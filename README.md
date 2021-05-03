@@ -26,7 +26,8 @@ for it. `TIME_SPENT` accepts jira format like `1h30m / 2h 20m`.
 
 ## Installation
 
-Clone repository and `make install` or check release page for latest release.
+[Check releases page](https://github.com/jzyinq/gojira/releases)
+or clone repository and run `make install`. 
 
 ## Configuration
 
