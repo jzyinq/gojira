@@ -9,6 +9,7 @@ script:
 
 deploy:
   provider: releases
+  tag_name: $TRAVIS_TAG
   api_key: $GITHUB_TOKEN
   file: dist/gojira
   skip_cleanup: true
