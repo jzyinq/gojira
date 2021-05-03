@@ -1,0 +1,69 @@
+# gojira
+
+Small cli helper for adding/updating work logs in Jira / Tempo. 
+Based on [urfave/cli](https://github.com/urfave/cli/) and [manifoldco/promptui](https://github.com/manifoldco/promptui).
+
+## Features
+
+`gojira`
+
+Argument-less call will try to detect jira issue from git branch name. If detected it will automatically
+perform `gojira log ISSUE`, otherwise will display issues from `gojira issues` command.
+
+`gojira issues`
+
+Displays last 5 jira issues that were recently updated and are assigned to you. Select one to update worklog with
+additional time spent.
+
+`gojira worklogs`
+
+Displays today's work logs - select one to edit existing work log.
+
+`gojira log ISSUE [TIME_SPENT]`
+
+Adds or updates existing `ISSUE` work log with given `TIME_SPENT`. Is `TIME_SPENT` is not provided you will be prompted
+for it. `TIME_SPENT` accepts jira format like `1h30m / 2h 20m`.
+
+## Installation
+
+Clone repository and `make install` or check release page for latest release.
+
+## Configuration
+
+`gojira` needs a couple of env variables right now that you have to configure:
+
+- Export below values in your .bashrc / .zshrc / .profile file:
+
+```
+export GOJIRA_JIRA_INSTANCE_URL="https://<INSTANCE>.atlassian.net"
+export GOJIRA_JIRA_LOGIN="your@email.com"
+export GOJIRA_JIRA_TOKEN="generate at https://id.atlassian.com/manage-profile/security/api-tokens"
+export GOJIRA_TEMPO_TOKEN="generate at https://<INSTANCE>.atlassian.net/plugins/servlet/ac/io.tempo.jira/tempo-app#!/configuration/api-integration"
+```  
+
+- Now we need to fetch one last env variable using previously saved values:
+
+`export GOJIRA_JIRA_ACCOUNT_ID=` - fetch it using this curl:
+
+```bash 
+curl --request GET \
+  --url "$GOJIRA_JIRA_INSTANCE_URL/rest/api/3/user/bulk/migration?username=$GOJIRA_JIRA_LOGIN" \
+  --header "Authorization: Basic $(echo -n $GOJIRA_JIRA_LOGIN:$GOJIRA_JIRA_TOKEN | base64)"
+```
+
+Save it and you should ready to go!
+
+## [Changelog](./CHANGELOG.md)
+
+## Todo list
+
+- [ ] tests
+- [ ] gojira worklog delete option
+- [ ] ticket status change prompt after logging time
+- [x] prompt validation
+- [x] while logging time check if worklog exists - if yes, append logged time (config.UpdateExistingWorkLog)
+- [x] cli help arguments & better handling
+- [x] more details on worklog list - goroutine details fetching?
+- [x] interactive edit worklog prompt
+- [x] detect git branch name (jira ticket)
+- [x] display todays logged working hours
