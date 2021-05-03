@@ -1,0 +1,13 @@
+language: go
+
+script:
+  - make test
+  - make build
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  file: dist/gojira
+  skip_cleanup: true
+  on:
+    tags: true
