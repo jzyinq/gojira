@@ -22,7 +22,10 @@ Displays today's work logs - select one to edit existing work log.
 `gojira log ISSUE [TIME_SPENT]`
 
 Adds or updates existing `ISSUE` work log with given `TIME_SPENT`. Is `TIME_SPENT` is not provided you will be prompted
-for it. `TIME_SPENT` accepts jira format like `1h30m / 2h 20m`.
+for it.
+- `ISSUE` could be straight Issue Key like `TICKET-999`, jira url like `https://instance.atlassian.net/browse/TICKET-999`
+  or any other string containing single issue key. Uppercase is important!
+- `TIME_SPENT` accepts jira format like `1h30m / 2h 20m`.
 
 ## Installation
 
@@ -59,9 +62,9 @@ Save it and you should ready to go!
 ## Todo list
 
 - [ ] tests
-- [ ] accept full jira url in `gojira log` and scrap issue key from it
 - [ ] gojira worklog delete option
 - [ ] ticket status change prompt after logging time
+- [x] accept full jira url in `gojira log` and scrap issue key from it
 - [x] prompt validation
 - [x] while logging time check if worklog exists - if yes, append logged time (config.UpdateExistingWorkLog)
 - [x] cli help arguments & better handling
