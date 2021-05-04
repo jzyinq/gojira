@@ -59,6 +59,7 @@ Save it and you should ready to go!
 ## Todo list
 
 - [ ] tests
+- [ ] accept full jira url in `gojira log` and scrap issue key from it
 - [ ] gojira worklog delete option
 - [ ] ticket status change prompt after logging time
 - [x] prompt validation
