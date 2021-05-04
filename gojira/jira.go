@@ -101,8 +101,8 @@ func GetLatestIssues() JQLResponse {
 	return jqlResponse
 }
 
-func GetIssue(issue string) Issue {
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s?fields=summary,status", Config.JiraUrl, issue)
+func GetIssue(issueKey string) Issue {
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issueKey/%s?fields=summary,status", Config.JiraUrl, issueKey)
 	headers := map[string]string{
 		"Authorization": getJiraAuthorizationHeader(),
 		"Content-Type":  "application/json",

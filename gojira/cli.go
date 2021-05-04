@@ -66,12 +66,15 @@ var LogWorkCommand = &cli.Command{
 	Usage:     "Log work to specified issue",
 	ArgsUsage: "ISSUE [TIME_SPENT]",
 	Action: func(context *cli.Context) error {
-		ticket := context.Args().Get(0)
+		//issueKey := FindIssueKeyInString(context.Args().Get(0))
+		issueKey := context.Args().Get(0)
 		timeSpent := context.Args().Get(1)
-		issue := Issue{Key: ticket}
-		if ticket == "" {
+		if issueKey == "" {
 			log.Fatalln("You need to provide at least an issue key as argument")
 		}
+		log.Printf("issue key %s", issueKey)
+		issue := GetIssue(issueKey)
+		fmt.Printf("Status: %s\nSummary: %s\n", issue.Fields.Status.Name, issue.Fields.Summary)
 		if timeSpent == "" {
 			var err error
 			timeSpent, err = PromptForTimeSpent("Add work log")

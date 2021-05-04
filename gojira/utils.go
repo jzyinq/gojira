@@ -3,6 +3,8 @@ package gojira
 import (
 	"fmt"
 	"math"
+	"os/exec"
+	"regexp"
 )
 
 func CalculateTimeSpent(workLogs []WorkLog) string {
@@ -24,4 +26,18 @@ func FormatTimeSpent(timeSpentSeconds int) string {
 		timeSpent = timeSpent + fmt.Sprintf("%vm", math.Round(floatPart*60))
 	}
 	return timeSpent
+}
+
+func GetTicketFromGitBranch() string {
+	gitBranch, err := exec.Command("git", "branch", "--show-current").CombinedOutput()
+	if err != nil {
+		return ""
+	}
+	return FindIssueKeyInString(string(gitBranch))
+}
+
+func FindIssueKeyInString(possibleUrl string) string {
+	r, _ := regexp.Compile("([A-Z]+-[0-9]+)")
+	match := r.FindString(possibleUrl)
+	return match
 }
