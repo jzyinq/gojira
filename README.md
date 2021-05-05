@@ -54,8 +54,11 @@ curl --request GET \
   --url "$GOJIRA_JIRA_INSTANCE_URL/rest/api/3/user/bulk/migration?username=$GOJIRA_JIRA_LOGIN" \
   --header "Authorization: Basic $(echo -n $GOJIRA_JIRA_LOGIN:$GOJIRA_JIRA_TOKEN | base64)"
 ```
-
-Save it and you should ready to go!
+If you receive `unknown` as `accountId`, just get it from your jira profile url instead:
+```
+https://<INSTANCE>.atlassian.net/jira/people/<ACCOUNT_ID>
+```
+Just remember to urldecode it. Save it and you should ready to go!
 
 ## [Changelog](./CHANGELOG.md)
 
