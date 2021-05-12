@@ -71,7 +71,7 @@ func PromptForIssueSelection(issues []Issue) (Issue, error) {
 	return issues[i], nil
 }
 
-func PromptForWorkLogSelection(workLogIssues []WorkLogIssue) (WorkLog, error) {
+func PromptForWorkLogSelection(workLogIssues []WorkLogIssue) (*WorkLog, error) {
 	//add timeSpent to available template functions
 	funcMap := template.FuncMap{"timeSpent": FormatTimeSpent}
 	//preserve previous functions
@@ -95,13 +95,8 @@ func PromptForWorkLogSelection(workLogIssues []WorkLogIssue) (WorkLog, error) {
 		return strings.Contains(name, input)
 	}
 
-	var workLogs []WorkLog
-	for _, workLog := range workLogIssues {
-		workLogs = append(workLogs, workLog.WorkLog)
-	}
-
 	promptSelect := promptui.Select{
-		Label:     "Today's work logs [" + CalculateTimeSpent(workLogs) + "]",
+		Label:     "Today's work logs [" + CalculateTimeSpent(getWorkLogsFromWorkLogIssues(workLogIssues)) + "]",
 		Items:     workLogIssues,
 		Templates: templates,
 		Size:      5,
@@ -113,8 +108,8 @@ func PromptForWorkLogSelection(workLogIssues []WorkLogIssue) (WorkLog, error) {
 
 	if err != nil {
 		fmt.Printf("Prompt failed %v\n", err)
-		return WorkLog{}, err
+		return &WorkLog{}, err
 	}
 
-	return workLogIssues[i].WorkLog, nil
+	return &workLogIssues[i].WorkLog, nil
 }

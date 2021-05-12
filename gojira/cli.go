@@ -39,6 +39,8 @@ var WorkLogsCommand = &cli.Command{
 			log.Fatalln(err)
 		}
 		workLog.Update(timeSpent)
+
+		fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(getWorkLogsFromWorkLogIssues(workLogIssues)))
 		return nil
 	},
 }

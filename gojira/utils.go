@@ -7,6 +7,14 @@ import (
 	"regexp"
 )
 
+func getWorkLogsFromWorkLogIssues(workLogIssues []WorkLogIssue) []WorkLog {
+	var workLogs []WorkLog
+	for _, workLog := range workLogIssues {
+		workLogs = append(workLogs, workLog.WorkLog)
+	}
+	return workLogs
+}
+
 func CalculateTimeSpent(workLogs []WorkLog) string {
 	timeSpentInSeconds := 0
 	for _, workLog := range workLogs {
