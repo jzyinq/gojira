@@ -31,6 +31,9 @@ func FormatTimeSpent(timeSpentSeconds int) string {
 		timeSpent = fmt.Sprintf("%vh", intPart)
 	}
 	if floatPart > 0 {
+		if (intPart) > 0 {
+			timeSpent += " "
+		}
 		timeSpent = timeSpent + fmt.Sprintf("%vm", math.Round(floatPart*60))
 	}
 	return timeSpent

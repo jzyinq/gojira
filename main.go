@@ -14,7 +14,7 @@ func main() {
 
    Calling without arguments will try to detect issue from git branch, 
    otherwise it will display list of last updated issues you're are assigned to.`,
-		Version: "0.2.1",
+		Version: "0.2.2",
 		Before: func(context *cli.Context) error {
 			if context.Args().First() != "config" {
 				// dont' check envs on ConfigCommand

@@ -12,7 +12,7 @@ func TestFormatTimeSpent(t *testing.T) {
 		{3600, "1h"},
 		{60, "1m"},
 		{900, "15m"},
-		{7080, "1h58m"},
+		{7080, "1h 58m"},
 		{901, "15m"},
 		{959, "16m"},
 	}
@@ -33,7 +33,7 @@ func TestCalculateTimeSpent(t *testing.T) {
 		{TimeSpentSeconds: 901},  // 15m
 		{TimeSpentSeconds: 959},  // 16m
 	}
-	expectedTimeSpent := "3h32m"
+	expectedTimeSpent := "3h 32m"
 
 	actualTimeSpent := CalculateTimeSpent(fixture)
 
@@ -59,4 +59,22 @@ func TestFindIssueKeyInString(t *testing.T) {
 		}
 	}
 
+}
+
+func TestTimeSpentToSeconds(t *testing.T) {
+	fixtures := []struct {
+		TimeSpent                  string
+		expectedTimeSpentInSeconds int
+	}{
+		{"1h 30m", 5400},
+		{"1h30m", 5400},
+		{"29m", 1740},
+	}
+
+	for _, fixture := range fixtures {
+		timeSpentInSeconds := TimeSpentToSeconds(fixture.TimeSpent)
+		if timeSpentInSeconds != fixture.expectedTimeSpentInSeconds {
+			t.Errorf("Incorrect timeSpent - got %d instead of %d", timeSpentInSeconds, fixture.expectedTimeSpentInSeconds)
+		}
+	}
 }

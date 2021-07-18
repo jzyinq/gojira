@@ -30,7 +30,7 @@ func PromptForTimeSpent(promptLabel string) (string, error) {
 		return "", err
 	}
 
-	return result, nil
+	return FormatTimeSpent(TimeSpentToSeconds(result)), nil
 }
 
 func PromptForIssueSelection(issues []Issue) (Issue, error) {
