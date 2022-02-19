@@ -27,6 +27,7 @@ func main() {
 			IssuesCommand,
 			WorkLogsCommand,
 			ConfigCommand,
+			ViewIssueCommand,
 		},
 		Action: DefaultAction,
 	}

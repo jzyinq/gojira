@@ -2,6 +2,8 @@ package gojira
 
 import (
 	"fmt"
+	"github.com/manifoldco/promptui"
+	"github.com/pkg/browser"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
@@ -63,6 +65,12 @@ var IssuesCommand = &cli.Command{
 	},
 }
 
+var ViewIssueCommand = &cli.Command{
+	Name:   "view",
+	Usage:  "View issue in browser",
+	Action: ViewIssueInBrowserAction,
+}
+
 var LogWorkCommand = &cli.Command{
 	Name:      "log",
 	Usage:     "Log work to specified issue",
@@ -71,7 +79,10 @@ var LogWorkCommand = &cli.Command{
 		issueKey := FindIssueKeyInString(context.Args().Get(0))
 		timeSpent := context.Args().Get(1)
 		if issueKey == "" {
-			log.Fatalln("You need to provide at least an issue key as argument")
+			issueKey = GetTicketFromGitBranch()
+		}
+		if issueKey == "" {
+			log.Fatalln("You need to provide at least an issue key as argument") // or be in git branch
 		}
 		issue := GetIssue(issueKey)
 		fmt.Printf("%s %s\n", issue.Key, issue.Fields.Summary)
@@ -94,7 +105,27 @@ var DefaultAction = func(c *cli.Context) error {
 		fmt.Printf("Command not found: %v\n", c.Args().Get(0))
 		os.Exit(1)
 	}
-	return GitOrIssueListAction(c)
+
+	prompt := promptui.Select{
+		Label: "Select Action",
+		Items: []string{"Log Work", "View Issue"},
+	}
+	_, action, err := prompt.Run()
+
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return nil
+	}
+
+	fmt.Printf("You choose %q\n", action)
+	if action == "Log Work" {
+		return GitOrIssueListAction(c) //fixme pass resolved Issue in context
+	}
+	if action == "View Issue" {
+		return ViewIssueInBrowserAction(c) //fixme pass resolved Issue in context
+	}
+
+	return nil
 }
 
 var GitOrIssueListAction = func(c *cli.Context) error {
@@ -103,6 +134,8 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 		fmt.Printf("Detected possible ticket in git branch name - %s\n", ticketFromBranch)
 		issue := GetIssue(ticketFromBranch)
 		fmt.Printf("Status: %s\nSummary: %s\n", issue.Fields.Status.Name, issue.Fields.Summary)
+
+		// log time or view issue
 		timeSpent, err := PromptForTimeSpent("Add work log")
 		if err != nil {
 			return nil
@@ -114,6 +147,17 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 	err := IssuesCommand.Action(c)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+var ViewIssueInBrowserAction = func(c *cli.Context) error {
+	ticketFromBranch := GetTicketFromGitBranch()
+	if ticketFromBranch != "" {
+		err := browser.OpenURL(fmt.Sprintf("%s/browse/%s", Config.JiraUrl, ticketFromBranch))
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
