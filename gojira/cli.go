@@ -106,26 +106,29 @@ var DefaultAction = func(c *cli.Context) error {
 		os.Exit(1)
 	}
 
-	prompt := promptui.Select{
-		Label: "Select Action",
-		Items: []string{"Log Work", "View Issue"},
-	}
-	_, action, err := prompt.Run()
+	ticketFromBranch := GetTicketFromGitBranch()
+	if ticketFromBranch != "" {
+		fmt.Printf("Detected possible ticket in git branch name - %s\n", ticketFromBranch)
+		prompt := promptui.Select{
+			Label: "Select Action",
+			Items: []string{"Log Work", "View Issue"},
+		}
+		_, action, err := prompt.Run()
 
-	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
-		return nil
+		if err != nil {
+			fmt.Printf("Prompt failed %v\n", err)
+			return nil
+		}
+		fmt.Printf("You choose %q\n", action)
+		if action == "Log Work" {
+			return GitOrIssueListAction(c) //fixme pass resolved Issue in context
+		}
+		if action == "View Issue" {
+			return ViewIssueInBrowserAction(c) //fixme pass resolved Issue in context
+		}
 	}
 
-	fmt.Printf("You choose %q\n", action)
-	if action == "Log Work" {
-		return GitOrIssueListAction(c) //fixme pass resolved Issue in context
-	}
-	if action == "View Issue" {
-		return ViewIssueInBrowserAction(c) //fixme pass resolved Issue in context
-	}
-
-	return nil
+	return GitOrIssueListAction(c)
 }
 
 var GitOrIssueListAction = func(c *cli.Context) error {
