@@ -3,7 +3,6 @@ package gojira
 import (
 	"fmt"
 	"github.com/manifoldco/promptui"
-	"github.com/pkg/browser"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
@@ -157,10 +156,7 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 var ViewIssueInBrowserAction = func(c *cli.Context) error {
 	ticketFromBranch := GetTicketFromGitBranch()
 	if ticketFromBranch != "" {
-		err := browser.OpenURL(fmt.Sprintf("%s/browse/%s", Config.JiraUrl, ticketFromBranch))
-		if err != nil {
-			return err
-		}
+		OpenUrl(fmt.Sprintf("%s/browse/%s", Config.JiraUrl, ticketFromBranch))
 	}
 	return nil
 }

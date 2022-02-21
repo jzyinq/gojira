@@ -2,6 +2,7 @@ package gojira
 
 import (
 	"fmt"
+	"github.com/pkg/browser"
 	"math"
 	"os/exec"
 	"regexp"
@@ -51,4 +52,15 @@ func FindIssueKeyInString(possibleUrl string) string {
 	r, _ := regexp.Compile("([A-Z]+-[0-9]+)")
 	match := r.FindString(possibleUrl)
 	return match
+}
+
+func OpenUrl(url string) {
+	// silence browser logs
+	browser.Stdout = nil
+	browser.Stderr = nil
+	err := browser.OpenURL(url)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
