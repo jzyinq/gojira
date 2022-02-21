@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ## [0.3.0] - 2022-02-21
+### Added 
+- `gojira view` command that opens up issue in default browser - works with issue key as arg and fetched from git branch name
+
 ### Changed
 - default behavior of argument-less `gojira` call if git branch is detected, now it allows to select do you want to log worklog or view issue in browser
 
