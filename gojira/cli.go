@@ -81,7 +81,7 @@ var LogWorkCommand = &cli.Command{
 			issueKey = GetTicketFromGitBranch()
 		}
 		if issueKey == "" {
-			log.Fatalln("You need to provide at least an issue key as argument") // or be in git branch
+			log.Fatalln("No issue key given / detected in git branch.")
 		}
 		issue := GetIssue(issueKey)
 		fmt.Printf("%s %s\n", issue.Key, issue.Fields.Summary)
