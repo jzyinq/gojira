@@ -154,9 +154,13 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 }
 
 var ViewIssueInBrowserAction = func(c *cli.Context) error {
-	ticketFromBranch := GetTicketFromGitBranch()
-	if ticketFromBranch != "" {
-		OpenUrl(fmt.Sprintf("%s/browse/%s", Config.JiraUrl, ticketFromBranch))
+	issueKey := FindIssueKeyInString(c.Args().Get(0))
+	if issueKey == "" {
+		issueKey = GetTicketFromGitBranch()
+	}
+
+	if issueKey != "" {
+		OpenUrl(fmt.Sprintf("%s/browse/%s", Config.JiraUrl, issueKey))
 	}
 	return nil
 }
