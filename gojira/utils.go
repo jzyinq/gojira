@@ -3,6 +3,7 @@ package gojira
 import (
 	"fmt"
 	"github.com/pkg/browser"
+	"github.com/urfave/cli/v2"
 	"math"
 	"os/exec"
 	"regexp"
@@ -38,6 +39,19 @@ func FormatTimeSpent(timeSpentSeconds int) string {
 		timeSpent = timeSpent + fmt.Sprintf("%vm", math.Round(floatPart*60))
 	}
 	return timeSpent
+}
+
+func ResolveIssueKey(c *cli.Context) string {
+	issueKey := ""
+	if 	c.App.Metadata["JiraIssue"] != nil {
+		issueKey = fmt.Sprintf("%s", c.App.Metadata["JiraTicket"])
+	}
+	issueKey = FindIssueKeyInString(c.Args().Get(0))
+	if issueKey == "" {
+		issueKey = GetTicketFromGitBranch()
+	}
+
+	return issueKey
 }
 
 func GetTicketFromGitBranch() string {

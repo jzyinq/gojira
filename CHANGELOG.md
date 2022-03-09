@@ -6,8 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.3.1] - 2022-03-09
+### Changed
+- Replace multiple methods for fetching issue key with single `ResolveIssueKey` method
+
 ## [0.3.0] - 2022-02-21
-### Added 
+### Added
 - `gojira view` command that opens up issue in default browser - works with issue key as arg and fetched from git branch name
 
 ### Changed
@@ -33,7 +37,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Initial release of gojira
 
-[Unreleased]: https://github.com/jzyinq/gojira/compare/0.3.0...master
+[Unreleased]: https://github.com/jzyinq/gojira/compare/0.3.1...master
+[0.3.1]: https://github.com/jzyinq/gojira/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/jzyinq/gojira/compare/0.2.2...0.3.0
 [0.2.2]: https://github.com/jzyinq/gojira/compare/0.2.1...0.2.2
 [0.2.1]: https://github.com/jzyinq/gojira/compare/0.2.0...0.2.1

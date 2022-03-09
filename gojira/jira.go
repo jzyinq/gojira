@@ -80,7 +80,7 @@ func GetLatestIssues() JQLResponse {
 	payload := &JQLSearch{
 		Expand:       []string{"names"},
 		Jql:          "assignee in (currentUser()) ORDER BY updated DESC, created DESC",
-		MaxResults:   5,
+		MaxResults:   10,
 		FieldsByKeys: false,
 		Fields:       []string{"summary", "status"},
 		StartAt:      0,

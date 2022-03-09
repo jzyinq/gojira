@@ -75,11 +75,8 @@ var LogWorkCommand = &cli.Command{
 	Usage:     "Log work to specified issue",
 	ArgsUsage: "ISSUE [TIME_SPENT]",
 	Action: func(context *cli.Context) error {
-		issueKey := FindIssueKeyInString(context.Args().Get(0))
+		issueKey := ResolveIssueKey(context)
 		timeSpent := context.Args().Get(1)
-		if issueKey == "" {
-			issueKey = GetTicketFromGitBranch()
-		}
 		if issueKey == "" {
 			log.Fatalln("No issue key given / detected in git branch.")
 		}
@@ -104,9 +101,9 @@ var DefaultAction = func(c *cli.Context) error {
 		fmt.Printf("Command not found: %v\n", c.Args().Get(0))
 		os.Exit(1)
 	}
-
-	ticketFromBranch := GetTicketFromGitBranch()
+	ticketFromBranch := ResolveIssueKey(c)
 	if ticketFromBranch != "" {
+		c.App.Metadata["JiraIssue"] = ticketFromBranch
 		fmt.Printf("Detected possible ticket in git branch name - %s\n", ticketFromBranch)
 		prompt := promptui.Select{
 			Label: "Select Action",
@@ -131,12 +128,10 @@ var DefaultAction = func(c *cli.Context) error {
 }
 
 var GitOrIssueListAction = func(c *cli.Context) error {
-	ticketFromBranch := GetTicketFromGitBranch()
-	if ticketFromBranch != "" {
-		fmt.Printf("Detected possible ticket in git branch name - %s\n", ticketFromBranch)
-		issue := GetIssue(ticketFromBranch)
+	issueKey := ResolveIssueKey(c)
+	if issueKey != "" {
+		issue := GetIssue(issueKey)
 		fmt.Printf("Status: %s\nSummary: %s\n", issue.Fields.Status.Name, issue.Fields.Summary)
-
 		// log time or view issue
 		timeSpent, err := PromptForTimeSpent("Add work log")
 		if err != nil {
@@ -154,11 +149,7 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 }
 
 var ViewIssueInBrowserAction = func(c *cli.Context) error {
-	issueKey := FindIssueKeyInString(c.Args().Get(0))
-	if issueKey == "" {
-		issueKey = GetTicketFromGitBranch()
-	}
-
+	issueKey := ResolveIssueKey(c)
 	if issueKey != "" {
 		OpenUrl(fmt.Sprintf("%s/browse/%s", Config.JiraUrl, issueKey))
 	}

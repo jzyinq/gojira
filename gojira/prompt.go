@@ -56,7 +56,7 @@ func PromptForIssueSelection(issues []Issue) (Issue, error) {
 		Label:     "Recently updated jira tickets assigned to you:",
 		Items:     issues,
 		Templates: templates,
-		Size:      5,
+		Size:      10,
 		Searcher:  searcher,
 		HideHelp:  true,
 	}
