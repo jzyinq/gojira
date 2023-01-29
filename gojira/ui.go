@@ -6,10 +6,11 @@ import (
 )
 
 type UserInteface struct {
-	app   *tview.Application
-	frame *tview.Frame
-	pages *tview.Pages
-	table *tview.Table
+	app    *tview.Application
+	frame  *tview.Frame
+	pages  *tview.Pages
+	table  *tview.Table
+	status *tview.TextView
 }
 
 func newUi() {
@@ -18,15 +19,16 @@ func newUi() {
 	app.ui.table = tview.NewTable()
 	app.ui.pages.AddPage("worklog-view", app.ui.table, true, true)
 	app.ui.frame = tview.NewFrame(app.ui.pages)
+	app.ui.status = tview.NewTextView().SetText("STATUS").SetChangedFunc(func() {
+		app.ui.app.Draw()
+	})
 	app.ui.frame.SetBorders(0, 0, 0, 0, 0, 0).
 		AddText("Worklogs", true, tview.AlignLeft, tcell.ColorWhite).
 		AddText("gojira v0.0.9", true, tview.AlignRight, tcell.ColorWhite).
 		AddText("(p)revious day   (n)ext day", true, tview.AlignLeft, tcell.ColorYellow).
-		AddText("(d)elete worklog (enter) update worklog", true, tview.AlignLeft, tcell.ColorYellow).
-		AddText("Status...", false, tview.AlignCenter, tcell.ColorGreen)
-	app.ui.app.SetRoot(app.ui.frame, true)
+		AddText("(d)elete worklog (enter) update worklog", true, tview.AlignLeft, tcell.ColorYellow)
 
-	// TODO worklog view
+	app.ui.app.SetRoot(app.ui.frame, true)
 
 }
 
@@ -59,6 +61,7 @@ func newWorklogForm(workLogIssues []WorkLogIssue, row int) *tview.Form {
 
 	updateWorklog := func() {
 		timeSpent := form.GetFormItem(0).(*tview.InputField).GetText()
+		app.ui.status.SetText("Updating....")
 		workLogIssues[row].WorkLog.Update(timeSpent)
 		app.ui.pages.HidePage("worklog-form")
 		newWorkLogTable(workLogIssues)
