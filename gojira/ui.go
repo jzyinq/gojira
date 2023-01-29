@@ -3,7 +3,6 @@ package gojira
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"strings"
 )
 
 type UserInteface struct {
@@ -20,20 +19,19 @@ func NewUi() {
 }
 
 func NewWorkLogView(workLogs []WorkLogIssue) {
-	//FIXMe wyświetlaj dane z worklogów
 	table := tview.NewTable().SetSelectable(true, false)
-	headers := strings.Split("Key Description Worklog", " ")
-	cols, rows := 3, 10
-	word := 0
-	for r := 0; r < rows; r++ {
-		for c := 0; c < cols; c++ {
-			color := tcell.ColorWhite
-			table.SetCell(r, c,
-				tview.NewTableCell(headers[word]).
-					SetTextColor(color).
-					SetAlign(tview.AlignCenter))
-			word = (word + 1) % len(headers)
-		}
+	color := tcell.ColorWhite
+	// FIXME  Set fixed number of rows
+	for r := 0; r < len(workLogs); r++ {
+		table.SetCell(r, 0, // FIXME use enums for column names
+			tview.NewTableCell(workLogs[r].Issue.Key).SetTextColor(color).SetAlign(tview.AlignLeft),
+		)
+		table.SetCell(r, 1,
+			tview.NewTableCell(workLogs[r].Issue.Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
+		)
+		table.SetCell(r, 2,
+			tview.NewTableCell(FormatTimeSpent(workLogs[r].WorkLog.TimeSpentSeconds)).SetTextColor(color).SetAlign(tview.AlignLeft),
+		)
 	}
 	table.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEscape {

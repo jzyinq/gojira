@@ -62,7 +62,8 @@ type WorkLogIssue struct {
 }
 
 func GetWorkLogs() []WorkLog {
-	currentDay := time.Now().Format("2006-01-02")
+	//currentDay := time.Now().Format("2006-01-02")
+	currentDay := time.Date(2023, 1, 27, 0, 0, 0, 0, time.Local).Format("2006-01-02")
 	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s", Config.TempoUrl, Config.JiraAccountId, currentDay, currentDay)
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
