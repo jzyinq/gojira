@@ -8,6 +8,9 @@ import (
 )
 
 func main() {
+	Test()
+	return
+
 	app := &cli.App{
 		Name: "gojira",
 		Usage: `quickly log time to jira/tempo through cli.
