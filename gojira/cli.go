@@ -25,6 +25,13 @@ var WorkLogsCommand = &cli.Command{
 		}
 		waitGroup.Wait()
 
+		NewUi()
+		NewWorkLogView(workLogIssues)
+		err := app.ui.app.Run()
+		if err != nil {
+			return err
+		}
+
 		if len(workLogIssues) == 0 {
 			fmt.Println("You don't have any logged work today.")
 			return nil

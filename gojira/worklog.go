@@ -7,7 +7,7 @@ import (
 )
 
 func Test() {
-	app := tview.NewApplication()
+	test := tview.NewApplication()
 	table := tview.NewTable().SetSelectable(true, false)
 	frame := tview.NewFrame(table).
 		SetBorders(0, 0, 0, 0, 0, 0).
@@ -33,18 +33,18 @@ func Test() {
 
 	table.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEscape {
-			app.Stop()
+			test.Stop()
 		}
 	}).SetSelectedFunc(func(row, column int) {
 		// tutaj można wstawić input z wyedytowaniem workloga
-		app.SetRoot(newWorklogForm(app, frame, table.GetCell(row, column).Text), true)
+		test.SetRoot(newWorklogForm(test, frame, table.GetCell(row, column).Text), true)
 	})
 
-	if err := app.SetRoot(frame, true).EnableMouse(true).Run(); err != nil {
+	if err := test.SetRoot(frame, true).EnableMouse(true).Run(); err != nil {
 		panic(err)
 	}
 
-	if err := app.SetRoot(frame, true).SetFocus(table).EnableMouse(true).Run(); err != nil {
+	if err := test.SetRoot(frame, true).SetFocus(table).EnableMouse(true).Run(); err != nil {
 		panic(err)
 	}
 
