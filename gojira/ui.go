@@ -11,17 +11,16 @@ type UserInteface struct {
 	pages *tview.Pages
 }
 
-func NewUi() {
+func newUi() {
 	app.ui.app = tview.NewApplication()
 	app.ui.pages = tview.NewPages()
 	app.ui.frame = tview.NewFrame(app.ui.pages)
 	app.ui.app.SetRoot(app.ui.frame, true)
 }
 
-func NewWorkLogView(workLogs []WorkLogIssue) {
+func newWorkLogTable(workLogs []WorkLogIssue) {
 	table := tview.NewTable().SetSelectable(true, false)
 	color := tcell.ColorWhite
-	// FIXME  Set fixed number of rows
 	for r := 0; r < len(workLogs); r++ {
 		table.SetCell(r, 0, // FIXME use enums for column names
 			tview.NewTableCell(workLogs[r].Issue.Key).SetTextColor(color).SetAlign(tview.AlignLeft),
@@ -38,7 +37,7 @@ func NewWorkLogView(workLogs []WorkLogIssue) {
 			app.ui.app.Stop()
 		}
 	}).SetSelectedFunc(func(row, column int) {
-		// akcja na edycje tabeli
+		newWorklogForm(workLogs, row)
 	})
 	app.ui.pages.AddPage("worklog-view", table, true, true)
 	app.ui.frame.SetBorders(0, 0, 0, 0, 0, 0).
@@ -47,4 +46,26 @@ func NewWorkLogView(workLogs []WorkLogIssue) {
 		AddText("(p)revious day   (n)ext day", true, tview.AlignLeft, tcell.ColorYellow).
 		AddText("(d)elete worklog (enter) update worklog", true, tview.AlignLeft, tcell.ColorYellow).
 		AddText("Status...", false, tview.AlignCenter, tcell.ColorGreen)
+}
+
+func newWorklogForm(workLogIssues []WorkLogIssue, row int) *tview.Form {
+	var form *tview.Form
+
+	updateWorklog := func() {
+		timeSpent := form.GetFormItem(0).(*tview.InputField).GetText()
+		workLogIssues[row].WorkLog.Update(timeSpent)
+		app.ui.pages.HidePage("worklog-form")
+		newWorkLogTable(workLogIssues)
+	}
+
+	form = tview.NewForm().
+		AddInputField("Time spent", FormatTimeSpent(workLogIssues[row].WorkLog.TimeSpentSeconds), 20, nil, nil).
+		AddButton("Update", updateWorklog).
+		AddButton("Cancel", func() {
+			app.ui.pages.HidePage("worklog-form")
+			newWorkLogTable(workLogIssues)
+		})
+	form.SetBorder(true).SetTitle("Enter some data").SetTitleAlign(tview.AlignLeft)
+	app.ui.pages.AddPage("worklog-form", form, true, true)
+	return form
 }

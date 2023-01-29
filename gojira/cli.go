@@ -25,8 +25,8 @@ var WorkLogsCommand = &cli.Command{
 		}
 		waitGroup.Wait()
 
-		NewUi()
-		NewWorkLogView(workLogIssues)
+		newUi()
+		newWorkLogTable(workLogIssues)
 		err := app.ui.app.Run()
 		if err != nil {
 			return err

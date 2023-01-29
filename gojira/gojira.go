@@ -11,8 +11,6 @@ type gojira struct {
 	ui  *UserInteface
 }
 
-var app gojira
-
 func Run() {
 	app.ui = &UserInteface{}
 	app.cli = &cli.App{
@@ -43,3 +41,5 @@ func Run() {
 		log.Fatal(err)
 	}
 }
+
+var app gojira
