@@ -25,6 +25,10 @@ var WorkLogsCommand = &cli.Command{
 		}
 		waitGroup.Wait()
 
+		if len(workLogIssues) == 0 {
+			fmt.Println("You don't have any logged work today.")
+			return nil
+		}
 		newUi()
 		newWorkLogTable(workLogIssues)
 		err := app.ui.app.Run()
@@ -32,23 +36,6 @@ var WorkLogsCommand = &cli.Command{
 			return err
 		}
 
-		if len(workLogIssues) == 0 {
-			fmt.Println("You don't have any logged work today.")
-			return nil
-		}
-		// goroutine awesomeness
-
-		workLog, err := PromptForWorkLogSelection(workLogIssues)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		timeSpent, err := PromptForTimeSpent("Update work log")
-		if err != nil {
-			log.Fatalln(err)
-		}
-		workLog.Update(timeSpent)
-
-		fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(getWorkLogsFromWorkLogIssues(workLogIssues)))
 		return nil
 	},
 }
