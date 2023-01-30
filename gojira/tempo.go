@@ -61,8 +61,8 @@ type WorkLogIssue struct {
 }
 
 func GetWorkLogs() []WorkLog {
-	//currentDay := time.Now().Format("2006-01-02")
-	currentDay := time.Date(2023, 1, 27, 0, 0, 0, 0, time.Local).Format("2006-01-02")
+	currentDay := time.Now().Format("2006-01-02")
+	//currentDay := time.Date(2023, 1, 27, 0, 0, 0, 0, time.Local).Format("2006-01-02") // FIXME dev only
 	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s", Config.TempoUrl, Config.JiraAccountId, currentDay, currentDay)
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
@@ -102,6 +102,7 @@ func TimeSpentToSeconds(timeSpent string) int {
 func (workLog *WorkLog) Update(timeSpent string) {
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 
+	// FIXME disable for development
 	//payload := WorkLogUpdate{
 	//	IssueKey:         workLog.Issue.Key,
 	//	StartDate:        workLog.StartDate,
@@ -119,7 +120,6 @@ func (workLog *WorkLog) Update(timeSpent string) {
 	//}
 	//
 	//SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
-	// avoid mismatch on ui if request fails
 
 	workLog.TimeSpentSeconds = timeSpentInSeconds
 }
