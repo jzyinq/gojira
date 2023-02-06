@@ -20,17 +20,16 @@ func newUi() {
 	app.ui.pages = tview.NewPages()
 	app.ui.table = tview.NewTable()
 	app.ui.status = tview.NewTextView().SetText(
-		fmt.Sprintf("gojira - worklogs - %s", app.time.Format("2006-01-02")),
+		fmt.Sprintf("worklogs - %s", app.time.Format("2006-01-02")),
 	).SetChangedFunc(func() {
 		app.ui.app.Draw()
 	})
-
 	app.ui.flex = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(app.ui.status, 1, 1, false).
 		AddItem(app.ui.pages, 0, 1, true)
+	app.ui.flex.SetBorder(true).SetTitle("gojira")
 
 	app.ui.app.SetRoot(app.ui.flex, true)
-
 	app.ui.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyRune:
@@ -67,7 +66,7 @@ func newWorkLogView(workLogs []WorkLogIssue) {
 	}).SetSelectedFunc(func(row, column int) {
 		newWorklogForm(workLogs, row)
 	})
-	app.ui.status.SetText(fmt.Sprintf("gojira - worklogs - %s", app.time.Format("2006-01-02")))
+	app.ui.status.SetText(fmt.Sprintf("worklogs - %s", app.time.Format("2006-01-02")))
 	app.ui.pages.ShowPage("worklog-view")
 }
 
