@@ -14,24 +14,8 @@ var WorkLogsCommand = &cli.Command{
 	Name:  "worklogs",
 	Usage: "Edit your today's work log",
 	Action: func(c *cli.Context) error {
-		var workLogIssues []WorkLogIssue
-		// goroutine awesomeness
-		waitGroup := sync.WaitGroup{}
-		for _, workLog := range GetWorkLogs(time.Now()) {
-			waitGroup.Add(1)
-			go func(workLog WorkLog) {
-				workLogIssues = append(workLogIssues, WorkLogIssue{WorkLog: workLog, Issue: GetIssue(workLog.Issue.Key)})
-				waitGroup.Done()
-			}(workLog)
-		}
-		waitGroup.Wait()
-
-		if len(workLogIssues) == 0 {
-			fmt.Println("You don't have any logged work today.")
-			return nil
-		}
 		newUi()
-		newWorkLogTable(workLogIssues)
+		newWorkLogTable(GetWorkLogIssues(time.Now()))
 		err := app.ui.app.Run()
 		if err != nil {
 			return err
@@ -39,6 +23,26 @@ var WorkLogsCommand = &cli.Command{
 
 		return nil
 	},
+}
+
+func GetWorkLogIssues(givenDay time.Time) []WorkLogIssue {
+	var workLogIssues []WorkLogIssue
+	// goroutine awesomeness
+	waitGroup := sync.WaitGroup{}
+	for _, workLog := range GetWorkLogs(givenDay) {
+		waitGroup.Add(1)
+		go func(workLog WorkLog) {
+			workLogIssues = append(workLogIssues, WorkLogIssue{WorkLog: workLog, Issue: GetIssue(workLog.Issue.Key)})
+			waitGroup.Done()
+		}(workLog)
+	}
+	waitGroup.Wait()
+
+	if len(workLogIssues) == 0 {
+		fmt.Println("You don't have any logged work today.")
+		return nil
+	}
+	return workLogIssues
 }
 
 var IssuesCommand = &cli.Command{

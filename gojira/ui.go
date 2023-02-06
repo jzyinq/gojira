@@ -3,6 +3,7 @@ package gojira
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"time"
 )
 
 type UserInteface struct {
@@ -30,6 +31,17 @@ func newUi() {
 
 	app.ui.app.SetRoot(app.ui.frame, true)
 
+	app.ui.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyRune:
+			switch event.Rune() {
+			case 'p':
+				selectedDay := time.Date(2023, 2, 3, 0, 0, 0, 0, time.Local)
+				newWorkLogTable(GetWorkLogIssues(selectedDay))
+			}
+		}
+		return event
+	})
 }
 
 func newWorkLogTable(workLogs []WorkLogIssue) {
