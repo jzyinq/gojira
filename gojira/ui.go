@@ -71,7 +71,11 @@ func newWorkLogView(workLogs []WorkLogIssue) {
 	}).SetSelectedFunc(func(row, column int) {
 		newWorklogForm(workLogs, row)
 	})
-	app.ui.status.SetText(fmt.Sprintf("worklogs - %s", app.time.Format("2006-01-02")))
+	app.ui.status.SetText(
+		fmt.Sprintf("Worklogs - %s - [%s]",
+			app.time.Format("2006-01-02"),
+			CalculateTimeSpent(getWorkLogsFromWorkLogIssues(workLogs)),
+		))
 	app.ui.pages.ShowPage("worklog-view")
 }
 
