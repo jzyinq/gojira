@@ -19,11 +19,11 @@ func newUi() {
 	app.ui.app = tview.NewApplication()
 	app.ui.pages = tview.NewPages()
 	app.ui.table = tview.NewTable()
-	app.ui.status = tview.NewTextView().SetText(
-		fmt.Sprintf("worklogs - %s", app.time.Format("2006-01-02")),
-	).SetChangedFunc(func() {
+	app.ui.status = tview.NewTextView().SetChangedFunc(func() {
 		app.ui.app.Draw()
-	})
+	}).SetText(
+		fmt.Sprintf("worklogs - %s", app.time.Format("2006-01-02")),
+	)
 	app.ui.flex = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(app.ui.status, 1, 1, false).
 		AddItem(app.ui.pages, 0, 1, true)
@@ -37,6 +37,11 @@ func newUi() {
 			case 'p':
 				app.time = app.time.Add(-time.Hour * 24)
 				newWorkLogView(GetWorkLogIssues())
+				break
+			case 'n':
+				app.time = app.time.Add(time.Hour * 24)
+				newWorkLogView(GetWorkLogIssues())
+				break
 			}
 		}
 		return event
@@ -84,10 +89,10 @@ func newWorklogForm(workLogIssues []WorkLogIssue, row int) *tview.Form {
 	form = tview.NewForm().
 		AddInputField("Time spent", FormatTimeSpent(workLogIssues[row].WorkLog.TimeSpentSeconds), 20, nil, nil).
 		AddButton("Update", updateWorklog).
-		AddButton("Cancel", func() {
+		AddButton("Cancel", func() { // FIXME can't move to cancel button
 			app.ui.pages.HidePage("worklog-form")
 		})
-	form.SetBorder(true).SetTitle("Enter some data").SetTitleAlign(tview.AlignLeft)
+	form.SetBorder(true).SetTitle("Update worklog").SetTitleAlign(tview.AlignLeft)
 	app.ui.pages.AddPage("worklog-form", form, true, true)
 	return form
 }
