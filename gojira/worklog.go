@@ -37,7 +37,7 @@ func Test() {
 		}
 	}).SetSelectedFunc(func(row, column int) {
 		// tutaj można wstawić input z wyedytowaniem workloga
-		//test.SetRoot(newWorklogForm(test, frame, table.GetCell(row, column).Text), true)
+		//test.SetRoot(newWorklogForm(test, flex, table.GetCell(row, column).Text), true)
 	})
 
 	if err := test.SetRoot(frame, true).EnableMouse(true).Run(); err != nil {
@@ -50,14 +50,14 @@ func Test() {
 
 }
 
-//func newWorklogForm(app *tview.Application, frame *tview.Frame, workLog string) *tview.Form {
+//func newWorklogForm(app *tview.Application, flex *tview.Frame, workLog string) *tview.Form {
 //	form := tview.NewForm().
 //		AddInputField("Worklog", workLog, 20, nil, nil).
 //		AddButton("Update", func() {
-//			app.SetRoot(frame, true)
+//			app.SetRoot(flex, true)
 //		}).
 //		AddButton("Cancel", func() {
-//			app.SetRoot(frame, true)
+//			app.SetRoot(flex, true)
 //		})
 //	form.SetBorder(true).SetTitle("Enter some data").SetTitleAlign(tview.AlignLeft)
 //	return form

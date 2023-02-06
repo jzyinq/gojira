@@ -9,7 +9,7 @@ import (
 
 type UserInteface struct {
 	app    *tview.Application
-	frame  *tview.Frame
+	flex   *tview.Flex
 	pages  *tview.Pages
 	table  *tview.Table
 	status *tview.TextView
@@ -19,17 +19,17 @@ func newUi() {
 	app.ui.app = tview.NewApplication()
 	app.ui.pages = tview.NewPages()
 	app.ui.table = tview.NewTable()
-	app.ui.frame = tview.NewFrame(app.ui.pages)
-	app.ui.status = tview.NewTextView().SetText("STATUS").SetChangedFunc(func() {
+	app.ui.status = tview.NewTextView().SetText(
+		fmt.Sprintf("gojira - worklogs - %s", app.time.Format("2006-01-02")),
+	).SetChangedFunc(func() {
 		app.ui.app.Draw()
 	})
-	app.ui.frame.SetBorders(0, 0, 0, 0, 0, 0).
-		AddText(fmt.Sprintf("Worklogs %s", app.time.Format("2006-01-02")), true, tview.AlignLeft, tcell.ColorWhite).
-		AddText("gojira v0.0.9", true, tview.AlignRight, tcell.ColorWhite).
-		AddText("(p)revious day   (n)ext day", true, tview.AlignLeft, tcell.ColorYellow).
-		AddText("(d)elete worklog (enter) update worklog", true, tview.AlignLeft, tcell.ColorYellow)
 
-	app.ui.app.SetRoot(app.ui.frame, true)
+	app.ui.flex = tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(app.ui.status, 1, 1, false).
+		AddItem(app.ui.pages, 0, 1, true)
+
+	app.ui.app.SetRoot(app.ui.flex, true)
 
 	app.ui.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -67,6 +67,7 @@ func newWorkLogView(workLogs []WorkLogIssue) {
 	}).SetSelectedFunc(func(row, column int) {
 		newWorklogForm(workLogs, row)
 	})
+	app.ui.status.SetText(fmt.Sprintf("gojira - worklogs - %s", app.time.Format("2006-01-02")))
 	app.ui.pages.ShowPage("worklog-view")
 }
 
