@@ -14,7 +14,7 @@ var WorkLogsCommand = &cli.Command{
 	Usage: "Edit your today's work log",
 	Action: func(c *cli.Context) error {
 		newUi()
-		newWorkLogTable(GetWorkLogIssues())
+		newWorkLogView(GetWorkLogIssues())
 		err := app.ui.app.Run()
 		if err != nil {
 			return err
