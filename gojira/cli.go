@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 )
 
 var WorkLogsCommand = &cli.Command{
@@ -16,7 +17,7 @@ var WorkLogsCommand = &cli.Command{
 		var workLogIssues []WorkLogIssue
 		// goroutine awesomeness
 		waitGroup := sync.WaitGroup{}
-		for _, workLog := range GetWorkLogs() {
+		for _, workLog := range GetWorkLogs(time.Now()) {
 			waitGroup.Add(1)
 			go func(workLog WorkLog) {
 				workLogIssues = append(workLogIssues, WorkLogIssue{WorkLog: workLog, Issue: GetIssue(workLog.Issue.Key)})
@@ -175,7 +176,7 @@ Save it and you should ready to go!
 }
 
 func (issue Issue) LogWork(timeSpent string) {
-	workLogs := GetWorkLogs()
+	workLogs := GetWorkLogs(time.Now())
 	if Config.UpdateExistingWorkLog {
 		for index, workLog := range workLogs {
 			if workLog.Issue.Key == issue.Key {
