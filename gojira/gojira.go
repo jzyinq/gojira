@@ -4,15 +4,18 @@ import (
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
+	"time"
 )
 
 type gojira struct {
-	cli *cli.App
-	ui  *UserInteface
+	cli  *cli.App
+	ui   *UserInteface
+	time time.Time
 }
 
 func Run() {
 	app.ui = &UserInteface{}
+	app.time = time.Now()
 	app.cli = &cli.App{
 		Name: "gojira",
 		Usage: `quickly log time to jira/tempo through cli.

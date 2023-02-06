@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"sync"
-	"time"
 )
 
 var WorkLogsCommand = &cli.Command{
@@ -15,7 +14,7 @@ var WorkLogsCommand = &cli.Command{
 	Usage: "Edit your today's work log",
 	Action: func(c *cli.Context) error {
 		newUi()
-		newWorkLogTable(GetWorkLogIssues(time.Now()))
+		newWorkLogTable(GetWorkLogIssues())
 		err := app.ui.app.Run()
 		if err != nil {
 			return err
@@ -25,11 +24,11 @@ var WorkLogsCommand = &cli.Command{
 	},
 }
 
-func GetWorkLogIssues(givenDay time.Time) []WorkLogIssue {
+func GetWorkLogIssues() []WorkLogIssue {
 	var workLogIssues []WorkLogIssue
 	// goroutine awesomeness
 	waitGroup := sync.WaitGroup{}
-	for _, workLog := range GetWorkLogs(givenDay) {
+	for _, workLog := range GetWorkLogs() {
 		waitGroup.Add(1)
 		go func(workLog WorkLog) {
 			workLogIssues = append(workLogIssues, WorkLogIssue{WorkLog: workLog, Issue: GetIssue(workLog.Issue.Key)})
@@ -38,10 +37,6 @@ func GetWorkLogIssues(givenDay time.Time) []WorkLogIssue {
 	}
 	waitGroup.Wait()
 
-	if len(workLogIssues) == 0 {
-		fmt.Println("You don't have any logged work today.")
-		return nil
-	}
 	return workLogIssues
 }
 
@@ -180,7 +175,7 @@ Save it and you should ready to go!
 }
 
 func (issue Issue) LogWork(timeSpent string) {
-	workLogs := GetWorkLogs(time.Now())
+	workLogs := GetWorkLogs()
 	if Config.UpdateExistingWorkLog {
 		for index, workLog := range workLogs {
 			if workLog.Issue.Key == issue.Key {

@@ -60,8 +60,8 @@ type WorkLogIssue struct {
 	Issue   Issue
 }
 
-func GetWorkLogs(day time.Time) []WorkLog {
-	selectedDay := day.Format("2006-01-02")
+func GetWorkLogs() []WorkLog {
+	selectedDay := app.time.Format("2006-01-02")
 	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s", Config.TempoUrl, Config.JiraAccountId, selectedDay, selectedDay)
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),

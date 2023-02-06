@@ -36,8 +36,8 @@ func newUi() {
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case 'p':
-				selectedDay := time.Date(2023, 2, 3, 0, 0, 0, 0, time.Local)
-				newWorkLogTable(GetWorkLogIssues(selectedDay))
+				app.time = app.time.Add(-time.Hour * 24)
+				newWorkLogTable(GetWorkLogIssues())
 			}
 		}
 		return event
