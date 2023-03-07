@@ -1,6 +1,7 @@
 package gojira
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -102,23 +103,24 @@ func (workLog *WorkLog) Update(timeSpent string) {
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 
 	// FIXME disable for development
-	//payload := WorkLogUpdate{
-	//	IssueKey:         workLog.Issue.Key,
-	//	StartDate:        workLog.StartDate,
-	//	StartTime:        workLog.StartTime,
-	//	Description:      workLog.Description,
-	//	AuthorAccountId:  workLog.Author.AccountId,
-	//	TimeSpentSeconds: timeSpentInSeconds,
-	//}
-	//payloadJson, _ := json.Marshal(payload)
-	//requestBody := bytes.NewBuffer(payloadJson)
-	//requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, workLog.TempoWorklogid)
-	//headers := map[string]string{
-	//	"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
-	//	"Content-Type":  "application/json",
-	//}
-	//
-	//SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
+	payload := WorkLogUpdate{
+		IssueKey:         workLog.Issue.Key,
+		StartDate:        workLog.StartDate,
+		StartTime:        workLog.StartTime,
+		Description:      workLog.Description,
+		AuthorAccountId:  workLog.Author.AccountId,
+		TimeSpentSeconds: timeSpentInSeconds,
+	}
+	payloadJson, _ := json.Marshal(payload)
+	requestBody := bytes.NewBuffer(payloadJson)
+	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, workLog.TempoWorklogid)
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
+		"Content-Type":  "application/json",
+	}
+
+	// FIXME - dodaj err i wywal na modal
+	SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
 
 	workLog.TimeSpentSeconds = timeSpentInSeconds
 }

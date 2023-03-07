@@ -15,6 +15,7 @@ var WorkLogsCommand = &cli.Command{
 	Action: func(c *cli.Context) error {
 		newUi()
 		newWorkLogView(GetWorkLogIssues())
+		app.ui.modal.SetFocus(0)
 		err := app.ui.app.Run()
 		if err != nil {
 			return err

@@ -13,6 +13,7 @@ type UserInteface struct {
 	pages  *tview.Pages
 	table  *tview.Table
 	status *tview.TextView
+	modal  *tview.Modal
 }
 
 func newUi() {
@@ -24,12 +25,23 @@ func newUi() {
 	}).SetText(
 		fmt.Sprintf("worklogs - %s", app.time.Format("2006-01-02")),
 	)
+	app.ui.modal = tview.NewModal().SetText("Something went wrong")
+	app.ui.modal.SetTitle("Error!")
+	app.ui.modal.AddButtons([]string{"OK"})
+	app.ui.modal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEnter:
+			app.ui.pages.RemovePage("error")
+		}
+		return event
+	})
+
 	app.ui.flex = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(app.ui.status, 1, 1, false).
 		AddItem(app.ui.pages, 0, 1, true)
 	app.ui.flex.SetBorder(true).SetTitle("gojira")
-
 	app.ui.app.SetRoot(app.ui.flex, true)
+
 	app.ui.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyRune:
