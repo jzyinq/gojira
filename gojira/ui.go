@@ -49,27 +49,12 @@ func newUi() {
 		case tcell.KeyRune:
 			switch event.Rune() {
 			// TODO unify this code to single helper
-			case 'p':
-				app.time = app.time.Add(-time.Hour * 24)
-				app.ui.table.Clear()
-				app.ui.table.SetCell(0, 0, tview.NewTableCell("Loading..."))
-				if cancel != nil {
-					cancel()
+			case 'n', 'p':
+				timePeriod := -time.Hour * 24
+				if event.Rune() == 'n' {
+					timePeriod = time.Hour * 24
 				}
-				ctx, cancel = context.WithCancel(context.Background())
-				go func(ctx context.Context) {
-					select {
-					case <-ctx.Done():
-						return
-					default:
-						GetWorkLogIssues()
-						logs, _ := workLogIssues.IssuesOnDate(app.time)
-						newWorkLogView(logs)
-					}
-				}(ctx)
-				break
-			case 'n':
-				app.time = app.time.Add(time.Hour * 24)
+				app.time = app.time.Add(timePeriod)
 				app.ui.table.Clear()
 				app.ui.table.SetCell(0, 0, tview.NewTableCell("Loading..."))
 				ctx, cancel = context.WithCancel(context.Background())
