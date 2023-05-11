@@ -62,7 +62,9 @@ func newUi() {
 					case <-ctx.Done():
 						return
 					default:
-						newWorkLogView(GetWorkLogIssues())
+						GetWorkLogIssues()
+						logs, _ := workLogIssues.IssuesOnDate(app.time)
+						newWorkLogView(logs)
 					}
 				}(ctx)
 				break
@@ -76,7 +78,9 @@ func newUi() {
 					case <-ctx.Done():
 						return
 					default:
-						newWorkLogView(GetWorkLogIssues())
+						GetWorkLogIssues()
+						logs, _ := workLogIssues.IssuesOnDate(app.time)
+						newWorkLogView(logs)
 					}
 				}(ctx)
 				break

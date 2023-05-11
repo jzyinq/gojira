@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+var workLogIssues WorkLogsIssues
 var workLogs WorkLogs
 
 type WorkLog struct {
@@ -64,6 +65,12 @@ type WorkLogIssue struct {
 	Issue   Issue
 }
 
+type WorkLogsIssues struct {
+	startDate time.Time
+	endDate   time.Time
+	issues    []WorkLogIssue
+}
+
 type WorkLogs struct {
 	startDate time.Time
 	endDate   time.Time
@@ -87,6 +94,25 @@ func (w *WorkLogs) LogsOnDate(date time.Time) ([]WorkLog, error) {
 		}
 	}
 	return logsOnDate, nil
+}
+
+func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]WorkLogIssue, error) {
+	var issuesOnDate []WorkLogIssue
+	if date.Before(w.startDate) || date.After(w.endDate) {
+		return nil, errors.New("Date is out of worklogs range")
+	}
+	date = date.Truncate(24 * time.Hour)
+	for _, issue := range w.issues {
+		logDate, err := time.Parse(dateLayout, issue.WorkLog.StartDate)
+		logDate = logDate.Truncate(24 * time.Hour)
+		if err != nil {
+			return nil, err
+		}
+		if date.Equal(logDate.Truncate(24 * time.Hour)) {
+			issuesOnDate = append(issuesOnDate, issue)
+		}
+	}
+	return issuesOnDate, nil
 }
 
 func GetWorkLogs() WorkLogs {

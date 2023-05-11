@@ -14,7 +14,9 @@ var WorkLogsCommand = &cli.Command{
 	Usage: "Edit your today's work log",
 	Action: func(c *cli.Context) error {
 		newUi()
-		newWorkLogView(GetWorkLogIssues())
+		GetWorkLogIssues()
+		logs, _ := workLogIssues.IssuesOnDate(app.time)
+		newWorkLogView(logs)
 		app.ui.modal.SetFocus(0)
 		err := app.ui.app.Run()
 		if err != nil {
@@ -25,25 +27,27 @@ var WorkLogsCommand = &cli.Command{
 	},
 }
 
-func GetWorkLogIssues() []WorkLogIssue {
-	var workLogIssues []WorkLogIssue
+func GetWorkLogIssues() {
 	// goroutine awesomeness
 	waitGroup := sync.WaitGroup{}
 	startDate, endDate := WeekRange(app.time)
+	if workLogIssues.startDate == startDate && workLogIssues.endDate == endDate {
+		return
+	}
 	if workLogs.startDate != startDate || workLogs.endDate != endDate {
 		workLogs = GetWorkLogs()
 	}
-	todayLogs, _ := workLogs.LogsOnDate(app.time) // fixme catch errors
-	for _, workLog := range todayLogs {
+	workLogIssues.startDate = startDate
+	workLogIssues.endDate = endDate
+	workLogIssues.issues = []WorkLogIssue{}
+	for _, workLog := range workLogs.logs {
 		waitGroup.Add(1)
 		go func(workLog WorkLog) {
-			workLogIssues = append(workLogIssues, WorkLogIssue{WorkLog: workLog, Issue: GetIssue(workLog.Issue.Key)})
+			workLogIssues.issues = append(workLogIssues.issues, WorkLogIssue{WorkLog: workLog, Issue: GetIssue(workLog.Issue.Key)})
 			waitGroup.Done()
 		}(workLog)
 	}
 	waitGroup.Wait()
-
-	return workLogIssues
 }
 
 var IssuesCommand = &cli.Command{
