@@ -26,7 +26,6 @@ var WorkLogsCommand = &cli.Command{
 }
 
 func GetWorkLogIssues() []WorkLogIssue {
-	app.ui.status.SetText("Updating...") // FIXME why it does not show up?
 	var workLogIssues []WorkLogIssue
 	// goroutine awesomeness
 	waitGroup := sync.WaitGroup{}

@@ -22,9 +22,7 @@ func newUi() {
 	app.ui.table = tview.NewTable()
 	app.ui.status = tview.NewTextView().SetChangedFunc(func() {
 		app.ui.app.Draw()
-	}).SetText(
-		fmt.Sprintf("worklogs - %s", app.time.Format("2006-01-02")),
-	)
+	})
 	app.ui.modal = tview.NewModal().SetText("Something went wrong")
 	app.ui.modal.SetTitle("Error!")
 	app.ui.modal.AddButtons([]string{"OK"})
@@ -48,11 +46,15 @@ func newUi() {
 			switch event.Rune() {
 			case 'p':
 				app.time = app.time.Add(-time.Hour * 24)
-				newWorkLogView(GetWorkLogIssues())
+				app.ui.table.Clear()
+				app.ui.table.SetCell(0, 0, tview.NewTableCell("Loading..."))
+				go func() { newWorkLogView(GetWorkLogIssues()) }()
 				break
 			case 'n':
 				app.time = app.time.Add(time.Hour * 24)
-				newWorkLogView(GetWorkLogIssues())
+				app.ui.table.Clear()
+				app.ui.table.SetCell(0, 0, tview.NewTableCell("Loading..."))
+				go func() { newWorkLogView(GetWorkLogIssues()) }()
 				break
 			}
 		}
@@ -96,7 +98,6 @@ func newWorklogForm(workLogIssues []WorkLogIssue, row int) *tview.Form {
 
 	updateWorklog := func() {
 		timeSpent := form.GetFormItem(0).(*tview.InputField).GetText()
-		app.ui.status.SetText("Updating....")
 		workLogIssues[row].WorkLog.Update(timeSpent)
 		app.ui.pages.HidePage("worklog-form")
 		newWorkLogView(workLogIssues)
