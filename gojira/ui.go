@@ -1,7 +1,6 @@
 package gojira
 
 import (
-	"context"
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -17,8 +16,7 @@ type UserInteface struct {
 	modal  *tview.Modal
 }
 
-var ctx context.Context
-var cancel context.CancelFunc
+var running = make(chan bool, 1)
 
 func newUi() {
 	app.ui.app = tview.NewApplication()
@@ -57,17 +55,17 @@ func newUi() {
 				app.time = app.time.Add(timePeriod)
 				app.ui.table.Clear()
 				app.ui.table.SetCell(0, 0, tview.NewTableCell("Loading..."))
-				ctx, cancel = context.WithCancel(context.Background())
-				go func(ctx context.Context) {
-					select {
-					case <-ctx.Done():
-						return
-					default:
+				select {
+				case running <- true:
+					go func() {
+						defer func() { <-running }()
 						GetWorkLogIssues()
 						logs, _ := workLogIssues.IssuesOnDate(app.time)
 						newWorkLogView(logs)
-					}
-				}(ctx)
+					}()
+				default:
+					// The goroutine is already running, do nothing
+				}
 				break
 			}
 		}
