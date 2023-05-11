@@ -64,6 +64,8 @@ Just remember to urldecode it. Save it and you should ready to go!
 
 ## Todo list
 
+- [ ] call for worklogs for whole week instead of day
+- [ ] show by colors if worklog is incomplete/full/overhours for date
 - [ ] tests
 - [ ] gojira worklog delete option
 - [ ] ticket status change prompt after logging time
