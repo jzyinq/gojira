@@ -187,19 +187,19 @@ Save it and you should ready to go!
 func (issue Issue) LogWork(timeSpent string) {
 	todayWorklog, _ := workLogs.LogsOnDate(app.time) // FIXME error handling
 	if Config.UpdateExistingWorkLog {
-		for index, workLog := range todayWorklog {
+		for index, workLog := range *todayWorklog {
 			if workLog.Issue.Key == issue.Key {
 				fmt.Println("Updating existing worklog...")
 				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
-				todayWorklog[index].Update(timeSpentSum)
+				(*todayWorklog)[index].Update(timeSpentSum)
 				fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, workLog.Issue.Key)
-				fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(todayWorklog))
+				fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(*todayWorklog))
 				return
 			}
 		}
 	}
 	issue.NewWorkLog(timeSpent)
 	// naive issue struct for quicker summary
-	todayWorklog = append(todayWorklog, WorkLog{TimeSpentSeconds: TimeSpentToSeconds(timeSpent)})
-	fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(todayWorklog))
+	*todayWorklog = append(*todayWorklog, WorkLog{TimeSpentSeconds: TimeSpentToSeconds(timeSpent)})
+	fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(*todayWorklog))
 }

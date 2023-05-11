@@ -77,7 +77,7 @@ type WorkLogs struct {
 	logs      []WorkLog
 }
 
-func (w *WorkLogs) LogsOnDate(date time.Time) ([]WorkLog, error) {
+func (w *WorkLogs) LogsOnDate(date time.Time) (*[]WorkLog, error) {
 	var logsOnDate []WorkLog
 	if date.Before(w.startDate) || date.After(w.endDate) {
 		return nil, errors.New("Date is out of worklogs range")
@@ -93,23 +93,23 @@ func (w *WorkLogs) LogsOnDate(date time.Time) ([]WorkLog, error) {
 			logsOnDate = append(logsOnDate, log)
 		}
 	}
-	return logsOnDate, nil
+	return &logsOnDate, nil
 }
 
-func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]WorkLogIssue, error) {
-	var issuesOnDate []WorkLogIssue
+func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]*WorkLogIssue, error) {
+	var issuesOnDate []*WorkLogIssue
 	if date.Before(w.startDate) || date.After(w.endDate) {
 		return nil, errors.New("Date is out of worklogs range")
 	}
 	date = date.Truncate(24 * time.Hour)
-	for _, issue := range w.issues {
+	for i, issue := range w.issues {
 		logDate, err := time.Parse(dateLayout, issue.WorkLog.StartDate)
 		logDate = logDate.Truncate(24 * time.Hour)
 		if err != nil {
 			return nil, err
 		}
 		if date.Equal(logDate.Truncate(24 * time.Hour)) {
-			issuesOnDate = append(issuesOnDate, issue)
+			issuesOnDate = append(issuesOnDate, &w.issues[i])
 		}
 	}
 	return issuesOnDate, nil

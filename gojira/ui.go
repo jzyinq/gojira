@@ -90,20 +90,20 @@ func newUi() {
 	})
 }
 
-func newWorkLogView(workLogs []WorkLogIssue) {
+func newWorkLogView(workLogs []*WorkLogIssue) {
 	app.ui.pages.AddPage("worklog-view", app.ui.table, true, true)
 	app.ui.table.Clear()
 	app.ui.table.SetSelectable(true, false)
 	color := tcell.ColorWhite
 	for r := 0; r < len(workLogs); r++ {
 		app.ui.table.SetCell(r, 0, // FIXME use enums for column names
-			tview.NewTableCell(workLogs[r].Issue.Key).SetTextColor(color).SetAlign(tview.AlignLeft),
+			tview.NewTableCell((workLogs)[r].Issue.Key).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
 		app.ui.table.SetCell(r, 1,
-			tview.NewTableCell(workLogs[r].Issue.Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
+			tview.NewTableCell((workLogs)[r].Issue.Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
 		app.ui.table.SetCell(r, 2,
-			tview.NewTableCell(FormatTimeSpent(workLogs[r].WorkLog.TimeSpentSeconds)).SetTextColor(color).SetAlign(tview.AlignLeft),
+			tview.NewTableCell(FormatTimeSpent((workLogs)[r].WorkLog.TimeSpentSeconds)).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
 	}
 	app.ui.table.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
@@ -121,7 +121,7 @@ func newWorkLogView(workLogs []WorkLogIssue) {
 	app.ui.pages.ShowPage("worklog-view")
 }
 
-func newWorklogForm(workLogIssues []WorkLogIssue, row int) *tview.Form {
+func newWorklogForm(workLogIssues []*WorkLogIssue, row int) *tview.Form {
 	var form *tview.Form
 
 	updateWorklog := func() {
