@@ -7,7 +7,10 @@ import (
 	"math"
 	"os/exec"
 	"regexp"
+	"time"
 )
+
+const dateLayout = "2006-01-02"
 
 func getWorkLogsFromWorkLogIssues(workLogIssues []WorkLogIssue) []WorkLog {
 	var workLogs []WorkLog
@@ -43,7 +46,7 @@ func FormatTimeSpent(timeSpentSeconds int) string {
 
 func ResolveIssueKey(c *cli.Context) string {
 	issueKey := ""
-	if 	c.App.Metadata["JiraIssue"] != nil {
+	if c.App.Metadata["JiraIssue"] != nil {
 		issueKey = fmt.Sprintf("%s", c.App.Metadata["JiraTicket"])
 	}
 	issueKey = FindIssueKeyInString(c.Args().Get(0))
@@ -77,4 +80,23 @@ func OpenUrl(url string) {
 		fmt.Println(err)
 		return
 	}
+}
+
+func WeekRange(today time.Time) (time.Time, time.Time) {
+	y, w := today.ISOWeek()
+	firstDay := time.Date(y, 1, 1, 0, 0, 0, 0, time.UTC)
+	for firstDay.Weekday() != time.Monday {
+		firstDay = firstDay.AddDate(0, 0, -1)
+	}
+
+	for {
+		y1, w1 := firstDay.ISOWeek()
+		if y1 == y && w1 == w {
+			break
+		}
+		firstDay = firstDay.AddDate(0, 0, 1)
+	}
+
+	lastDay := firstDay.AddDate(0, 0, 6) // Adding 6 days to get to Sunday
+	return firstDay.Truncate(24 * time.Hour), lastDay.Truncate(24 * time.Hour)
 }

@@ -3,12 +3,15 @@ package gojira
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
 	"strconv"
 	"time"
 )
+
+var workLogs WorkLogs
 
 type WorkLog struct {
 	Self           string `json:"self"`
@@ -61,9 +64,35 @@ type WorkLogIssue struct {
 	Issue   Issue
 }
 
-func GetWorkLogs() []WorkLog {
-	selectedDay := app.time.Format("2006-01-02")
-	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s", Config.TempoUrl, Config.JiraAccountId, selectedDay, selectedDay)
+type WorkLogs struct {
+	startDate time.Time
+	endDate   time.Time
+	logs      []WorkLog
+}
+
+func (w *WorkLogs) LogsOnDate(date time.Time) ([]WorkLog, error) {
+	var logsOnDate []WorkLog
+	if date.Before(w.startDate) || date.After(w.endDate) {
+		return nil, errors.New("Date is out of worklogs range")
+	}
+	date = date.Truncate(24 * time.Hour)
+	for _, log := range w.logs {
+		logDate, err := time.Parse(dateLayout, log.StartDate)
+		logDate = logDate.Truncate(24 * time.Hour)
+		if err != nil {
+			return nil, err
+		}
+		if date.Equal(logDate.Truncate(24 * time.Hour)) {
+			logsOnDate = append(logsOnDate, log)
+		}
+	}
+	return logsOnDate, nil
+}
+
+func GetWorkLogs() WorkLogs {
+	// get first day of week nd the last for date in app.time
+	fromDate, toDate := WeekRange(app.time)
+	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s", Config.TempoUrl, Config.JiraAccountId, fromDate.Format(dateLayout), toDate.Format(dateLayout))
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
 		"Content-Type":  "application/json",
@@ -74,7 +103,7 @@ func GetWorkLogs() []WorkLog {
 	if err != nil {
 		panic(err)
 	}
-	return workLogsResponse.WorkLogs
+	return WorkLogs{startDate: fromDate, endDate: toDate, logs: workLogsResponse.WorkLogs}
 }
 
 func TimeSpentToSeconds(timeSpent string) int {

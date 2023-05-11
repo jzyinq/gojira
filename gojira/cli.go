@@ -29,7 +29,12 @@ func GetWorkLogIssues() []WorkLogIssue {
 	var workLogIssues []WorkLogIssue
 	// goroutine awesomeness
 	waitGroup := sync.WaitGroup{}
-	for _, workLog := range GetWorkLogs() {
+	startDate, endDate := WeekRange(app.time)
+	if workLogs.startDate != startDate || workLogs.endDate != endDate {
+		workLogs = GetWorkLogs()
+	}
+	todayLogs, _ := workLogs.LogsOnDate(app.time) // fixme catch errors
+	for _, workLog := range todayLogs {
 		waitGroup.Add(1)
 		go func(workLog WorkLog) {
 			workLogIssues = append(workLogIssues, WorkLogIssue{WorkLog: workLog, Issue: GetIssue(workLog.Issue.Key)})
@@ -176,21 +181,21 @@ Save it and you should ready to go!
 }
 
 func (issue Issue) LogWork(timeSpent string) {
-	workLogs := GetWorkLogs()
+	todayWorklog, _ := workLogs.LogsOnDate(app.time) // FIXME error handling
 	if Config.UpdateExistingWorkLog {
-		for index, workLog := range workLogs {
+		for index, workLog := range todayWorklog {
 			if workLog.Issue.Key == issue.Key {
 				fmt.Println("Updating existing worklog...")
 				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
-				workLogs[index].Update(timeSpentSum)
+				todayWorklog[index].Update(timeSpentSum)
 				fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, workLog.Issue.Key)
-				fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(workLogs))
+				fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(todayWorklog))
 				return
 			}
 		}
 	}
 	issue.NewWorkLog(timeSpent)
 	// naive issue struct for quicker summary
-	workLogs = append(workLogs, WorkLog{TimeSpentSeconds: TimeSpentToSeconds(timeSpent)})
-	fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(workLogs))
+	todayWorklog = append(todayWorklog, WorkLog{TimeSpentSeconds: TimeSpentToSeconds(timeSpent)})
+	fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(todayWorklog))
 }
