@@ -1,6 +1,7 @@
 package gojira
 
 import (
+	"context"
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -15,6 +16,9 @@ type UserInteface struct {
 	status *tview.TextView
 	modal  *tview.Modal
 }
+
+var ctx context.Context
+var cancel context.CancelFunc
 
 func newUi() {
 	app.ui.app = tview.NewApplication()
@@ -44,17 +48,37 @@ func newUi() {
 		switch event.Key() {
 		case tcell.KeyRune:
 			switch event.Rune() {
+			// TODO unify this code to single helper
 			case 'p':
 				app.time = app.time.Add(-time.Hour * 24)
 				app.ui.table.Clear()
 				app.ui.table.SetCell(0, 0, tview.NewTableCell("Loading..."))
-				go func() { newWorkLogView(GetWorkLogIssues()) }()
+				if cancel != nil {
+					cancel()
+				}
+				ctx, cancel = context.WithCancel(context.Background())
+				go func(ctx context.Context) {
+					select {
+					case <-ctx.Done():
+						return
+					default:
+						newWorkLogView(GetWorkLogIssues())
+					}
+				}(ctx)
 				break
 			case 'n':
 				app.time = app.time.Add(time.Hour * 24)
 				app.ui.table.Clear()
 				app.ui.table.SetCell(0, 0, tview.NewTableCell("Loading..."))
-				go func() { newWorkLogView(GetWorkLogIssues()) }()
+				ctx, cancel = context.WithCancel(context.Background())
+				go func(ctx context.Context) {
+					select {
+					case <-ctx.Done():
+						return
+					default:
+						newWorkLogView(GetWorkLogIssues())
+					}
+				}(ctx)
 				break
 			}
 		}
