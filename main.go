@@ -7,84 +7,94 @@ import (
 	"time"
 )
 
-func main() {
-	app := tview.NewApplication()
+type Calendar struct {
+	*tview.Table
+	year  int
+	month time.Month
+	day   int
+}
 
-	// Create a grid to represent the days of the week.
-	grid := tview.NewGrid().
-		SetRows(1, 1, 1, 1, 1, 1, 1, 1).
-		SetColumns(-1, -1, -1, -1, -1, -1, -1, -1).
-		SetBorders(true)
+func NewCalendar() *Calendar {
+	t := time.Now()
 
-	// Add headers for the days of the week.
-	days := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
-	for i, day := range days {
-		grid.AddItem(tview.NewTextView().SetTextAlign(tview.AlignCenter).SetText(day), 0, i, 1, 1, 1, 0, false)
+	calendar := &Calendar{
+		Table: tview.NewTable(),
+		year:  t.Year(),
+		month: t.Month(),
+		day:   t.Day(),
 	}
 
-	// Get the current day.
-	currentDay := time.Now().Day()
+	calendar.update()
 
-	// Add days for the month of May 2023.
-	// The month starts on a Monday and has 31 days.
-	buttons := make([]*tview.Button, 31)
-	for i := 1; i <= 31; i++ {
-		row := (i)/7 + 1
-		column := (i)%7 - 1
-		if column < 0 {
-			column = 6
-			row--
+	// Set up input handling
+	calendar.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyLeft:
+			calendar.day--
+		case tcell.KeyRight:
+			calendar.day++
+		case tcell.KeyUp:
+			calendar.day -= 7
+		case tcell.KeyDown:
+			calendar.day += 7
 		}
 
-		// Create a button for each day.
-		button := tview.NewButton(tview.Escape(fmt.Sprintf("%2d", i)))
-		button.SetStyle(tcell.StyleDefault.Background(tcell.ColorYellow).Foreground(tcell.ColorBlack))
-		buttons[i-1] = button
-
-		grid.AddItem(button, row, column, 1, 1, 0, 0, false)
-	}
-	// Set the grid as the root of the application.
-	app.SetRoot(grid, true)
-	// Handle key presses for navigation.
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// Get the current focus.
-		focus := app.GetFocus()
-
-		// Find the button in the buttons slice.
-		for i, button := range buttons {
-			if focus == button {
-				// Determine the new focus based on the key pressed.
-				switch event.Key() {
-				case tcell.KeyUp:
-					if i >= 7 {
-						app.SetFocus(buttons[i-7])
-					}
-				case tcell.KeyDown:
-					if i+7 < len(buttons) {
-						app.SetFocus(buttons[i+7])
-					}
-				case tcell.KeyLeft:
-					if i > 0 {
-						app.SetFocus(buttons[i-1])
-					}
-				case tcell.KeyRight:
-					if i+1 < len(buttons) {
-						app.SetFocus(buttons[i+1])
-					}
-				}
-			}
+		// Handle day overflow/underflow
+		if calendar.day < 1 {
+			calendar.day = 1
 		}
+		if calendar.day > time.Date(calendar.year, calendar.month+1, 0, 0, 0, 0, 0, time.Local).Day() {
+			calendar.day = time.Date(calendar.year, calendar.month+1, 0, 0, 0, 0, 0, time.Local).Day()
+		}
+
+		calendar.update()
 
 		return event
 	})
 
-	// Set the initial focus to the current day.
-	// Subtract 1 because slice indices start at 0.
-	if currentDay <= len(buttons) {
-		app.SetFocus(buttons[currentDay-1])
+	return calendar
+}
+
+func (c *Calendar) update() {
+	c.Clear()
+
+	t := time.Date(c.year, c.month, 1, 0, 0, 0, 0, time.Local)
+	daysInMonth := time.Date(c.year, c.month+1, 0, 0, 0, 0, 0, time.Local).Day()
+
+	// Weekdays
+	weekdays := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+	for i, day := range weekdays {
+		c.SetCell(0, i, tview.NewTableCell(day))
 	}
 
-	// Run the application.
+	// Days
+	week := 1
+	for i := 1; i <= daysInMonth; i++ {
+		dayOfWeek := int(t.Weekday()) - 1 // Weekday() returns 1 (Monday) to 7 (Sunday)
+		if dayOfWeek < 0 {
+			dayOfWeek = 6 // Sunday
+		}
+
+		cell := tview.NewTableCell(fmt.Sprintf("%d", i))
+		if i == c.day {
+			cell.SetTextColor(tcell.ColorRed)
+		}
+		c.SetCell(week, dayOfWeek, cell)
+
+		if dayOfWeek == 6 {
+			week++
+		}
+
+		t = t.AddDate(0, 0, 1)
+	}
+}
+
+func main() {
+	calendar := NewCalendar()
+
+	app := tview.NewApplication()
+	app.SetRoot(calendar, true)
+
 	if err := app.Run(); err != nil {
 		panic(err)
 	}
