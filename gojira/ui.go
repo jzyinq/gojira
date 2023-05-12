@@ -44,8 +44,8 @@ func newUi() {
 			AddItem(app.ui.pages, 0, 1, true),
 			80, 1, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
-			AddItem(app.ui.calendar.Table, 20, 1, false),
-			20, 1, false)
+			AddItem(app.ui.calendar.Table, 28, 1, false),
+			30, 1, false)
 	app.ui.flex.SetBorder(true).SetTitle("gojira")
 	app.ui.app.SetRoot(app.ui.flex, true)
 
@@ -72,6 +72,10 @@ func newUi() {
 				default:
 					// The goroutine is already running, do nothing
 				}
+				app.ui.calendar.year = app.time.Year()
+				app.ui.calendar.month = app.time.Month()
+				app.ui.calendar.day = app.time.Day()
+				app.ui.calendar.update()
 				break
 			}
 		}
