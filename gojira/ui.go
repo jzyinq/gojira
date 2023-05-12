@@ -8,12 +8,13 @@ import (
 )
 
 type UserInteface struct {
-	app    *tview.Application
-	flex   *tview.Flex
-	pages  *tview.Pages
-	table  *tview.Table
-	status *tview.TextView
-	modal  *tview.Modal
+	app      *tview.Application
+	flex     *tview.Flex
+	pages    *tview.Pages
+	table    *tview.Table
+	status   *tview.TextView
+	modal    *tview.Modal
+	calendar *Calendar
 }
 
 var running = make(chan bool, 1)
@@ -22,6 +23,7 @@ func newUi() {
 	app.ui.app = tview.NewApplication()
 	app.ui.pages = tview.NewPages()
 	app.ui.table = tview.NewTable()
+	app.ui.calendar = NewCalendar()
 	app.ui.status = tview.NewTextView().SetChangedFunc(func() {
 		app.ui.app.Draw()
 	})
@@ -36,9 +38,14 @@ func newUi() {
 		return event
 	})
 
-	app.ui.flex = tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(app.ui.status, 1, 1, false).
-		AddItem(app.ui.pages, 0, 1, true)
+	app.ui.flex = tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+			AddItem(app.ui.status, 1, 1, false).
+			AddItem(app.ui.pages, 0, 1, true),
+			80, 1, false).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
+			AddItem(app.ui.calendar.Table, 20, 1, false),
+			20, 1, false)
 	app.ui.flex.SetBorder(true).SetTitle("gojira")
 	app.ui.app.SetRoot(app.ui.flex, true)
 
