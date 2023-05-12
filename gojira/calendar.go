@@ -9,53 +9,56 @@ import (
 
 type Calendar struct {
 	*tview.Table
-	year  int
-	month time.Month
-	day   int
+	year     int
+	month    time.Month
+	day      int
+	worklogs *WorkLogs
 }
 
 func NewCalendar() *Calendar {
-	t := time.Now()
+	t := app.time
 
 	calendar := &Calendar{
-		Table: tview.NewTable(),
-		year:  t.Year(),
-		month: t.Month(),
-		day:   t.Day(),
+		Table:    tview.NewTable(),
+		year:     t.Year(),
+		month:    t.Month(),
+		day:      t.Day(),
+		worklogs: nil,
 	}
 
 	calendar.update()
 
-	// Set up input handling
-	calendar.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyLeft:
-			calendar.day--
-		case tcell.KeyRight:
-			calendar.day++
-		case tcell.KeyUp:
-			calendar.day -= 7
-		case tcell.KeyDown:
-			calendar.day += 7
-		}
-
-		// Handle day overflow/underflow
-		if calendar.day < 1 {
-			calendar.day = 1
-		}
-		if calendar.day > time.Date(calendar.year, calendar.month+1, 0, 0, 0, 0, 0, time.Local).Day() {
-			calendar.day = time.Date(calendar.year, calendar.month+1, 0, 0, 0, 0, 0, time.Local).Day()
-		}
-
-		calendar.update()
-
-		return event
-	})
+	//// Set up input handling
+	//calendar.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	//	switch event.Key() {
+	//	case tcell.KeyLeft:
+	//		calendar.day--
+	//	case tcell.KeyRight:
+	//		calendar.day++
+	//	case tcell.KeyUp:
+	//		calendar.day -= 7
+	//	case tcell.KeyDown:
+	//		calendar.day += 7
+	//	}
+	//	// Handle day overflow/underflow
+	//	if calendar.day < 1 {
+	//		calendar.day = 1
+	//	}
+	//	if calendar.day > time.Date(calendar.year, calendar.month+1, 0, 0, 0, 0, 0, time.Local).Day() {
+	//		calendar.day = time.Date(calendar.year, calendar.month+1, 0, 0, 0, 0, 0, time.Local).Day()
+	//	}
+	//	calendar.update()
+	//	return event
+	//})
 
 	return calendar
 }
 
 func (c *Calendar) update() {
+	c.day = app.time.Day()
+	c.month = app.time.Month()
+	c.year = app.time.Year()
+	c.worklogs = &workLogs
 	c.Clear()
 
 	t := time.Date(c.year, c.month, 1, 0, 0, 0, 0, time.Local)
@@ -76,6 +79,13 @@ func (c *Calendar) update() {
 		}
 
 		cell := tview.NewTableCell(fmt.Sprintf("%d", i))
+
+		if len(workLogs.logs) > 0 {
+			worklogs, _ := workLogs.LogsOnDate(time.Date(c.year, c.month, i+1, 0, 0, 0, 0, time.Local))
+			timeSpent := CalculateTimeSpent(worklogs)
+			color := GetTimeSpentColor(timeSpent)
+			cell.SetTextColor(color)
+		}
 		if i == c.day {
 			cell.SetTextColor(tcell.ColorRed)
 		}
@@ -88,15 +98,3 @@ func (c *Calendar) update() {
 		t = t.AddDate(0, 0, 1)
 	}
 }
-
-//
-//func main() {
-//	calendar := NewCalendar()
-//
-//	app := tview.NewApplication()
-//	app.SetRoot(calendar, true)
-//
-//	if err := app.Run(); err != nil {
-//		panic(err)
-//	}
-//}

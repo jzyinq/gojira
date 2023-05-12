@@ -2,6 +2,7 @@ package gojira
 
 import (
 	"fmt"
+	"github.com/gdamore/tcell/v2"
 	"github.com/pkg/browser"
 	"github.com/urfave/cli/v2"
 	"math"
@@ -12,15 +13,15 @@ import (
 
 const dateLayout = "2006-01-02"
 
-func getWorkLogsFromWorkLogIssues(workLogIssues []*WorkLogIssue) []WorkLog {
-	var workLogs []WorkLog
+func getWorkLogsFromWorkLogIssues(workLogIssues []*WorkLogIssue) []*WorkLog {
+	var workLogs []*WorkLog
 	for _, workLog := range workLogIssues {
-		workLogs = append(workLogs, workLog.WorkLog)
+		workLogs = append(workLogs, &workLog.WorkLog)
 	}
 	return workLogs
 }
 
-func CalculateTimeSpent(workLogs []WorkLog) int {
+func CalculateTimeSpent(workLogs []*WorkLog) int {
 	timeSpentInSeconds := 0
 	for _, workLog := range workLogs {
 		timeSpentInSeconds += workLog.TimeSpentSeconds
@@ -30,12 +31,27 @@ func CalculateTimeSpent(workLogs []WorkLog) int {
 
 func GetTimeSpentColorTag(timeSpentInSeconds int) string {
 	switch {
-	case timeSpentInSeconds < 8*60*60:
+	case timeSpentInSeconds < 8*60*60 && timeSpentInSeconds > 0:
 		return "[yellow]"
 	case timeSpentInSeconds == 8*60*60:
 		return "[green]"
-	default:
+	case timeSpentInSeconds > 8*60*60:
 		return "[purple]"
+	default:
+		return "[white]"
+	}
+}
+
+func GetTimeSpentColor(timeSpentInSeconds int) tcell.Color {
+	switch {
+	case timeSpentInSeconds < 8*60*60 && timeSpentInSeconds > 0:
+		return tcell.ColorYellow
+	case timeSpentInSeconds == 8*60*60:
+		return tcell.ColorGreen
+	case timeSpentInSeconds > 8*60*60:
+		return tcell.ColorPurple
+	default:
+		return tcell.ColorWhite
 	}
 }
 
@@ -110,4 +126,10 @@ func WeekRange(today time.Time) (time.Time, time.Time) {
 
 	lastDay := firstDay.AddDate(0, 0, 6) // Adding 6 days to get to Sunday
 	return firstDay.Truncate(24 * time.Hour), lastDay.Truncate(24 * time.Hour)
+}
+
+func MonthRange(t time.Time) (time.Time, time.Time) {
+	firstDay := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
+	lastDay := firstDay.AddDate(0, 1, -1)
+	return firstDay, lastDay
 }

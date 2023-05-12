@@ -72,9 +72,9 @@ func newUi() {
 				default:
 					// The goroutine is already running, do nothing
 				}
-				app.ui.calendar.year = app.time.Year()
-				app.ui.calendar.month = app.time.Month()
-				app.ui.calendar.day = app.time.Day()
+				//app.ui.calendar.year = app.time.Year()
+				//app.ui.calendar.month = app.time.Month()
+				//app.ui.calendar.day = app.time.Day()
 				app.ui.calendar.update()
 				break
 			}

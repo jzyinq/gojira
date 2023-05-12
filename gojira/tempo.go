@@ -77,23 +77,23 @@ type WorkLogs struct {
 	logs      []WorkLog
 }
 
-func (w *WorkLogs) LogsOnDate(date time.Time) (*[]WorkLog, error) {
-	var logsOnDate []WorkLog
+func (w *WorkLogs) LogsOnDate(date time.Time) ([]*WorkLog, error) {
+	var logsOnDate []*WorkLog
 	if date.Before(w.startDate) || date.After(w.endDate) {
 		return nil, errors.New("Date is out of worklogs range")
 	}
 	date = date.Truncate(24 * time.Hour)
-	for _, log := range w.logs {
+	for i, log := range w.logs {
 		logDate, err := time.Parse(dateLayout, log.StartDate)
 		logDate = logDate.Truncate(24 * time.Hour)
 		if err != nil {
 			return nil, err
 		}
 		if date.Equal(logDate.Truncate(24 * time.Hour)) {
-			logsOnDate = append(logsOnDate, log)
+			logsOnDate = append(logsOnDate, &w.logs[i])
 		}
 	}
-	return &logsOnDate, nil
+	return logsOnDate, nil
 }
 
 func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]*WorkLogIssue, error) {
@@ -117,7 +117,7 @@ func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]*WorkLogIssue, error) {
 
 func GetWorkLogs() WorkLogs {
 	// get first day of week nd the last for date in app.time
-	fromDate, toDate := WeekRange(app.time)
+	fromDate, toDate := MonthRange(app.time)
 	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s", Config.TempoUrl, Config.JiraAccountId, fromDate.Format(dateLayout), toDate.Format(dateLayout))
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
