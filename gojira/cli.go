@@ -193,7 +193,7 @@ func (issue Issue) LogWork(timeSpent string) {
 				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
 				(*todayWorklog)[index].Update(timeSpentSum)
 				fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, workLog.Issue.Key)
-				fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(*todayWorklog))
+				fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(*todayWorklog)))
 				return
 			}
 		}
@@ -201,5 +201,5 @@ func (issue Issue) LogWork(timeSpent string) {
 	issue.NewWorkLog(timeSpent)
 	// naive issue struct for quicker summary
 	*todayWorklog = append(*todayWorklog, WorkLog{TimeSpentSeconds: TimeSpentToSeconds(timeSpent)})
-	fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(*todayWorklog))
+	fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(*todayWorklog)))
 }

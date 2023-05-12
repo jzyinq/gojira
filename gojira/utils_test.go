@@ -35,7 +35,7 @@ func TestCalculateTimeSpent(t *testing.T) {
 	}
 	expectedTimeSpent := "3h 32m"
 
-	actualTimeSpent := CalculateTimeSpent(fixture)
+	actualTimeSpent := FormatTimeSpent(CalculateTimeSpent(fixture))
 
 	if actualTimeSpent != expectedTimeSpent {
 		t.Errorf("Incorrect timeSpent - got %s instead of %s", actualTimeSpent, expectedTimeSpent)

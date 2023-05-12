@@ -46,7 +46,6 @@ func newUi() {
 		switch event.Key() {
 		case tcell.KeyRune:
 			switch event.Rune() {
-			// TODO unify this code to single helper
 			case 'n', 'p':
 				timePeriod := -time.Hour * 24
 				if event.Rune() == 'n' {
@@ -96,11 +95,13 @@ func newWorkLogView(workLogs []*WorkLogIssue) {
 	}).SetSelectedFunc(func(row, column int) {
 		newWorklogForm(workLogs, row)
 	})
+	timeSpent := CalculateTimeSpent(getWorkLogsFromWorkLogIssues(workLogs))
 	app.ui.status.SetText(
-		fmt.Sprintf("Worklogs - %s - [%s]",
+		fmt.Sprintf("Worklogs - %s -  [%s%s[white]]",
 			app.time.Format("2006-01-02"),
-			CalculateTimeSpent(getWorkLogsFromWorkLogIssues(workLogs)),
-		))
+			GetTimeSpentColorTag(timeSpent),
+			FormatTimeSpent(timeSpent),
+		)).SetDynamicColors(true)
 	app.ui.pages.ShowPage("worklog-view")
 }
 

@@ -20,12 +20,23 @@ func getWorkLogsFromWorkLogIssues(workLogIssues []*WorkLogIssue) []WorkLog {
 	return workLogs
 }
 
-func CalculateTimeSpent(workLogs []WorkLog) string {
+func CalculateTimeSpent(workLogs []WorkLog) int {
 	timeSpentInSeconds := 0
 	for _, workLog := range workLogs {
 		timeSpentInSeconds += workLog.TimeSpentSeconds
 	}
-	return FormatTimeSpent(timeSpentInSeconds)
+	return timeSpentInSeconds
+}
+
+func GetTimeSpentColorTag(timeSpentInSeconds int) string {
+	switch {
+	case timeSpentInSeconds < 8*60*60:
+		return "[yellow]"
+	case timeSpentInSeconds == 8*60*60:
+		return "[green]"
+	default:
+		return "[purple]"
+	}
 }
 
 func FormatTimeSpent(timeSpentSeconds int) string {
