@@ -64,7 +64,9 @@ Just remember to urldecode it. Save it and you should ready to go!
 
 ## Todo list
 
-- [ ] call for worklogs for whole week instead of day
+- [ ] call for worklogs for whole ~week~ month instead of day
+- [ ] show calendar with colorized dates 
+  - fix colors git
 - [ ] show by colors if worklog is incomplete/full/overhours for date
 - [ ] tests
 - [ ] gojira worklog delete option

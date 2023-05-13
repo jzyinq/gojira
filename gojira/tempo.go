@@ -118,7 +118,7 @@ func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]*WorkLogIssue, error) {
 func GetWorkLogs() WorkLogs {
 	// get first day of week nd the last for date in app.time
 	fromDate, toDate := MonthRange(app.time)
-	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s", Config.TempoUrl, Config.JiraAccountId, fromDate.Format(dateLayout), toDate.Format(dateLayout))
+	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s&limit=1000", Config.TempoUrl, Config.JiraAccountId, fromDate.Format(dateLayout), toDate.Format(dateLayout))
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
 		"Content-Type":  "application/json",

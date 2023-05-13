@@ -28,7 +28,7 @@ func NewCalendar() *Calendar {
 
 	calendar.update()
 
-	//// Set up input handling
+	// Browse through the calendar
 	//calendar.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 	//	switch event.Key() {
 	//	case tcell.KeyLeft:
@@ -78,16 +78,24 @@ func (c *Calendar) update() {
 			dayOfWeek = 6 // Sunday
 		}
 
-		cell := tview.NewTableCell(fmt.Sprintf("%d", i))
+		cell := tview.NewTableCell(fmt.Sprintf("%d", i)).SetAlign(tview.AlignCenter)
 
+		calendarDay := time.Date(c.year, c.month, i+1, 0, 0, 0, 0, time.Local)
+		if calendarDay.Before(time.Now()) {
+			cell.SetBackgroundColor(tcell.ColorGray)
+		}
 		if len(workLogs.logs) > 0 {
-			worklogs, _ := workLogs.LogsOnDate(time.Date(c.year, c.month, i+1, 0, 0, 0, 0, time.Local))
+			worklogs, _ := workLogs.LogsOnDate(calendarDay)
 			timeSpent := CalculateTimeSpent(worklogs)
 			color := GetTimeSpentColor(timeSpent)
 			cell.SetTextColor(color)
+			if (dayOfWeek == 5 || dayOfWeek == 6) && color == tcell.ColorWhite {
+				cell.SetTextColor(tcell.ColorGrey)
+			}
 		}
 		if i == c.day {
-			cell.SetTextColor(tcell.ColorRed)
+			cell.SetTextColor(tcell.ColorWhite)
+			cell.SetBackgroundColor(tcell.ColorDimGray)
 		}
 		c.SetCell(week, dayOfWeek, cell)
 
