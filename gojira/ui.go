@@ -42,7 +42,7 @@ func newUi() {
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(app.ui.status, 1, 1, false).
 			AddItem(app.ui.pages, 0, 1, true),
-			80, 1, false).
+			80, 1, true).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
 			AddItem(app.ui.calendar.Table, 28, 1, false),
 			30, 1, false)
