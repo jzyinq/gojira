@@ -16,7 +16,7 @@ const dateLayout = "2006-01-02"
 func getWorkLogsFromWorkLogIssues(workLogIssues []*WorkLogIssue) []*WorkLog {
 	var workLogs []*WorkLog
 	for _, workLog := range workLogIssues {
-		workLogs = append(workLogs, &workLog.WorkLog)
+		workLogs = append(workLogs, workLog.WorkLog)
 	}
 	return workLogs
 }

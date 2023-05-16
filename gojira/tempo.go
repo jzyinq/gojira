@@ -11,9 +11,6 @@ import (
 	"time"
 )
 
-var workLogIssues WorkLogsIssues
-var workLogs WorkLogs
-
 type WorkLog struct {
 	Self           string `json:"self"`
 	TempoWorklogid int    `json:"tempoWorklogId"`
@@ -61,7 +58,7 @@ type WorkLogsResponse struct {
 }
 
 type WorkLogIssue struct {
-	WorkLog WorkLog
+	WorkLog *WorkLog
 	Issue   Issue
 }
 

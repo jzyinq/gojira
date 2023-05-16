@@ -8,9 +8,11 @@ import (
 )
 
 type gojira struct {
-	cli  *cli.App
-	ui   *UserInteface
-	time time.Time
+	cli            *cli.App
+	ui             *UserInteface
+	time           time.Time
+	workLogs       WorkLogs
+	workLogsIssues WorkLogsIssues
 }
 
 func Run() {

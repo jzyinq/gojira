@@ -15,7 +15,7 @@ var WorkLogsCommand = &cli.Command{
 	Action: func(c *cli.Context) error {
 		newUi()
 		GetWorkLogIssues()
-		logs, _ := workLogIssues.IssuesOnDate(app.time)
+		logs, _ := app.workLogsIssues.IssuesOnDate(app.time)
 		newWorkLogView(logs)
 		app.ui.modal.SetFocus(0)
 		err := app.ui.app.Run()
@@ -31,22 +31,22 @@ func GetWorkLogIssues() {
 	// goroutine awesomeness
 	waitGroup := sync.WaitGroup{}
 	startDate, endDate := MonthRange(app.time)
-	if workLogIssues.startDate == startDate && workLogIssues.endDate == endDate {
+	if app.workLogsIssues.startDate == startDate && app.workLogsIssues.endDate == endDate {
 		return
 	}
-	if workLogs.startDate != startDate || workLogs.endDate != endDate {
-		workLogs = GetWorkLogs()
+	if app.workLogsIssues.startDate != startDate || app.workLogsIssues.endDate != endDate {
+		app.workLogs = GetWorkLogs()
 		app.ui.calendar.update()
 	}
-	workLogIssues.startDate = startDate
-	workLogIssues.endDate = endDate
-	workLogIssues.issues = []WorkLogIssue{}
-	for _, workLog := range workLogs.logs {
+	app.workLogsIssues.startDate = startDate
+	app.workLogsIssues.endDate = endDate
+	app.workLogsIssues.issues = []WorkLogIssue{}
+	for i, _ := range app.workLogs.logs {
 		waitGroup.Add(1)
 		go func(workLog WorkLog) {
-			workLogIssues.issues = append(workLogIssues.issues, WorkLogIssue{WorkLog: workLog, Issue: GetIssue(workLog.Issue.Key)})
+			app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{WorkLog: &workLog, Issue: GetIssue(workLog.Issue.Key)})
 			waitGroup.Done()
-		}(workLog)
+		}(app.workLogs.logs[i])
 	}
 	waitGroup.Wait()
 }
@@ -186,7 +186,7 @@ Save it and you should ready to go!
 }
 
 func (issue Issue) LogWork(timeSpent string) {
-	todayWorklog, _ := workLogs.LogsOnDate(app.time) // FIXME error handling
+	todayWorklog, _ := app.workLogs.LogsOnDate(app.time) // FIXME error handling
 	if Config.UpdateExistingWorkLog {
 		for index, workLog := range todayWorklog {
 			if workLog.Issue.Key == issue.Key {

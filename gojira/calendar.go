@@ -9,21 +9,19 @@ import (
 
 type Calendar struct {
 	*tview.Table
-	year     int
-	month    time.Month
-	day      int
-	worklogs *WorkLogs
+	year  int
+	month time.Month
+	day   int
 }
 
 func NewCalendar() *Calendar {
 	t := app.time
 
 	calendar := &Calendar{
-		Table:    tview.NewTable(),
-		year:     t.Year(),
-		month:    t.Month(),
-		day:      t.Day(),
-		worklogs: nil,
+		Table: tview.NewTable(),
+		year:  t.Year(),
+		month: t.Month(),
+		day:   t.Day(),
 	}
 
 	calendar.update()
@@ -58,7 +56,6 @@ func (c *Calendar) update() {
 	c.day = app.time.Day()
 	c.month = app.time.Month()
 	c.year = app.time.Year()
-	c.worklogs = &workLogs
 	c.Clear()
 
 	t := time.Date(c.year, c.month, 1, 0, 0, 0, 0, time.Local)
@@ -84,8 +81,8 @@ func (c *Calendar) update() {
 		if calendarDay.Before(time.Now()) {
 			cell.SetBackgroundColor(tcell.ColorGray)
 		}
-		if len(workLogs.logs) > 0 {
-			worklogs, _ := workLogs.LogsOnDate(calendarDay)
+		if len(app.workLogs.logs) > 0 {
+			worklogs, _ := app.workLogs.LogsOnDate(calendarDay)
 			timeSpent := CalculateTimeSpent(worklogs)
 			color := GetTimeSpentColor(timeSpent)
 			cell.SetTextColor(color)
