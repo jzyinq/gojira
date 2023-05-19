@@ -103,7 +103,7 @@ func newWorkLogView(workLogs []*WorkLogIssue) {
 	}).SetSelectedFunc(func(row, column int) {
 		newWorklogForm(workLogs, row)
 	})
-	timeSpent := CalculateTimeSpent(getWorkLogsFromWorkLogIssues(workLogs))
+	timeSpent := CalculateTimeSpent(getWorkLogsFromWorkLogIssues(workLogs)) // FIXME it's not app.workglogs dude
 	app.ui.status.SetText(
 		fmt.Sprintf("Worklogs - %s -  [%s%s[white]]",
 			app.time.Format("2006-01-02"),
@@ -121,6 +121,7 @@ func newWorklogForm(workLogIssues []*WorkLogIssue, row int) *tview.Form {
 		workLogIssues[row].WorkLog.Update(timeSpent)
 		app.ui.pages.HidePage("worklog-form")
 		newWorkLogView(workLogIssues)
+		app.ui.calendar.update()
 	}
 
 	form = tview.NewForm().
