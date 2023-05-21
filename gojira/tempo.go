@@ -93,6 +93,15 @@ func (w *WorkLogs) LogsOnDate(date time.Time) ([]*WorkLog, error) {
 	return logsOnDate, nil
 }
 
+// function that will summarize all timeSpentSeconds in logs slice and return it
+func (w *WorkLogs) TotalTimeSpent() int {
+	var totalTime int
+	for _, log := range w.logs {
+		totalTime += log.TimeSpentSeconds
+	}
+	return totalTime
+}
+
 func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]*WorkLogIssue, error) {
 	var issuesOnDate []*WorkLogIssue
 	if date.Before(w.startDate) || date.After(w.endDate) {
@@ -112,7 +121,7 @@ func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]*WorkLogIssue, error) {
 	return issuesOnDate, nil
 }
 
-func GetWorkLogs() WorkLogs {
+func GetWorkLogs() (WorkLogs, error) {
 	// get first day of week nd the last for date in app.time
 	fromDate, toDate := MonthRange(app.time)
 	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s&limit=1000", Config.TempoUrl, Config.JiraAccountId, fromDate.Format(dateLayout), toDate.Format(dateLayout))
@@ -120,13 +129,16 @@ func GetWorkLogs() WorkLogs {
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
 		"Content-Type":  "application/json",
 	}
-	response := SendHttpRequest("GET", requestUrl, nil, headers, 200)
-	var workLogsResponse WorkLogsResponse
-	err := json.Unmarshal(response, &workLogsResponse)
+	response, err := SendHttpRequest("GET", requestUrl, nil, headers, 200)
 	if err != nil {
-		panic(err)
+		return WorkLogs{}, err
 	}
-	return WorkLogs{startDate: fromDate, endDate: toDate, logs: workLogsResponse.WorkLogs}
+	var workLogsResponse WorkLogsResponse
+	err = json.Unmarshal(response, &workLogsResponse)
+	if err != nil {
+		return WorkLogs{}, err
+	}
+	return WorkLogs{startDate: fromDate, endDate: toDate, logs: workLogsResponse.WorkLogs}, nil
 }
 
 func TimeSpentToSeconds(timeSpent string) int {
@@ -151,7 +163,7 @@ func TimeSpentToSeconds(timeSpent string) int {
 	return timeSpentSeconds
 }
 
-func (workLog *WorkLog) Update(timeSpent string) {
+func (workLog *WorkLog) Update(timeSpent string) error {
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 
 	// FIXME disable for development
@@ -171,8 +183,33 @@ func (workLog *WorkLog) Update(timeSpent string) {
 		"Content-Type":  "application/json",
 	}
 
-	// FIXME - dodaj err i wywal na modal
-	SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
+	_, err := SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
+	if err != nil {
+		return err
+	}
 
 	workLog.TimeSpentSeconds = timeSpentInSeconds
+	return nil
+}
+
+func (workLogs WorkLogs) Delete(worklog *WorkLog) error {
+	// FIXME check if it's works - but not now
+	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, worklog.TempoWorklogid)
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
+		"Content-Type":  "application/json",
+	}
+	_, err := SendHttpRequest("DELETE", requestUrl, nil, headers, 200)
+	if err != nil {
+		return err
+	}
+
+	for i, log := range workLogs.logs {
+		if log.TempoWorklogid == worklog.TempoWorklogid {
+			workLogs.logs = append(workLogs.logs[:i], workLogs.logs[i+1:]...)
+			break
+		}
+	}
+
+	return nil
 }

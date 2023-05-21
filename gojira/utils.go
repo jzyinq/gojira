@@ -133,3 +133,18 @@ func MonthRange(t time.Time) (time.Time, time.Time) {
 	firstDayOfNextMonth := firstDayOfCurrentMonth.AddDate(0, 1, 0)
 	return firstDayOfCurrentMonth, firstDayOfNextMonth
 }
+
+func workingHoursInMonth(year int, month time.Month) int {
+	t := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+
+	totalWorkHours := 0
+
+	for t.Month() == month {
+		if t.Weekday() != time.Saturday && t.Weekday() != time.Sunday {
+			totalWorkHours += 8
+		}
+		t = t.AddDate(0, 0, 1)
+	}
+
+	return totalWorkHours
+}

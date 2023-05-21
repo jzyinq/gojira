@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 )
 
 func getJiraAuthorizationHeader() string {
@@ -14,7 +13,7 @@ func getJiraAuthorizationHeader() string {
 	return authorizationHeader
 }
 
-func (issue Issue) NewWorkLog(timeSpent string) {
+func (issue Issue) NewWorkLog(timeSpent string) error {
 	payload := map[string]string{
 		"timeSpent":      timeSpent,
 		"adjustEstimate": "leave",
@@ -27,8 +26,12 @@ func (issue Issue) NewWorkLog(timeSpent string) {
 		"Content-Type":  "application/json",
 	}
 
-	SendHttpRequest("POST", requestUrl, requestBody, headers, 201)
+	_, err := SendHttpRequest("POST", requestUrl, requestBody, headers, 201)
+	if err != nil {
+		return err
+	}
 	fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, issue.Key)
+	return nil
 }
 
 type JQLSearch struct {
@@ -76,7 +79,7 @@ type Issue struct {
 	} `json:"fields"`
 }
 
-func GetLatestIssues() JQLResponse {
+func GetLatestIssues() (JQLResponse, error) {
 	payload := &JQLSearch{
 		Expand:       []string{"names"},
 		Jql:          "assignee in (currentUser()) ORDER BY updated DESC, created DESC",
@@ -92,26 +95,32 @@ func GetLatestIssues() JQLResponse {
 		"Authorization": getJiraAuthorizationHeader(),
 		"Content-Type":  "application/json",
 	}
-	response := SendHttpRequest("POST", requestUrl, requestBody, headers, 200)
+	response, err := SendHttpRequest("POST", requestUrl, requestBody, headers, 200)
+	if err != nil {
+		return JQLResponse{}, err
+	}
 	var jqlResponse JQLResponse
 	err = json.Unmarshal(response, &jqlResponse)
 	if err != nil {
-		panic(err)
+		return JQLResponse{}, err
 	}
-	return jqlResponse
+	return jqlResponse, nil
 }
 
-func GetIssue(issueKey string) Issue {
+func GetIssue(issueKey string) (Issue, error) {
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s?fields=summary,status", Config.JiraUrl, issueKey)
 	headers := map[string]string{
 		"Authorization": getJiraAuthorizationHeader(),
 		"Content-Type":  "application/json",
 	}
-	response := SendHttpRequest("GET", requestUrl, nil, headers, 200)
-	var jiraIssue Issue
-	err := json.Unmarshal(response, &jiraIssue)
+	response, err := SendHttpRequest("GET", requestUrl, nil, headers, 200)
 	if err != nil {
-		log.Fatalln(err)
+		return Issue{}, err
 	}
-	return jiraIssue
+	var jiraIssue Issue
+	err = json.Unmarshal(response, &jiraIssue)
+	if err != nil {
+		return Issue{}, err
+	}
+	return jiraIssue, nil
 }
