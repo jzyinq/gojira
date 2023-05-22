@@ -8,25 +8,49 @@ import (
 )
 
 type DayView struct {
-	table  *tview.Table
-	status *tview.TextView
+	worklogList        *tview.Table
+	worklogStatus      *tview.TextView
+	latestIssuesList   *tview.Table
+	latestIssuesStatus *tview.TextView
 }
 
 func NewDayView() *DayView {
 	dayView := &DayView{
-		table: tview.NewTable(),
-		status: tview.NewTextView().SetChangedFunc(func() {
+		worklogList: tview.NewTable(),
+		worklogStatus: tview.NewTextView().SetChangedFunc(func() {
+			app.ui.app.Draw()
+		}),
+		latestIssuesList: tview.NewTable(),
+		latestIssuesStatus: tview.NewTextView().SetChangedFunc(func() {
 			app.ui.app.Draw()
 		}),
 	}
 
-	app.ui.pages.AddPage("worklog-view",
-		tview.NewFlex().SetDirection(tview.FlexRow).
-			AddItem(dayView.status, 1, 1, false).
-			AddItem(dayView.table, 0, 1, true),
-		true, true)
+	dayView.worklogList.SetBorder(true)
+	dayView.latestIssuesList.SetBorder(true)
 
-	dayView.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	flexView := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(dayView.worklogStatus, 1, 1, false).
+		AddItem(dayView.worklogList, 0, 1, true).
+		AddItem(dayView.latestIssuesStatus, 1, 1, false).
+		AddItem(dayView.latestIssuesList, 0, 1, false)
+
+	// Make tab key able to switch between the two tables
+	flexView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			if app.ui.app.GetFocus() == dayView.worklogList {
+				app.ui.app.SetFocus(dayView.latestIssuesList)
+				return nil
+			}
+			app.ui.app.SetFocus(dayView.worklogList)
+			return nil
+		}
+		return event
+	})
+
+	app.ui.pages.AddPage("worklog-view", flexView, true, true)
+
+	dayView.worklogList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyLeft, tcell.KeyRight:
 			timePeriod := -time.Hour * 24
@@ -40,6 +64,8 @@ func NewDayView() *DayView {
 		}
 		return event
 	})
+
+	dayView.loadLatest()
 
 	return dayView
 }
@@ -66,21 +92,21 @@ func loadWorklogs() {
 
 func (d *DayView) update() {
 	logs, _ := app.workLogsIssues.IssuesOnDate(app.time)
-	d.table.Clear()
-	d.table.SetSelectable(true, false)
+	d.worklogList.Clear()
+	d.worklogList.SetSelectable(true, false)
 	color := tcell.ColorWhite
 	for r := 0; r < len(logs); r++ {
-		d.table.SetCell(r, 0, // FIXME use enums for column names
+		d.worklogList.SetCell(r, 0, // FIXME use enums for column names
 			tview.NewTableCell((logs)[r].Issue.Key).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
-		d.table.SetCell(r, 1,
+		d.worklogList.SetCell(r, 1,
 			tview.NewTableCell((logs)[r].Issue.Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
-		d.table.SetCell(r, 2,
+		d.worklogList.SetCell(r, 2,
 			tview.NewTableCell(FormatTimeSpent((logs)[r].WorkLog.TimeSpentSeconds)).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
 	}
-	d.table.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
+	d.worklogList.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEscape {
 			app.ui.app.Stop()
 		}
@@ -88,12 +114,37 @@ func (d *DayView) update() {
 		newWorklogForm(d, logs, row)
 	})
 	timeSpent := CalculateTimeSpent(getWorkLogsFromWorkLogIssues(logs))
-	d.status.SetText(
+	d.worklogStatus.SetText(
 		fmt.Sprintf("Worklogs - %s -  [%s%s[white]]",
 			app.time.Format("2006-01-02"),
 			GetTimeSpentColorTag(timeSpent),
 			FormatTimeSpent(timeSpent),
 		)).SetDynamicColors(true)
+}
+
+func (d *DayView) loadLatest() {
+	d.latestIssuesStatus.SetText("Latest issues").SetDynamicColors(true)
+	issues, err := GetLatestIssues()
+	if err != nil {
+		app.ui.errorView.ShowError(err.Error())
+		return
+	}
+	d.latestIssuesList.Clear()
+	d.latestIssuesList.SetSelectable(true, false)
+	color := tcell.ColorWhite
+	for r := 0; r < len(issues.Issues); r++ {
+		d.latestIssuesList.SetCell(r, 0, // FIXME use enums for column names
+			tview.NewTableCell((issues.Issues)[r].Key).SetTextColor(color).SetAlign(tview.AlignLeft),
+		)
+		d.latestIssuesList.SetCell(r, 1,
+			tview.NewTableCell((issues.Issues)[r].Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
+		)
+	}
+	d.latestIssuesList.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEscape {
+			app.ui.app.Stop()
+		}
+	})
 }
 
 func newWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *tview.Form {
