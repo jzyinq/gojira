@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 func getJiraAuthorizationHeader() string {
@@ -30,17 +31,23 @@ func (issue Issue) NewWorkLog(timeSpent string) (WorkLog, error) {
 	if err != nil {
 		return WorkLog{}, err
 	}
-	// print string version of response
-	//fmt.Println(string(response))
 
-	// FIXME that's a fiction that we're having actual WorkLog object here - response is different
-	var worklog WorkLog
-	err = json.Unmarshal(response, &worklog)
+	var newWorklog NewWorkLog
+	err = json.Unmarshal(response, &newWorklog)
 	if err != nil {
 		return WorkLog{}, err
 	}
 	fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, issue.Key)
-	worklog.StartDate = app.time.Format(dateLayout)
+	// FIXME it seems that this not not a tempo id, but some jira internal id
+	tempoWorkLogId, err := strconv.Atoi(newWorklog.ID)
+	if err != nil {
+		return WorkLog{}, err
+	}
+	worklog := WorkLog{
+		TempoWorklogid:   tempoWorkLogId,
+		StartDate:        app.time.Format(dateLayout),
+		TimeSpentSeconds: newWorklog.Timespentseconds,
+	}
 	return worklog, nil
 }
 
@@ -87,6 +94,47 @@ type Issue struct {
 			} `json:"statusCategory"`
 		} `json:"status"`
 	} `json:"fields"`
+}
+
+type NewWorkLog struct {
+	Self   string `json:"self"`
+	Author struct {
+		Self         string `json:"self"`
+		Accountid    string `json:"accountId"`
+		Emailaddress string `json:"emailAddress"`
+		Avatarurls   struct {
+			Four8X48  string `json:"48x48"`
+			Two4X24   string `json:"24x24"`
+			One6X16   string `json:"16x16"`
+			Three2X32 string `json:"32x32"`
+		} `json:"avatarUrls"`
+		Displayname string `json:"displayName"`
+		Active      bool   `json:"active"`
+		Timezone    string `json:"timeZone"`
+		Accounttype string `json:"accountType"`
+	} `json:"author"`
+	Updateauthor struct {
+		Self         string `json:"self"`
+		Accountid    string `json:"accountId"`
+		Emailaddress string `json:"emailAddress"`
+		Avatarurls   struct {
+			Four8X48  string `json:"48x48"`
+			Two4X24   string `json:"24x24"`
+			One6X16   string `json:"16x16"`
+			Three2X32 string `json:"32x32"`
+		} `json:"avatarUrls"`
+		Displayname string `json:"displayName"`
+		Active      bool   `json:"active"`
+		Timezone    string `json:"timeZone"`
+		Accounttype string `json:"accountType"`
+	} `json:"updateAuthor"`
+	Created          string `json:"created"`
+	Updated          string `json:"updated"`
+	Started          string `json:"started"`
+	Timespent        string `json:"timeSpent"`
+	Timespentseconds int    `json:"timeSpentSeconds"`
+	ID               string `json:"id"`
+	Issueid          string `json:"issueId"`
 }
 
 func GetLatestIssues() (JQLResponse, error) {

@@ -55,7 +55,7 @@ func NewWorkLogIssues() error {
 			}
 			app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{WorkLog: workLog, Issue: issue})
 			waitGroup.Done()
-		}(&app.workLogs.logs[i])
+		}(app.workLogs.logs[i])
 	}
 	waitGroup.Wait()
 	close(errCh)
@@ -242,7 +242,7 @@ func (issue Issue) LogWork(timeSpent string) error {
 		return err
 	}
 	// add this workload to global object
-	app.workLogs.logs = append(app.workLogs.logs, worklog)
+	app.workLogs.logs = append(app.workLogs.logs, &worklog)
 	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{Issue: issue, WorkLog: &worklog})
 	todayWorklog, err = app.workLogs.LogsOnDate(app.time)
 	if err != nil {

@@ -71,13 +71,13 @@ type WorkLogsIssues struct {
 type WorkLogs struct {
 	startDate time.Time
 	endDate   time.Time
-	logs      []WorkLog
+	logs      []*WorkLog
 }
 
 func (w *WorkLogs) LogsOnDate(date time.Time) ([]*WorkLog, error) {
 	var logsOnDate []*WorkLog
 	if date.Before(w.startDate) || date.After(w.endDate) {
-		return nil, errors.New("Date is out of worklogs range")
+		return nil, nil
 	}
 	date = date.Truncate(24 * time.Hour)
 	for i, log := range w.logs {
@@ -87,7 +87,7 @@ func (w *WorkLogs) LogsOnDate(date time.Time) ([]*WorkLog, error) {
 			return nil, err
 		}
 		if date.Equal(logDate.Truncate(24 * time.Hour)) {
-			logsOnDate = append(logsOnDate, &w.logs[i])
+			logsOnDate = append(logsOnDate, w.logs[i])
 		}
 	}
 	return logsOnDate, nil
@@ -109,7 +109,7 @@ func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]*WorkLogIssue, error) {
 	}
 	date = date.Truncate(24 * time.Hour)
 	for i, issue := range w.issues {
-		logDate, err := time.Parse(dateLayout, issue.WorkLog.StartDate)
+		logDate, err := time.ParseInLocation(dateLayout, issue.WorkLog.StartDate, time.Local)
 		logDate = logDate.Truncate(24 * time.Hour)
 		if err != nil {
 			return nil, err
@@ -138,7 +138,11 @@ func GetWorkLogs() (WorkLogs, error) {
 	if err != nil {
 		return WorkLogs{}, err
 	}
-	return WorkLogs{startDate: fromDate, endDate: toDate, logs: workLogsResponse.WorkLogs}, nil
+	var worklogs []*WorkLog
+	for i, _ := range workLogsResponse.WorkLogs {
+		worklogs = append(worklogs, &workLogsResponse.WorkLogs[i])
+	}
+	return WorkLogs{startDate: fromDate, endDate: toDate, logs: worklogs}, nil
 }
 
 func TimeSpentToSeconds(timeSpent string) int {
@@ -192,7 +196,7 @@ func (workLog *WorkLog) Update(timeSpent string) error {
 	return nil
 }
 
-func (workLogs WorkLogs) Delete(worklog *WorkLog) error {
+func (workLogs *WorkLogs) Delete(worklog *WorkLog) error {
 	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, worklog.TempoWorklogid)
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
@@ -203,17 +207,16 @@ func (workLogs WorkLogs) Delete(worklog *WorkLog) error {
 		return err
 	}
 
-	// FIXME delete is kinda buggy - it messes up pointers and we're getting weird results
-	for i, log := range workLogs.logs {
-		if log.TempoWorklogid == worklog.TempoWorklogid {
-			workLogs.logs = append(workLogs.logs[:i], workLogs.logs[i+1:]...)
-			break
-		}
-	}
-
+	// FIXME delete is kinda buggy - it messes up pointers and we're getting weird results\
 	for i, issue := range app.workLogsIssues.issues {
 		if issue.WorkLog.TempoWorklogid == worklog.TempoWorklogid {
 			app.workLogsIssues.issues = append(app.workLogsIssues.issues[:i], app.workLogsIssues.issues[i+1:]...)
+			break
+		}
+	}
+	for i, log := range workLogs.logs {
+		if log.TempoWorklogid == worklog.TempoWorklogid {
+			workLogs.logs = append(workLogs.logs[:i], workLogs.logs[i+1:]...)
 			break
 		}
 	}
