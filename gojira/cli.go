@@ -239,7 +239,12 @@ func (issue Issue) LogWork(timeSpent string) error {
 		return err
 	}
 	// naive issue struct for quicker summary
-	todayWorklog = append(todayWorklog, &WorkLog{TimeSpentSeconds: TimeSpentToSeconds(timeSpent)})
+	loggedWorklog := &WorkLog{TimeSpentSeconds: TimeSpentToSeconds(timeSpent)}
+	todayWorklog = append(todayWorklog, loggedWorklog)
+	// append new WorkLogIssue to app.workLogsIssues.issues with newly recorded worklog
+	// FIXME - newly added worklog is not showing up correcly - updated one does right
+	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{Issue: issue, WorkLog: loggedWorklog})
+
 	fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(todayWorklog)))
 	return nil
 }

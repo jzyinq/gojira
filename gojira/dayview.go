@@ -48,6 +48,7 @@ func NewDayView() *DayView {
 	// Make tab key able to switch between the two tables
 	// Change focues table active row color to yellow and inactive to white
 	flexView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// FIXME - it's not ideal - we should to check if given table is focused instead
 		if event.Key() == tcell.KeyTab {
 			if app.ui.app.GetFocus() == dayView.worklogList {
 				app.ui.app.SetFocus(dayView.latestIssuesList)
@@ -127,7 +128,7 @@ func (d *DayView) update() {
 			app.ui.app.Stop()
 		}
 	}).SetSelectedFunc(func(row, column int) {
-		newWorklogForm(d, logs, row)
+		NewUpdateWorklogForm(d, logs, row)
 	})
 	timeSpent := CalculateTimeSpent(getWorkLogsFromWorkLogIssues(logs))
 	d.worklogStatus.SetText(
@@ -160,10 +161,55 @@ func (d *DayView) loadLatest() {
 		if key == tcell.KeyEscape {
 			app.ui.app.Stop()
 		}
+	}).SetSelectedFunc(func(row, column int) {
+		NewAddWorklogForm(d, issues.Issues, row)
 	})
 }
 
-func newWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *tview.Form {
+func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
+	var form *tview.Form
+
+	newWorklog := func() {
+		timeSpent := form.GetFormItem(0).(*tview.InputField).GetText()
+		app.ui.flex.SetTitle(" gojira - adding worklog... ")
+		go func() {
+			issue, err := GetIssue(issues[row].Key)
+			if err != nil {
+				app.ui.errorView.ShowError(err.Error())
+				return
+			}
+			err = issue.LogWork(timeSpent)
+			app.ui.flex.SetTitle(" gojira ")
+			if err != nil {
+				app.ui.errorView.ShowError(err.Error())
+				return
+			}
+			d.update()
+			app.ui.pages.RemovePage("worklog-form")
+			app.ui.calendar.update()
+		}()
+	}
+
+	form = tview.NewForm().
+		AddInputField("Time spent", "", 20, nil, nil).
+		AddButton("Add", newWorklog).
+		AddButton("Cancel", func() {
+			app.ui.pages.RemovePage("worklog-form")
+		})
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEscape:
+			app.ui.pages.RemovePage("worklog-form")
+			break
+		}
+		return event
+	})
+	form.SetBorder(true).SetTitle("New worklog").SetTitleAlign(tview.AlignLeft)
+	app.ui.pages.AddPage("worklog-form", form, true, true)
+	return form
+}
+
+func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *tview.Form {
 	var form *tview.Form
 
 	updateWorklog := func() {

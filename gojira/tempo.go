@@ -199,7 +199,7 @@ func (workLogs WorkLogs) Delete(worklog *WorkLog) error {
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
 		"Content-Type":  "application/json",
 	}
-	_, err := SendHttpRequest("DELETE", requestUrl, nil, headers, 200)
+	_, err := SendHttpRequest("DELETE", requestUrl, nil, headers, 204)
 	if err != nil {
 		return err
 	}
