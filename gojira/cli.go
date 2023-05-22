@@ -218,7 +218,10 @@ Save it and you should ready to go!
 }
 
 func (issue Issue) LogWork(timeSpent string) error {
-	todayWorklog, _ := app.workLogs.LogsOnDate(app.time) // FIXME error handling
+	todayWorklog, err := app.workLogs.LogsOnDate(app.time) // FIXME error handling
+	if err != nil {
+		return err
+	}
 	if Config.UpdateExistingWorkLog {
 		for index, workLog := range todayWorklog {
 			if workLog.Issue.Key == issue.Key {
@@ -234,17 +237,17 @@ func (issue Issue) LogWork(timeSpent string) error {
 			}
 		}
 	}
-	err := issue.NewWorkLog(timeSpent)
+	worklog, err := issue.NewWorkLog(timeSpent)
 	if err != nil {
 		return err
 	}
-	// naive issue struct for quicker summary
-	loggedWorklog := &WorkLog{TimeSpentSeconds: TimeSpentToSeconds(timeSpent)}
-	todayWorklog = append(todayWorklog, loggedWorklog)
-	// append new WorkLogIssue to app.workLogsIssues.issues with newly recorded worklog
-	// FIXME - newly added worklog is not showing up correcly - updated one does right
-	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{Issue: issue, WorkLog: loggedWorklog})
-
+	// add this workload to global object
+	app.workLogs.logs = append(app.workLogs.logs, worklog)
+	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{Issue: issue, WorkLog: &worklog})
+	todayWorklog, err = app.workLogs.LogsOnDate(app.time)
+	if err != nil {
+		return err
+	}
 	fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(todayWorklog)))
 	return nil
 }

@@ -13,7 +13,7 @@ func getJiraAuthorizationHeader() string {
 	return authorizationHeader
 }
 
-func (issue Issue) NewWorkLog(timeSpent string) error {
+func (issue Issue) NewWorkLog(timeSpent string) (WorkLog, error) {
 	payload := map[string]string{
 		"timeSpent":      timeSpent,
 		"adjustEstimate": "leave",
@@ -26,12 +26,22 @@ func (issue Issue) NewWorkLog(timeSpent string) error {
 		"Content-Type":  "application/json",
 	}
 
-	_, err := SendHttpRequest("POST", requestUrl, requestBody, headers, 201)
+	response, err := SendHttpRequest("POST", requestUrl, requestBody, headers, 201)
 	if err != nil {
-		return err
+		return WorkLog{}, err
+	}
+	// print string version of response
+	//fmt.Println(string(response))
+
+	// FIXME that's a fiction that we're having actual WorkLog object here - response is different
+	var worklog WorkLog
+	err = json.Unmarshal(response, &worklog)
+	if err != nil {
+		return WorkLog{}, err
 	}
 	fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, issue.Key)
-	return nil
+	worklog.StartDate = app.time.Format(dateLayout)
+	return worklog, nil
 }
 
 type JQLSearch struct {

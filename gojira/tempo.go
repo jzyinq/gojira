@@ -193,7 +193,6 @@ func (workLog *WorkLog) Update(timeSpent string) error {
 }
 
 func (workLogs WorkLogs) Delete(worklog *WorkLog) error {
-	// FIXME check if it's works - but not now
 	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, worklog.TempoWorklogid)
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
@@ -204,9 +203,17 @@ func (workLogs WorkLogs) Delete(worklog *WorkLog) error {
 		return err
 	}
 
+	// FIXME delete is kinda buggy - it messes up pointers and we're getting weird results
 	for i, log := range workLogs.logs {
 		if log.TempoWorklogid == worklog.TempoWorklogid {
 			workLogs.logs = append(workLogs.logs[:i], workLogs.logs[i+1:]...)
+			break
+		}
+	}
+
+	for i, issue := range app.workLogsIssues.issues {
+		if issue.WorkLog.TempoWorklogid == worklog.TempoWorklogid {
+			app.workLogsIssues.issues = append(app.workLogsIssues.issues[:i], app.workLogsIssues.issues[i+1:]...)
 			break
 		}
 	}
