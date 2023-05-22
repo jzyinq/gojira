@@ -26,8 +26,13 @@ func NewDayView() *DayView {
 		}),
 	}
 
+	// FIXME instead border we could color code it or add some prompt to given section
 	dayView.worklogList.SetBorder(true)
 	dayView.latestIssuesList.SetBorder(true)
+	dayView.worklogStatus.SetText(
+		fmt.Sprintf("Worklogs - %s - [?h[white]]",
+			app.time.Format("2006-01-02"),
+		)).SetDynamicColors(true)
 
 	flexView := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(dayView.worklogStatus, 1, 1, false).
@@ -35,14 +40,21 @@ func NewDayView() *DayView {
 		AddItem(dayView.latestIssuesStatus, 1, 1, false).
 		AddItem(dayView.latestIssuesList, 0, 1, false)
 
+	dayView.worklogList.SetCell(0, 0, // FIXME use enums for column names
+		tview.NewTableCell("Loading...").SetAlign(tview.AlignLeft),
+	)
+
 	// Make tab key able to switch between the two tables
+	// Change focues table active row color to yellow and inactive to white
 	flexView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
 			if app.ui.app.GetFocus() == dayView.worklogList {
 				app.ui.app.SetFocus(dayView.latestIssuesList)
+				dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow))
 				return nil
 			}
 			app.ui.app.SetFocus(dayView.worklogList)
+			dayView.worklogStatus.SetText(fmt.Sprintf(">%s", dayView.worklogStatus.GetText(true)))
 			return nil
 		}
 		return event
@@ -115,7 +127,7 @@ func (d *DayView) update() {
 	})
 	timeSpent := CalculateTimeSpent(getWorkLogsFromWorkLogIssues(logs))
 	d.worklogStatus.SetText(
-		fmt.Sprintf("Worklogs - %s -  [%s%s[white]]",
+		fmt.Sprintf("Worklogs - %s - [%s%s[white]]",
 			app.time.Format("2006-01-02"),
 			GetTimeSpentColorTag(timeSpent),
 			FormatTimeSpent(timeSpent),
