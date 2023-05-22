@@ -29,6 +29,7 @@ func NewDayView() *DayView {
 	// FIXME instead border we could color code it or add some prompt to given section
 	dayView.worklogList.SetBorder(true)
 	dayView.latestIssuesList.SetBorder(true)
+	dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGray))
 	dayView.worklogStatus.SetText(
 		fmt.Sprintf("Worklogs - %s - [?h[white]]",
 			app.time.Format("2006-01-02"),
@@ -50,11 +51,14 @@ func NewDayView() *DayView {
 		if event.Key() == tcell.KeyTab {
 			if app.ui.app.GetFocus() == dayView.worklogList {
 				app.ui.app.SetFocus(dayView.latestIssuesList)
-				dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow))
+				dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+				dayView.worklogList.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
 				return nil
 			}
 			app.ui.app.SetFocus(dayView.worklogList)
 			dayView.worklogStatus.SetText(fmt.Sprintf(">%s", dayView.worklogStatus.GetText(true)))
+			dayView.worklogList.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+			dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
 			return nil
 		}
 		return event
