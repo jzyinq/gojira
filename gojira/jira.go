@@ -39,14 +39,19 @@ func (issue Issue) NewWorkLog(timeSpent string) (WorkLog, error) {
 	}
 	//fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, issue.Key)
 	// FIXME it seems that this not not a tempo id, but some jira internal id
-	tempoWorkLogId, err := strconv.Atoi(newWorklog.ID)
+	jiraWorklogId, err := strconv.Atoi(newWorklog.ID)
 	if err != nil {
 		return WorkLog{}, err
 	}
 	worklog := WorkLog{
-		TempoWorklogid:   tempoWorkLogId,
+		JiraWorklogid:    jiraWorklogId,
 		StartDate:        app.time.Format(dateLayout),
 		TimeSpentSeconds: newWorklog.Timespentseconds,
+		Issue: struct { // FIXME oh my god what a mess
+			Self string `json:"self"`
+			Key  string `json:"key"`
+			ID   int    `json:"id"`
+		}{Self: "", Key: issue.Key, ID: 0},
 	}
 	return worklog, nil
 }
@@ -96,6 +101,34 @@ type Issue struct {
 	} `json:"fields"`
 }
 
+func GetLatestIssues() (JQLResponse, error) {
+	payload := &JQLSearch{
+		Expand:       []string{"names"},
+		Jql:          "assignee in (currentUser()) ORDER BY updated DESC, created DESC",
+		MaxResults:   10,
+		FieldsByKeys: false,
+		Fields:       []string{"summary", "status"},
+		StartAt:      0,
+	}
+	payloadJson, err := json.Marshal(payload)
+	requestBody := bytes.NewBuffer(payloadJson)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/search", Config.JiraUrl)
+	headers := map[string]string{
+		"Authorization": getJiraAuthorizationHeader(),
+		"Content-Type":  "application/json",
+	}
+	response, err := SendHttpRequest("POST", requestUrl, requestBody, headers, 200)
+	if err != nil {
+		return JQLResponse{}, err
+	}
+	var jqlResponse JQLResponse
+	err = json.Unmarshal(response, &jqlResponse)
+	if err != nil {
+		return JQLResponse{}, err
+	}
+	return jqlResponse, nil
+}
+
 type NewWorkLog struct {
 	Self   string `json:"self"`
 	Author struct {
@@ -135,34 +168,6 @@ type NewWorkLog struct {
 	Timespentseconds int    `json:"timeSpentSeconds"`
 	ID               string `json:"id"`
 	Issueid          string `json:"issueId"`
-}
-
-func GetLatestIssues() (JQLResponse, error) {
-	payload := &JQLSearch{
-		Expand:       []string{"names"},
-		Jql:          "assignee in (currentUser()) ORDER BY updated DESC, created DESC",
-		MaxResults:   10,
-		FieldsByKeys: false,
-		Fields:       []string{"summary", "status"},
-		StartAt:      0,
-	}
-	payloadJson, err := json.Marshal(payload)
-	requestBody := bytes.NewBuffer(payloadJson)
-	requestUrl := fmt.Sprintf("%s/rest/api/2/search", Config.JiraUrl)
-	headers := map[string]string{
-		"Authorization": getJiraAuthorizationHeader(),
-		"Content-Type":  "application/json",
-	}
-	response, err := SendHttpRequest("POST", requestUrl, requestBody, headers, 200)
-	if err != nil {
-		return JQLResponse{}, err
-	}
-	var jqlResponse JQLResponse
-	err = json.Unmarshal(response, &jqlResponse)
-	if err != nil {
-		return JQLResponse{}, err
-	}
-	return jqlResponse, nil
 }
 
 func GetIssue(issueKey string) (Issue, error) {

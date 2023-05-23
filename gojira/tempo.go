@@ -198,11 +198,14 @@ func (workLog *WorkLog) Update(timeSpent string) error {
 }
 
 func (workLogs *WorkLogs) Delete(worklog *WorkLog) error {
-	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, worklog.TempoWorklogid)
+	// fixme this no longer depends on tempo api - why I'm using tempo api? :confused:
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d",
+		Config.JiraUrl, worklog.Issue.Key, worklog.JiraWorklogid)
 	headers := map[string]string{
-		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
+		"Authorization": getJiraAuthorizationHeader(),
 		"Content-Type":  "application/json",
 	}
+
 	_, err := SendHttpRequest("DELETE", requestUrl, nil, headers, 204)
 	if err != nil {
 		return err
@@ -210,13 +213,13 @@ func (workLogs *WorkLogs) Delete(worklog *WorkLog) error {
 
 	// FIXME delete is kinda buggy - it messes up pointers and we're getting weird results\
 	for i, issue := range app.workLogsIssues.issues {
-		if issue.WorkLog.TempoWorklogid == worklog.TempoWorklogid {
+		if issue.WorkLog.JiraWorklogid == worklog.JiraWorklogid {
 			app.workLogsIssues.issues = append(app.workLogsIssues.issues[:i], app.workLogsIssues.issues[i+1:]...)
 			break
 		}
 	}
 	for i, log := range workLogs.logs {
-		if log.TempoWorklogid == worklog.TempoWorklogid {
+		if log.JiraWorklogid == worklog.JiraWorklogid {
 			workLogs.logs = append(workLogs.logs[:i], workLogs.logs[i+1:]...)
 			break
 		}
