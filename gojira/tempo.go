@@ -38,15 +38,6 @@ type WorkLog struct {
 	} `json:"attributes"`
 }
 
-type WorkLogUpdate struct {
-	IssueKey         string `json:"issueKey"`
-	StartDate        string `json:"startDate"`
-	StartTime        string `json:"startTime"`
-	Description      string `json:"description"`
-	AuthorAccountId  string `json:"authorAccountId"`
-	TimeSpentSeconds int    `json:"timeSpentSeconds"`
-}
-
 type JiraWorklogUpdate struct {
 	TimeSpentSeconds int `json:"timeSpentSeconds"`
 }
@@ -129,6 +120,7 @@ func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]*WorkLogIssue, error) {
 func GetWorkLogs() (WorkLogs, error) {
 	// get first day of week nd the last for date in app.time
 	fromDate, toDate := MonthRange(app.time)
+	// tempo is required only for fetching workklogs by date range
 	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s&limit=1000", Config.TempoUrl, Config.JiraAccountId, fromDate.Format(dateLayout), toDate.Format(dateLayout))
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),

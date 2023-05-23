@@ -70,6 +70,7 @@ Just remember to urldecode it. Save it and you should ready to go!
 ## Todo list
 
 - [ ] unify workLogs and worklogsIssues structs - use one for both
+  - Reduce jira/tempo spaghetti and unnecessary structs and functions
 - [ ] add worklogs from ui
 - [ ] tests
 - [ ] gojira worklog delete option
