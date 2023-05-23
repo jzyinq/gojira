@@ -21,7 +21,7 @@ func (issue Issue) NewWorkLog(timeSpent string) (WorkLog, error) {
 	}
 	payloadJson, _ := json.Marshal(payload)
 	requestBody := bytes.NewBuffer(payloadJson)
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog", Config.JiraUrl, issue.Key)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog?notifyUsers=false", Config.JiraUrl, issue.Key)
 	headers := map[string]string{
 		"Authorization": getJiraAuthorizationHeader(),
 		"Content-Type":  "application/json",
@@ -43,9 +43,16 @@ func (issue Issue) NewWorkLog(timeSpent string) (WorkLog, error) {
 	if err != nil {
 		return WorkLog{}, err
 	}
+
 	worklog := WorkLog{
-		JiraWorklogid:    jiraWorklogId,
-		StartDate:        app.time.Format(dateLayout),
+		JiraWorklogid: jiraWorklogId,
+		StartDate:     app.time.Format(dateLayout),
+		StartTime:     app.time.Format("15:04:05"),
+		Author: struct { // FIXME oh my god what a mess
+			Self        string `json:"self"`
+			AccountId   string `json:"accountId"`
+			DisplayName string `json:"displayName"`
+		}{Self: newWorklog.Self, AccountId: newWorklog.Author.Accountid, DisplayName: newWorklog.Author.Displayname},
 		TimeSpentSeconds: newWorklog.Timespentseconds,
 		Issue: struct { // FIXME oh my god what a mess
 			Self string `json:"self"`
@@ -93,7 +100,6 @@ type Issue struct {
 			StatusCategory struct {
 				Self      string `json:"self"`
 				ID        int    `json:"id"`
-				Key       string `json:"key"`
 				ColorName string `json:"colorName"`
 				Name      string `json:"name"`
 			} `json:"statusCategory"`

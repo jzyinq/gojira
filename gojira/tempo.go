@@ -47,6 +47,10 @@ type WorkLogUpdate struct {
 	TimeSpentSeconds int    `json:"timeSpentSeconds"`
 }
 
+type JiraWorklogUpdate struct {
+	TimeSpentSeconds int `json:"timeSpentSeconds"`
+}
+
 type WorkLogsResponse struct {
 	Self     string `json:"self"`
 	Metadata struct {
@@ -171,20 +175,14 @@ func TimeSpentToSeconds(timeSpent string) int {
 func (workLog *WorkLog) Update(timeSpent string) error {
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 
-	// FIXME disable for development
-	payload := WorkLogUpdate{
-		IssueKey:         workLog.Issue.Key,
-		StartDate:        workLog.StartDate,
-		StartTime:        workLog.StartTime,
-		Description:      workLog.Description,
-		AuthorAccountId:  workLog.Author.AccountId,
+	payload := JiraWorklogUpdate{
 		TimeSpentSeconds: timeSpentInSeconds,
 	}
 	payloadJson, _ := json.Marshal(payload)
 	requestBody := bytes.NewBuffer(payloadJson)
-	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, workLog.TempoWorklogid)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false", Config.JiraUrl, workLog.Issue.Key, workLog.JiraWorklogid)
 	headers := map[string]string{
-		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
+		"Authorization": getJiraAuthorizationHeader(),
 		"Content-Type":  "application/json",
 	}
 
@@ -199,7 +197,7 @@ func (workLog *WorkLog) Update(timeSpent string) error {
 
 func (workLogs *WorkLogs) Delete(worklog *WorkLog) error {
 	// fixme this no longer depends on tempo api - why I'm using tempo api? :confused:
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d",
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false",
 		Config.JiraUrl, worklog.Issue.Key, worklog.JiraWorklogid)
 	headers := map[string]string{
 		"Authorization": getJiraAuthorizationHeader(),
