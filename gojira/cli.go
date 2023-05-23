@@ -225,7 +225,7 @@ func (issue Issue) LogWork(timeSpent string) error {
 	if Config.UpdateExistingWorkLog {
 		for index, workLog := range todayWorklog {
 			if workLog.Issue.Key == issue.Key {
-				fmt.Println("Updating existing worklog...")
+				//fmt.Println("Updating existing worklog...")
 				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
 				err := todayWorklog[index].Update(timeSpentSum)
 				if err != nil {
@@ -249,6 +249,6 @@ func (issue Issue) LogWork(timeSpent string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(todayWorklog)))
+	//fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(todayWorklog)))
 	return nil
 }
