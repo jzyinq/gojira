@@ -231,8 +231,9 @@ func (issue Issue) LogWork(timeSpent string) error {
 				if err != nil {
 					return err
 				}
-				fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, workLog.Issue.Key)
-				fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(todayWorklog)))
+				// FIXME - this should be only in cli mode
+				//fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, workLog.Issue.Key)
+				//fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(todayWorklog)))
 				return nil
 			}
 		}

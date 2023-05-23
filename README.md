@@ -69,17 +69,18 @@ Just remember to urldecode it. Save it and you should ready to go!
 
 ## Todo list
 
-- [ ] recent jira task list for easy time logging
-- [ ] delete worklogs
+- [ ] unify workLogs and worklogsIssues structs - use one for both
 - [ ] add worklogs from ui
 - [ ] tests
 - [ ] gojira worklog delete option
 - [ ] ticket status change prompt after logging time
+- [x] recent jira task list for easy time logging
+- [x] delete worklogs
 - [x] error handling
 - [x] call for worklogs for whole ~week~ month instead of day
 - [x] show calendar with colorized dates
-  - fix colors git
-  - [x] show by colors if worklog is incomplete/full/overhours for date- 
+    - fix colors git
+    - [x] show by colors if worklog is incomplete/full/overhours for date-
 - [x] accept full jira url in `gojira log` and scrap issue key from it
 - [x] prompt validation
 - [x] while logging time check if worklog exists - if yes, append logged time (config.UpdateExistingWorkLog)

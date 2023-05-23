@@ -37,7 +37,7 @@ func (issue Issue) NewWorkLog(timeSpent string) (WorkLog, error) {
 	if err != nil {
 		return WorkLog{}, err
 	}
-	fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, issue.Key)
+	//fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, issue.Key)
 	// FIXME it seems that this not not a tempo id, but some jira internal id
 	tempoWorkLogId, err := strconv.Atoi(newWorklog.ID)
 	if err != nil {
