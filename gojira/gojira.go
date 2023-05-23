@@ -17,7 +17,7 @@ type gojira struct {
 
 func Run() {
 	app.ui = &UserInteface{}
-	app.time = time.Now()
+	app.time = time.Now().Local()
 	app.cli = &cli.App{
 		Name: "gojira",
 		Usage: `quickly log time to jira/tempo through cli.

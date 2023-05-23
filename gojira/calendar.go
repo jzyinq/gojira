@@ -77,8 +77,8 @@ func (c *Calendar) update() {
 
 		cell := tview.NewTableCell(fmt.Sprintf("%d", i)).SetAlign(tview.AlignCenter)
 
-		calendarDay := time.Date(c.year, c.month, i+1, 0, 0, 0, 0, time.Local)
-		if calendarDay.Before(time.Now()) {
+		calendarDay := time.Date(c.year, c.month, i, 0, 0, 0, 0, time.Local)
+		if calendarDay.Before(time.Now().Local()) {
 			cell.SetBackgroundColor(tcell.ColorGray)
 		}
 		if len(app.workLogs.logs) > 0 {

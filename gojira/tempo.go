@@ -81,7 +81,7 @@ func (w *WorkLogs) LogsOnDate(date time.Time) ([]*WorkLog, error) {
 	}
 	date = date.Truncate(24 * time.Hour)
 	for i, log := range w.logs {
-		logDate, err := time.Parse(dateLayout, log.StartDate)
+		logDate, err := time.ParseInLocation(dateLayout, log.StartDate, time.Local)
 		logDate = logDate.Truncate(24 * time.Hour)
 		if err != nil {
 			return nil, err
@@ -109,7 +109,8 @@ func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]*WorkLogIssue, error) {
 	}
 	date = date.Truncate(24 * time.Hour)
 	for i, issue := range w.issues {
-		logDate, err := time.ParseInLocation(dateLayout, issue.WorkLog.StartDate, time.Local)
+		// FIXME should be in local timezone PariseInLocation - but it's not working
+		logDate, err := time.Parse(dateLayout, issue.WorkLog.StartDate)
 		logDate = logDate.Truncate(24 * time.Hour)
 		if err != nil {
 			return nil, err
