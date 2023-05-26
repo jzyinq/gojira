@@ -172,6 +172,7 @@ func (workLog *WorkLog) Update(timeSpent string) error {
 	}
 	payloadJson, _ := json.Marshal(payload)
 	requestBody := bytes.NewBuffer(payloadJson)
+	// FIXME use tempo api to update worklog, unless there is not tempoId in worklog
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false", Config.JiraUrl, workLog.Issue.Key, workLog.JiraWorklogid)
 	headers := map[string]string{
 		"Authorization": getJiraAuthorizationHeader(),
