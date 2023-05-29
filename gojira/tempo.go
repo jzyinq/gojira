@@ -42,6 +42,15 @@ type JiraWorklogUpdate struct {
 	TimeSpentSeconds int `json:"timeSpentSeconds"`
 }
 
+type WorkLogUpdate struct {
+	IssueKey         string `json:"issueKey"`
+	StartDate        string `json:"startDate"`
+	StartTime        string `json:"startTime"`
+	Description      string `json:"description"`
+	AuthorAccountId  string `json:"authorAccountId"`
+	TimeSpentSeconds int    `json:"timeSpentSeconds"`
+}
+
 type WorkLogsResponse struct {
 	Self     string `json:"self"`
 	Metadata struct {
@@ -167,18 +176,41 @@ func TimeSpentToSeconds(timeSpent string) int {
 func (workLog *WorkLog) Update(timeSpent string) error {
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 
-	payload := JiraWorklogUpdate{
-		TimeSpentSeconds: timeSpentInSeconds,
-	}
-	payloadJson, _ := json.Marshal(payload)
-	requestBody := bytes.NewBuffer(payloadJson)
-	// FIXME use tempo api to update worklog, unless there is not tempoId in worklog
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false", Config.JiraUrl, workLog.Issue.Key, workLog.JiraWorklogid)
-	headers := map[string]string{
-		"Authorization": getJiraAuthorizationHeader(),
-		"Content-Type":  "application/json",
-	}
+	// make update request to tempo if tempoWrorklogId is set
+	var requestBody *bytes.Buffer
+	var requestUrl string
+	var headers map[string]string
 
+	// updating meetings does not work even through tempo? w00t
+	if workLog.TempoWorklogid != 0 {
+		payload := WorkLogUpdate{
+			IssueKey:         workLog.Issue.Key,
+			StartDate:        workLog.StartDate,
+			StartTime:        workLog.StartTime,
+			Description:      workLog.Description,
+			AuthorAccountId:  workLog.Author.AccountId,
+			TimeSpentSeconds: timeSpentInSeconds,
+		}
+		payloadJson, _ := json.Marshal(payload)
+		requestBody = bytes.NewBuffer(payloadJson)
+		requestUrl = fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, workLog.TempoWorklogid)
+		headers = map[string]string{
+			"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
+			"Content-Type":  "application/json",
+		}
+	} else {
+		payload := JiraWorklogUpdate{
+			TimeSpentSeconds: timeSpentInSeconds,
+		}
+		payloadJson, _ := json.Marshal(payload)
+		requestBody = bytes.NewBuffer(payloadJson)
+		// FIXME use tempo api to update worklog, unless there is not tempoId in worklog
+		requestUrl = fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false", Config.JiraUrl, workLog.Issue.Key, workLog.JiraWorklogid)
+		headers = map[string]string{
+			"Authorization": getJiraAuthorizationHeader(),
+			"Content-Type":  "application/json",
+		}
+	}
 	_, err := SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
 	if err != nil {
 		return err
