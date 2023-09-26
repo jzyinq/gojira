@@ -71,9 +71,9 @@ Just remember to urldecode it. Save it and you should ready to go!
 
 - [ ] unify workLogs and worklogsIssues structs - use one for both
   - Reduce jira/tempo spaghetti and unnecessary structs and functions
-- [ ] add worklogs from ui
+- [x] Add worklogs from ui
 - [ ] tests
-- [ ] gojira worklog delete option
+- [x] gojira worklog delete option
 - [ ] ticket status change prompt after logging time
 - [x] recent jira task list for easy time logging
 - [x] delete worklogs

@@ -27,9 +27,9 @@ func Run() {
 	logrus.SetOutput(logFile)
 	// Now log messages will be written to the file
 	logrus.Info("Gojira started")
-	appTime := time.Now().Local()
+	appTimer := time.Now().Local()
 	app.ui = &UserInteface{}
-	app.time = &appTime
+	app.time = &appTimer
 	app.cli = &cli.App{
 		Name: "gojira",
 		Usage: `quickly log time to jira/tempo through cli.

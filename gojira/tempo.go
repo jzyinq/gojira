@@ -81,7 +81,7 @@ type WorkLogs struct {
 
 func (w *WorkLogs) LogsOnDate(date *time.Time) ([]*WorkLog, error) {
 	var logsOnDate []*WorkLog
-	truncatedDate := (*date).Local().Truncate(24 * time.Hour)
+	truncatedDate := (*date).Truncate(24 * time.Hour)
 	if truncatedDate.Before(w.startDate) || truncatedDate.After(w.endDate) {
 		return nil, nil
 	}

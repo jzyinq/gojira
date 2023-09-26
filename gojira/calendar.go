@@ -77,7 +77,7 @@ func (c *Calendar) update() {
 
 		cell := tview.NewTableCell(fmt.Sprintf("%d", i)).SetAlign(tview.AlignCenter)
 
-		calendarDay := time.Date(c.year, c.month, i, 0, 0, 0, 0, time.Local)
+		calendarDay := time.Date(c.year, c.month, i, 0, 0, 0, 0, time.UTC)
 		if calendarDay.Before(time.Now().Local()) {
 			cell.SetBackgroundColor(tcell.ColorGray)
 		}
