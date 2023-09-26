@@ -3,6 +3,7 @@ package gojira
 import (
 	"fmt"
 	"github.com/manifoldco/promptui"
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
@@ -218,6 +219,7 @@ Save it and you should ready to go!
 }
 
 func (issue Issue) LogWork(timeSpent string) error {
+	logrus.Infof("Logging %s of time to ticket %s at %s", timeSpent, issue.Key, app.time)
 	todayWorklog, err := app.workLogs.LogsOnDate(app.time) // FIXME error handling
 	if err != nil {
 		return err

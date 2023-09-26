@@ -18,6 +18,7 @@ func (issue Issue) NewWorkLog(timeSpent string) (WorkLog, error) {
 	payload := map[string]string{
 		"timeSpent":      timeSpent,
 		"adjustEstimate": "leave",
+		"started":        app.time.Format("2006-01-02T15:04:05.000-0700"),
 	}
 	payloadJson, _ := json.Marshal(payload)
 	requestBody := bytes.NewBuffer(payloadJson)

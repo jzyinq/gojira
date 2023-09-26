@@ -82,7 +82,7 @@ func (c *Calendar) update() {
 			cell.SetBackgroundColor(tcell.ColorGray)
 		}
 		if len(app.workLogs.logs) > 0 {
-			worklogs, err := app.workLogs.LogsOnDate(calendarDay)
+			worklogs, err := app.workLogs.LogsOnDate(&calendarDay)
 			if err != nil {
 				panic(err)
 			}

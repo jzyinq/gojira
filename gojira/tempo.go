@@ -79,19 +79,19 @@ type WorkLogs struct {
 	logs      []*WorkLog
 }
 
-func (w *WorkLogs) LogsOnDate(date time.Time) ([]*WorkLog, error) {
+func (w *WorkLogs) LogsOnDate(date *time.Time) ([]*WorkLog, error) {
 	var logsOnDate []*WorkLog
-	if date.Before(w.startDate) || date.After(w.endDate) {
+	truncatedDate := (*date).Local().Truncate(24 * time.Hour)
+	if truncatedDate.Before(w.startDate) || truncatedDate.After(w.endDate) {
 		return nil, nil
 	}
-	date = date.Truncate(24 * time.Hour)
-	for i, log := range w.logs {
-		logDate, err := time.ParseInLocation(dateLayout, log.StartDate, time.Local)
+	for i, logEntry := range w.logs {
+		logDate, err := time.Parse(dateLayout, logEntry.StartDate)
 		logDate = logDate.Truncate(24 * time.Hour)
 		if err != nil {
 			return nil, err
 		}
-		if date.Equal(logDate.Truncate(24 * time.Hour)) {
+		if truncatedDate.Equal(logDate) {
 			logsOnDate = append(logsOnDate, w.logs[i])
 		}
 	}
@@ -107,12 +107,12 @@ func (w *WorkLogs) TotalTimeSpent() int {
 	return totalTime
 }
 
-func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]*WorkLogIssue, error) {
+func (w *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error) {
 	var issuesOnDate []*WorkLogIssue
 	if date.Before(w.startDate) || date.After(w.endDate) {
 		return nil, errors.New("Date is out of worklogs range")
 	}
-	date = date.Truncate(24 * time.Hour)
+	truncatedDate := (*date).Truncate(24 * time.Hour)
 	for i, issue := range w.issues {
 		// FIXME should be in local timezone PariseInLocation - but it's not working
 		logDate, err := time.Parse(dateLayout, issue.WorkLog.StartDate)
@@ -120,7 +120,7 @@ func (w *WorkLogsIssues) IssuesOnDate(date time.Time) ([]*WorkLogIssue, error) {
 		if err != nil {
 			return nil, err
 		}
-		if date.Equal(logDate.Truncate(24 * time.Hour)) {
+		if truncatedDate.Equal(logDate.Truncate(24 * time.Hour)) {
 			issuesOnDate = append(issuesOnDate, &w.issues[i])
 		}
 	}

@@ -74,7 +74,8 @@ func NewDayView() *DayView {
 			if event.Key() == tcell.KeyRight {
 				timePeriod = time.Hour * 24
 			}
-			app.time = app.time.Add(timePeriod)
+			newTime := app.time.Add(timePeriod)
+			app.time = &newTime
 			loadWorklogs()
 			app.ui.calendar.update()
 			break
