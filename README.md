@@ -90,3 +90,4 @@ Just remember to urldecode it. Save it and you should ready to go!
 - [x] interactive edit worklog prompt
 - [x] detect git branch name (jira ticket)
 - [x] display todays logged working hours
+- NewWorklog view - add input for date and date period optionally
