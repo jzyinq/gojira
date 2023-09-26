@@ -1,6 +1,7 @@
 package gojira
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
@@ -16,6 +17,17 @@ type gojira struct {
 }
 
 func Run() {
+	// Open the log file
+	logFile, err := os.OpenFile("/tmp/gojira.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		logrus.Fatalf("Error opening log file: %v", err)
+	}
+	defer logFile.Close()
+	// Set the log output to write to the file
+	logrus.SetOutput(logFile)
+	// Now log messages will be written to the file
+	logrus.Info("Gojira started")
+
 	app.ui = &UserInteface{}
 	app.time = time.Now().Local()
 	app.cli = &cli.App{
@@ -41,7 +53,7 @@ func Run() {
 		},
 		Action: DefaultAction,
 	}
-	err := app.cli.Run(os.Args)
+	err = app.cli.Run(os.Args)
 	if err != nil {
 		log.Fatal(err)
 	}

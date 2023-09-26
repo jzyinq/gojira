@@ -10,6 +10,7 @@ require (
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/rivo/tview v0.0.0-20230104153304-892d1a2eb0da
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/urfave/cli/v2 v2.3.0
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 )

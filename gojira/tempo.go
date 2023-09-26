@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"log"
 	"regexp"
 	"strconv"
@@ -221,20 +222,18 @@ func (workLog *WorkLog) Update(timeSpent string) error {
 }
 
 func (workLogs *WorkLogs) Delete(worklog *WorkLog) error {
-	// fixme this no longer depends on tempo api - why I'm using tempo api? :confused:
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false",
-		Config.JiraUrl, worklog.Issue.Key, worklog.JiraWorklogid)
+	logrus.Infof("Deleting worklog ... %+v", worklog)
+	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, worklog.TempoWorklogid)
 	headers := map[string]string{
-		"Authorization": getJiraAuthorizationHeader(),
+		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
 		"Content-Type":  "application/json",
 	}
-
 	_, err := SendHttpRequest("DELETE", requestUrl, nil, headers, 204)
 	if err != nil {
 		return err
 	}
 
-	// FIXME delete is kinda buggy - it messes up pointers and we're getting weird results\
+	// FIXME delete is kinda buggy - it messes up pointers and we're getting weird results
 	for i, issue := range app.workLogsIssues.issues {
 		if issue.WorkLog.JiraWorklogid == worklog.JiraWorklogid {
 			app.workLogsIssues.issues = append(app.workLogsIssues.issues[:i], app.workLogsIssues.issues[i+1:]...)

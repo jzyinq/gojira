@@ -2,6 +2,7 @@ package gojira
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -14,6 +15,8 @@ func SendHttpRequest(
 	headers map[string]string,
 	successfulStatusCode int) ([]byte, error) {
 	client := &http.Client{}
+	logrus.Infof("Sending %s request to %s", requestMethod, requestUrl)
+	logrus.Infof("Request body:\n%s", requestBody)
 	req, err := http.NewRequest(requestMethod, requestUrl, requestBody)
 	if err != nil {
 		return nil, err
@@ -30,6 +33,7 @@ func SendHttpRequest(
 		return nil, err
 	}
 	if resp.StatusCode != successfulStatusCode {
+		logrus.Errorf("There was an error when performing request:\n%s %s\nResponse code was: %d\nResponse body:\n%s", requestMethod, requestUrl, resp.StatusCode, string(body))
 		return nil, fmt.Errorf("There was an error when performing request:\n%s %s\nResponse code was: %d\nResponse body:\n%s", requestMethod, requestUrl, resp.StatusCode, string(body))
 	}
 	return body, nil
