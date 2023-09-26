@@ -26,28 +26,7 @@ func NewCalendar() *Calendar {
 
 	calendar.update()
 
-	// Browse through the calendar
-	//calendar.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-	//	switch event.Key() {
-	//	case tcell.KeyLeft:
-	//		calendar.day--
-	//	case tcell.KeyRight:
-	//		calendar.day++
-	//	case tcell.KeyUp:
-	//		calendar.day -= 7
-	//	case tcell.KeyDown:
-	//		calendar.day += 7
-	//	}
-	//	// Handle day overflow/underflow
-	//	if calendar.day < 1 {
-	//		calendar.day = 1
-	//	}
-	//	if calendar.day > time.Date(calendar.year, calendar.month+1, 0, 0, 0, 0, 0, time.Local).Day() {
-	//		calendar.day = time.Date(calendar.year, calendar.month+1, 0, 0, 0, 0, 0, time.Local).Day()
-	//	}
-	//	calendar.update()
-	//	return event
-	//})
+	// calendar browsing is pinned to dayview
 
 	return calendar
 }
