@@ -79,41 +79,41 @@ type WorkLogs struct {
 	logs      []*WorkLog
 }
 
-func (w *WorkLogs) LogsOnDate(date *time.Time) ([]*WorkLog, error) {
+func (wl *WorkLogs) LogsOnDate(date *time.Time) ([]*WorkLog, error) {
 	var logsOnDate []*WorkLog
 	truncatedDate := (*date).Truncate(24 * time.Hour)
-	if truncatedDate.Before(w.startDate) || truncatedDate.After(w.endDate) {
+	if truncatedDate.Before(wl.startDate) || truncatedDate.After(wl.endDate) {
 		return nil, nil
 	}
-	for i, logEntry := range w.logs {
+	for i, logEntry := range wl.logs {
 		logDate, err := time.Parse(dateLayout, logEntry.StartDate)
 		logDate = logDate.Truncate(24 * time.Hour)
 		if err != nil {
 			return nil, err
 		}
 		if truncatedDate.Equal(logDate) {
-			logsOnDate = append(logsOnDate, w.logs[i])
+			logsOnDate = append(logsOnDate, wl.logs[i])
 		}
 	}
 	return logsOnDate, nil
 }
 
 // function that will summarize all timeSpentSeconds in logs slice and return it
-func (w *WorkLogs) TotalTimeSpent() int {
+func (wl *WorkLogs) TotalTimeSpent() int {
 	var totalTime int
-	for _, log := range w.logs {
+	for _, log := range wl.logs {
 		totalTime += log.TimeSpentSeconds
 	}
 	return totalTime
 }
 
-func (w *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error) {
+func (wli *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error) {
 	var issuesOnDate []*WorkLogIssue
-	if date.Before(w.startDate) || date.After(w.endDate) {
+	if date.Before(wli.startDate) || date.After(wli.endDate) {
 		return nil, errors.New("Date is out of worklogs range")
 	}
 	truncatedDate := (*date).Truncate(24 * time.Hour)
-	for i, issue := range w.issues {
+	for i, issue := range wli.issues {
 		// FIXME should be in local timezone PariseInLocation - but it's not working
 		logDate, err := time.Parse(dateLayout, issue.WorkLog.StartDate)
 		logDate = logDate.Truncate(24 * time.Hour)
@@ -121,7 +121,7 @@ func (w *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error) 
 			return nil, err
 		}
 		if truncatedDate.Equal(logDate.Truncate(24 * time.Hour)) {
-			issuesOnDate = append(issuesOnDate, &w.issues[i])
+			issuesOnDate = append(issuesOnDate, &wli.issues[i])
 		}
 	}
 	return issuesOnDate, nil
@@ -174,7 +174,7 @@ func TimeSpentToSeconds(timeSpent string) int {
 	return timeSpentSeconds
 }
 
-func (workLog *WorkLog) Update(timeSpent string) error {
+func (wl *WorkLog) Update(timeSpent string) error {
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 
 	// make update request to tempo if tempoWrorklogId is set
@@ -183,18 +183,18 @@ func (workLog *WorkLog) Update(timeSpent string) error {
 	var headers map[string]string
 
 	// updating meetings does not work even through tempo? w00t
-	if workLog.TempoWorklogid != 0 {
+	if wl.TempoWorklogid != 0 {
 		payload := WorkLogUpdate{
-			IssueKey:         workLog.Issue.Key,
-			StartDate:        workLog.StartDate,
-			StartTime:        workLog.StartTime,
-			Description:      workLog.Description,
-			AuthorAccountId:  workLog.Author.AccountId,
+			IssueKey:         wl.Issue.Key,
+			StartDate:        wl.StartDate,
+			StartTime:        wl.StartTime,
+			Description:      wl.Description,
+			AuthorAccountId:  wl.Author.AccountId,
 			TimeSpentSeconds: timeSpentInSeconds,
 		}
 		payloadJson, _ := json.Marshal(payload)
 		requestBody = bytes.NewBuffer(payloadJson)
-		requestUrl = fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, workLog.TempoWorklogid)
+		requestUrl = fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, wl.TempoWorklogid)
 		headers = map[string]string{
 			"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
 			"Content-Type":  "application/json",
@@ -206,7 +206,7 @@ func (workLog *WorkLog) Update(timeSpent string) error {
 		payloadJson, _ := json.Marshal(payload)
 		requestBody = bytes.NewBuffer(payloadJson)
 		// FIXME use tempo api to update worklog, unless there is not tempoId in worklog
-		requestUrl = fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false", Config.JiraUrl, workLog.Issue.Key, workLog.JiraWorklogid)
+		requestUrl = fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false", Config.JiraUrl, wl.Issue.Key, wl.JiraWorklogid)
 		headers = map[string]string{
 			"Authorization": getJiraAuthorizationHeader(),
 			"Content-Type":  "application/json",
@@ -217,11 +217,11 @@ func (workLog *WorkLog) Update(timeSpent string) error {
 		return err
 	}
 
-	workLog.TimeSpentSeconds = timeSpentInSeconds
+	wl.TimeSpentSeconds = timeSpentInSeconds
 	return nil
 }
 
-func (workLogs *WorkLogs) Delete(worklog *WorkLog) error {
+func (wl *WorkLogs) Delete(worklog *WorkLog) error {
 	logrus.Infof("Deleting worklog ... %+v", worklog)
 	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, worklog.TempoWorklogid)
 	headers := map[string]string{
@@ -240,9 +240,9 @@ func (workLogs *WorkLogs) Delete(worklog *WorkLog) error {
 			break
 		}
 	}
-	for i, log := range workLogs.logs {
+	for i, log := range wl.logs {
 		if log.JiraWorklogid == worklog.JiraWorklogid {
-			workLogs.logs = append(workLogs.logs[:i], workLogs.logs[i+1:]...)
+			wl.logs = append(wl.logs[:i], wl.logs[i+1:]...)
 			break
 		}
 	}
