@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 func getJiraAuthorizationHeader() string {
@@ -14,11 +15,11 @@ func getJiraAuthorizationHeader() string {
 	return authorizationHeader
 }
 
-func (issue Issue) NewWorkLog(timeSpent string) (WorkLog, error) {
+func (issue Issue) NewWorkLog(logTime *time.Time, timeSpent string) (WorkLog, error) {
 	payload := map[string]string{
 		"timeSpent":      timeSpent,
 		"adjustEstimate": "leave",
-		"started":        app.time.Format("2006-01-02T15:04:05.000-0700"),
+		"started":        logTime.Format("2006-01-02T15:04:05.000-0700"),
 	}
 	payloadJson, _ := json.Marshal(payload)
 	requestBody := bytes.NewBuffer(payloadJson)
@@ -47,8 +48,8 @@ func (issue Issue) NewWorkLog(timeSpent string) (WorkLog, error) {
 
 	worklog := WorkLog{
 		JiraWorklogid: jiraWorklogId,
-		StartDate:     app.time.Format(dateLayout),
-		StartTime:     app.time.Format("15:04:05"),
+		StartDate:     logTime.Format(dateLayout),
+		StartTime:     logTime.Format("15:04:05"),
 		Author: struct { // FIXME oh my god what a mess
 			Self        string `json:"self"`
 			AccountId   string `json:"accountId"`

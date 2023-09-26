@@ -1,9 +1,12 @@
 package gojira
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/sirupsen/logrus"
+	"strings"
 	"time"
 )
 
@@ -167,11 +170,58 @@ func (d *DayView) loadLatest() {
 	})
 }
 
+// DateRange is a struct for holding the start and end dates
+type DateRange struct {
+	StartDate time.Time
+	EndDate   time.Time
+}
+
+func ParseDateRange(dateStr string) (DateRange, error) {
+	// Define the expected date layout
+	const layout = "2006-01-02"
+	var startDate, endDate time.Time
+	var err error
+
+	// Check if the string contains "->", indicating a range
+	if strings.Contains(dateStr, "->") {
+		dateParts := strings.Split(dateStr, "->")
+		if len(dateParts) != 2 {
+			return DateRange{}, errors.New("invalid date range format")
+		}
+
+		// Parse the start and end dates
+		startDate, err = time.Parse(layout, dateParts[0])
+		if err != nil {
+			return DateRange{}, fmt.Errorf("error parsing start date: %w", err)
+		}
+
+		endDate, err = time.Parse(layout, dateParts[1])
+		if err != nil {
+			return DateRange{}, fmt.Errorf("error parsing end date: %w", err)
+		}
+
+	} else {
+		// Parse the single date
+		startDate, err = time.Parse(layout, dateStr)
+		if err != nil {
+			return DateRange{}, fmt.Errorf("error parsing date: %w", err)
+		}
+		endDate = startDate
+	}
+
+	return DateRange{
+		StartDate: startDate,
+		EndDate:   endDate,
+	}, nil
+}
+
 func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	var form *tview.Form
 
 	newWorklog := func() {
-		timeSpent := form.GetFormItem(0).(*tview.InputField).GetText()
+
+		logTime := form.GetFormItem(0).(*tview.InputField).GetText()
+		timeSpent := form.GetFormItem(1).(*tview.InputField).GetText()
 		app.ui.flex.SetTitle(" gojira - adding worklog... ")
 		go func() {
 			issue, err := GetIssue(issues[row].Key)
@@ -179,7 +229,16 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 				app.ui.errorView.ShowError(err.Error())
 				return
 			}
-			err = issue.LogWork(timeSpent)
+			// TODO use ParseDateRange and LogWork for each day in range
+			dateRange, err := ParseDateRange(logTime)
+			if err != nil {
+				app.ui.errorView.ShowError(err.Error())
+				return
+			}
+			for day := dateRange.StartDate; day.Before(dateRange.EndDate.AddDate(0, 0, 1)); day = day.AddDate(0, 0, 1) {
+				logrus.Infof("Logging work for %s / %s / %s", day.Format(dateLayout), issue, timeSpent)
+				issue.LogWork(&day, timeSpent)
+			}
 			app.ui.flex.SetTitle(" gojira ")
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
@@ -192,6 +251,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	}
 
 	form = tview.NewForm().
+		AddInputField("Date", app.time.Format(dateLayout), 30, nil, nil).
 		AddInputField("Time spent", "", 20, nil, nil).
 		AddButton("Add", newWorklog).
 		AddButton("Cancel", func() {

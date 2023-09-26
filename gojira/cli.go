@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 )
 
 var WorkLogsCommand = &cli.Command{
@@ -86,7 +87,7 @@ var IssuesCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		err = issue.LogWork(timeSpent)
+		err = issue.LogWork(app.time, timeSpent)
 		if err != nil {
 			return err
 		}
@@ -123,7 +124,7 @@ var LogWorkCommand = &cli.Command{
 			}
 		}
 
-		issue.LogWork(timeSpent)
+		issue.LogWork(app.time, timeSpent)
 		return nil
 	},
 }
@@ -172,7 +173,7 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 		if err != nil {
 			return nil
 		}
-		err = issue.LogWork(timeSpent)
+		err = issue.LogWork(app.time, timeSpent)
 		if err != nil {
 			return err
 		}
@@ -218,9 +219,9 @@ Save it and you should ready to go!
 	},
 }
 
-func (issue Issue) LogWork(timeSpent string) error {
-	logrus.Infof("Logging %s of time to ticket %s at %s", timeSpent, issue.Key, app.time)
-	todayWorklog, err := app.workLogs.LogsOnDate(app.time) // FIXME error handling
+func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
+	logrus.Infof("Logging %s of time to ticket %s at %s", timeSpent, issue.Key, logTime)
+	todayWorklog, err := app.workLogs.LogsOnDate(logTime) // FIXME error handling
 	if err != nil {
 		return err
 	}
@@ -240,14 +241,14 @@ func (issue Issue) LogWork(timeSpent string) error {
 			}
 		}
 	}
-	worklog, err := issue.NewWorkLog(timeSpent)
+	worklog, err := issue.NewWorkLog(logTime, timeSpent)
 	if err != nil {
 		return err
 	}
 	// add this workload to global object
 	app.workLogs.logs = append(app.workLogs.logs, &worklog)
 	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{Issue: issue, WorkLog: &worklog})
-	todayWorklog, err = app.workLogs.LogsOnDate(app.time)
+	todayWorklog, err = app.workLogs.LogsOnDate(logTime)
 	if err != nil {
 		return err
 	}
