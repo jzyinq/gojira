@@ -71,10 +71,14 @@ Just remember to urldecode it. Save it and you should ready to go!
 
 - [ ] unify workLogs and worklogsIssues structs - use one for both
   - Reduce jira/tempo spaghetti and unnecessary structs and functions
+- While deleting freshly set worklog, fetch it's data from jira to delete it properly - currently there is:
+  ```
+  The worklog has either been deleted or you no longer have permission to view it
+  ```
+- [ ] ticket status change prompt after logging time
 - [x] Add worklogs from ui
 - [ ] tests
 - [x] gojira worklog delete option
-- [ ] ticket status change prompt after logging time
 - [x] recent jira task list for easy time logging
 - [x] delete worklogs
 - [x] error handling
@@ -90,4 +94,5 @@ Just remember to urldecode it. Save it and you should ready to go!
 - [x] interactive edit worklog prompt
 - [x] detect git branch name (jira ticket)
 - [x] display todays logged working hours
-- NewWorklog view - add input for date and date period optionally
+- [x] NewWorklog view - add input for date and date period optionally
+  
