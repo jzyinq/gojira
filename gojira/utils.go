@@ -2,27 +2,57 @@ package gojira
 
 import (
 	"fmt"
+	"github.com/gdamore/tcell/v2"
 	"github.com/pkg/browser"
 	"github.com/urfave/cli/v2"
 	"math"
 	"os/exec"
 	"regexp"
+	"time"
 )
 
-func getWorkLogsFromWorkLogIssues(workLogIssues []WorkLogIssue) []WorkLog {
-	var workLogs []WorkLog
+const dateLayout = "2006-01-02"
+
+func getWorkLogsFromWorkLogIssues(workLogIssues []*WorkLogIssue) []*WorkLog {
+	var workLogs []*WorkLog
 	for _, workLog := range workLogIssues {
 		workLogs = append(workLogs, workLog.WorkLog)
 	}
 	return workLogs
 }
 
-func CalculateTimeSpent(workLogs []WorkLog) string {
+func CalculateTimeSpent(workLogs []*WorkLog) int {
 	timeSpentInSeconds := 0
 	for _, workLog := range workLogs {
 		timeSpentInSeconds += workLog.TimeSpentSeconds
 	}
-	return FormatTimeSpent(timeSpentInSeconds)
+	return timeSpentInSeconds
+}
+
+func GetTimeSpentColorTag(timeSpentInSeconds int) string {
+	switch {
+	case timeSpentInSeconds < 8*60*60 && timeSpentInSeconds > 0:
+		return "[yellow]"
+	case timeSpentInSeconds == 8*60*60:
+		return "[green]"
+	case timeSpentInSeconds > 8*60*60:
+		return "[purple]"
+	default:
+		return "[white]"
+	}
+}
+
+func GetTimeSpentColor(timeSpentInSeconds int) tcell.Color {
+	switch {
+	case timeSpentInSeconds < 8*60*60 && timeSpentInSeconds > 0:
+		return tcell.ColorYellow
+	case timeSpentInSeconds == 8*60*60:
+		return tcell.ColorGreen
+	case timeSpentInSeconds > 8*60*60:
+		return tcell.ColorPurple
+	default:
+		return tcell.ColorWhite
+	}
 }
 
 func FormatTimeSpent(timeSpentSeconds int) string {
@@ -43,7 +73,7 @@ func FormatTimeSpent(timeSpentSeconds int) string {
 
 func ResolveIssueKey(c *cli.Context) string {
 	issueKey := ""
-	if 	c.App.Metadata["JiraIssue"] != nil {
+	if c.App.Metadata["JiraIssue"] != nil {
 		issueKey = fmt.Sprintf("%s", c.App.Metadata["JiraTicket"])
 	}
 	issueKey = FindIssueKeyInString(c.Args().Get(0))
@@ -77,4 +107,44 @@ func OpenUrl(url string) {
 		fmt.Println(err)
 		return
 	}
+}
+
+func WeekRange(today time.Time) (time.Time, time.Time) {
+	y, w := today.ISOWeek()
+	firstDay := time.Date(y, 1, 1, 0, 0, 0, 0, time.UTC)
+	for firstDay.Weekday() != time.Monday {
+		firstDay = firstDay.AddDate(0, 0, -1)
+	}
+
+	for {
+		y1, w1 := firstDay.ISOWeek()
+		if y1 == y && w1 == w {
+			break
+		}
+		firstDay = firstDay.AddDate(0, 0, 1)
+	}
+
+	lastDay := firstDay.AddDate(0, 0, 6) // Adding 6 days to get to Sunday
+	return firstDay.Truncate(24 * time.Hour), lastDay.Truncate(24 * time.Hour)
+}
+
+func MonthRange(t *time.Time) (time.Time, time.Time) {
+	firstDayOfCurrentMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
+	firstDayOfNextMonth := firstDayOfCurrentMonth.AddDate(0, 1, 0)
+	return firstDayOfCurrentMonth, firstDayOfNextMonth
+}
+
+func workingHoursInMonth(year int, month time.Month) int {
+	t := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+
+	totalWorkHours := 0
+
+	for t.Month() == month {
+		if t.Weekday() != time.Saturday && t.Weekday() != time.Sunday {
+			totalWorkHours += 8
+		}
+		t = t.AddDate(0, 0, 1)
+	}
+
+	return totalWorkHours
 }

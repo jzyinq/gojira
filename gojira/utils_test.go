@@ -26,7 +26,7 @@ func TestFormatTimeSpent(t *testing.T) {
 }
 
 func TestCalculateTimeSpent(t *testing.T) {
-	fixture := []WorkLog{
+	fixture := []*WorkLog{
 		{TimeSpentSeconds: 60},   // 1m
 		{TimeSpentSeconds: 3600}, // 1h
 		{TimeSpentSeconds: 7200}, // 2h
@@ -35,7 +35,7 @@ func TestCalculateTimeSpent(t *testing.T) {
 	}
 	expectedTimeSpent := "3h 32m"
 
-	actualTimeSpent := CalculateTimeSpent(fixture)
+	actualTimeSpent := FormatTimeSpent(CalculateTimeSpent(fixture))
 
 	if actualTimeSpent != expectedTimeSpent {
 		t.Errorf("Incorrect timeSpent - got %s instead of %s", actualTimeSpent, expectedTimeSpent)

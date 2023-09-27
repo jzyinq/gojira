@@ -1,9 +1,10 @@
 package gojira
 
 import (
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
@@ -12,25 +13,28 @@ func SendHttpRequest(
 	requestUrl string,
 	requestBody io.Reader,
 	headers map[string]string,
-	successfulStatusCode int) []byte {
+	successfulStatusCode int) ([]byte, error) {
 	client := &http.Client{}
+	logrus.Infof("Sending %s request to %s", requestMethod, requestUrl)
+	logrus.Infof("Request body:\n%s", requestBody)
 	req, err := http.NewRequest(requestMethod, requestUrl, requestBody)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	for name, value := range headers {
 		req.Header.Set(name, value)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatalf("An Error Occured %v", err)
+		return nil, err
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
 	if resp.StatusCode != successfulStatusCode {
-		log.Fatalf("There was an error when performing request:\n%s %s\nResponse code was: %d\nResponse body:\n%s", requestMethod, requestUrl, resp.StatusCode, string(body))
+		logrus.Errorf("There was an error when performing request:\n%s %s\nResponse code was: %d\nResponse body:\n%s", requestMethod, requestUrl, resp.StatusCode, string(body))
+		return nil, fmt.Errorf("There was an error when performing request:\n%s %s\nResponse code was: %d\nResponse body:\n%s", requestMethod, requestUrl, resp.StatusCode, string(body))
 	}
-	return body
+	return body, nil
 }

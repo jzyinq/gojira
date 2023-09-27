@@ -6,7 +6,6 @@ import (
 	"github.com/manifoldco/promptui"
 	"regexp"
 	"strings"
-	"text/template"
 )
 
 func PromptForTimeSpent(promptLabel string) (string, error) {
@@ -69,47 +68,4 @@ func PromptForIssueSelection(issues []Issue) (Issue, error) {
 	}
 
 	return issues[i], nil
-}
-
-func PromptForWorkLogSelection(workLogIssues []WorkLogIssue) (*WorkLog, error) {
-	//add timeSpent to available template functions
-	funcMap := template.FuncMap{"timeSpent": FormatTimeSpent}
-	//preserve previous functions
-	for k, v := range promptui.FuncMap {
-		funcMap[k] = v
-	}
-
-	templates := &promptui.SelectTemplates{
-		Label:    "{{ .Issue.Key }}",
-		Active:   "-> {{ .Issue.Key | cyan }} [{{ .WorkLog.TimeSpentSeconds | timeSpent }}] {{ .Issue.Fields.Summary }}",
-		Inactive: "  {{ .Issue.Key | cyan }} [{{ .WorkLog.TimeSpentSeconds | timeSpent }}] {{ .Issue.Fields.Summary }}",
-		Selected: "Selected work log {{ .Issue.Key | cyan }} [{{ .WorkLog.TimeSpentSeconds | timeSpent }}]",
-		FuncMap:  funcMap,
-	}
-
-	searcher := func(input string, index int) bool {
-		issue := workLogIssues[index]
-		name := strings.Replace(strings.ToLower(issue.Issue.Key+issue.Issue.Fields.Summary), " ", "", -1)
-		input = strings.Replace(strings.ToLower(input), " ", "", -1)
-
-		return strings.Contains(name, input)
-	}
-
-	promptSelect := promptui.Select{
-		Label:     "Today's work logs [" + CalculateTimeSpent(getWorkLogsFromWorkLogIssues(workLogIssues)) + "]",
-		Items:     workLogIssues,
-		Templates: templates,
-		Size:      5,
-		Searcher:  searcher,
-		HideHelp:  true,
-	}
-
-	i, _, err := promptSelect.Run()
-
-	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
-		return &WorkLog{}, err
-	}
-
-	return &workLogIssues[i].WorkLog, nil
 }

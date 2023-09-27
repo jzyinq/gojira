@@ -3,63 +3,94 @@ package gojira
 import (
 	"fmt"
 	"github.com/manifoldco/promptui"
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 	"sync"
+	"time"
 )
 
 var WorkLogsCommand = &cli.Command{
 	Name:  "worklogs",
 	Usage: "Edit your today's work log",
 	Action: func(c *cli.Context) error {
-		var workLogIssues []WorkLogIssue
-		// goroutine awesomeness
-		waitGroup := sync.WaitGroup{}
-		for _, workLog := range GetWorkLogs() {
-			waitGroup.Add(1)
-			go func(workLog WorkLog) {
-				workLogIssues = append(workLogIssues, WorkLogIssue{WorkLog: workLog, Issue: GetIssue(workLog.Issue.Key)})
-				waitGroup.Done()
-			}(workLog)
-		}
-		waitGroup.Wait()
-
-		if len(workLogIssues) == 0 {
-			fmt.Println("You don't have any logged work today.")
-			return nil
-		}
-		// goroutine awesomeness
-
-		workLog, err := PromptForWorkLogSelection(workLogIssues)
+		newUi()
+		loadWorklogs()
+		err := app.ui.app.Run()
 		if err != nil {
-			log.Fatalln(err)
+			return err
 		}
-		timeSpent, err := PromptForTimeSpent("Update work log")
-		if err != nil {
-			log.Fatalln(err)
-		}
-		workLog.Update(timeSpent)
 
-		fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(getWorkLogsFromWorkLogIssues(workLogIssues)))
 		return nil
 	},
+}
+
+func NewWorkLogIssues() error {
+	// goroutine awesomeness
+	var err error
+	startDate, endDate := MonthRange(app.time)
+	if app.workLogsIssues.startDate == startDate && app.workLogsIssues.endDate == endDate {
+		return nil
+	}
+	if app.workLogsIssues.startDate != startDate || app.workLogsIssues.endDate != endDate {
+		app.workLogs, err = GetWorkLogs()
+		if err != nil {
+			return err
+		}
+		app.ui.calendar.update()
+		app.ui.summary.update()
+	}
+	app.workLogsIssues.startDate = startDate
+	app.workLogsIssues.endDate = endDate
+	app.workLogsIssues.issues = []WorkLogIssue{}
+	waitGroup := sync.WaitGroup{}
+	var errors []error
+	errCh := make(chan error, len(app.workLogs.logs))
+	for i, _ := range app.workLogs.logs {
+		waitGroup.Add(1)
+		go func(workLog *WorkLog) {
+			issue, err := GetIssue(workLog.Issue.Key)
+			if err != nil {
+				errCh <- err // Send the error to the channel.
+				return
+			}
+			app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{WorkLog: workLog, Issue: issue})
+			waitGroup.Done()
+		}(app.workLogs.logs[i])
+	}
+	waitGroup.Wait()
+	close(errCh)
+	// Collect all the errors.
+	for err := range errCh {
+		errors = append(errors, err)
+	}
+	if len(errors) > 0 {
+		return errors[0]
+	}
+	return nil
 }
 
 var IssuesCommand = &cli.Command{
 	Name:  "issues",
 	Usage: "Show currently assigned issues",
 	Action: func(context *cli.Context) error {
-		lastTickets := GetLatestIssues()
+		lastTickets, err := GetLatestIssues()
+		if err != nil {
+			return err
+		}
 		issue, err := PromptForIssueSelection(lastTickets.Issues)
 		if err != nil {
-			return nil
+			return err
 		}
 		timeSpent, err := PromptForTimeSpent("Add work log")
 		if err != nil {
-			return nil
+			return err
 		}
-		issue.LogWork(timeSpent)
+		err = issue.LogWork(app.time, timeSpent)
+		if err != nil {
+			return err
+		}
 		return nil
 	},
 }
@@ -80,18 +111,20 @@ var LogWorkCommand = &cli.Command{
 		if issueKey == "" {
 			log.Fatalln("No issue key given / detected in git branch.")
 		}
-		issue := GetIssue(issueKey)
+		issue, err := GetIssue(issueKey)
+		if err != nil {
+			return err
+		}
 		fmt.Printf("%s %s\n", issue.Key, issue.Fields.Summary)
 		fmt.Printf("Status: %s\n", issue.Fields.Status.Name)
 		if timeSpent == "" {
-			var err error
 			timeSpent, err = PromptForTimeSpent("Add work log")
 			if err != nil {
-				log.Fatalln(err)
+				return err
 			}
 		}
 
-		issue.LogWork(timeSpent)
+		issue.LogWork(app.time, timeSpent)
 		return nil
 	},
 }
@@ -130,14 +163,20 @@ var DefaultAction = func(c *cli.Context) error {
 var GitOrIssueListAction = func(c *cli.Context) error {
 	issueKey := ResolveIssueKey(c)
 	if issueKey != "" {
-		issue := GetIssue(issueKey)
+		issue, err := GetIssue(issueKey)
+		if err != nil {
+			return err
+		}
 		fmt.Printf("Status: %s\nSummary: %s\n", issue.Fields.Status.Name, issue.Fields.Summary)
 		// log time or view issue
 		timeSpent, err := PromptForTimeSpent("Add work log")
 		if err != nil {
 			return nil
 		}
-		issue.LogWork(timeSpent)
+		err = issue.LogWork(app.time, timeSpent)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -180,22 +219,39 @@ Save it and you should ready to go!
 	},
 }
 
-func (issue Issue) LogWork(timeSpent string) {
-	workLogs := GetWorkLogs()
+func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
+	logrus.Infof("Logging %s of time to ticket %s at %s", timeSpent, issue.Key, logTime)
+	todayWorklog, err := app.workLogs.LogsOnDate(logTime) // FIXME error handling
+	if err != nil {
+		return err
+	}
 	if Config.UpdateExistingWorkLog {
-		for index, workLog := range workLogs {
+		for index, workLog := range todayWorklog {
 			if workLog.Issue.Key == issue.Key {
-				fmt.Println("Updating existing worklog...")
+				//fmt.Println("Updating existing worklog...")
 				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
-				workLogs[index].Update(timeSpentSum)
-				fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, workLog.Issue.Key)
-				fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(workLogs))
-				return
+				err := todayWorklog[index].Update(timeSpentSum)
+				if err != nil {
+					return err
+				}
+				// FIXME - this should be only in cli mode
+				//fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, workLog.Issue.Key)
+				//fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(todayWorklog)))
+				return nil
 			}
 		}
 	}
-	issue.NewWorkLog(timeSpent)
-	// naive issue struct for quicker summary
-	workLogs = append(workLogs, WorkLog{TimeSpentSeconds: TimeSpentToSeconds(timeSpent)})
-	fmt.Printf("Currently logged time: %s\n", CalculateTimeSpent(workLogs))
+	worklog, err := issue.NewWorkLog(logTime, timeSpent)
+	if err != nil {
+		return err
+	}
+	// add this workload to global object
+	app.workLogs.logs = append(app.workLogs.logs, &worklog)
+	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{Issue: issue, WorkLog: &worklog})
+	todayWorklog, err = app.workLogs.LogsOnDate(logTime)
+	if err != nil {
+		return err
+	}
+	//fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(todayWorklog)))
+	return nil
 }

@@ -5,7 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
+	"strconv"
+	"time"
 )
 
 func getJiraAuthorizationHeader() string {
@@ -14,21 +15,54 @@ func getJiraAuthorizationHeader() string {
 	return authorizationHeader
 }
 
-func (issue Issue) NewWorkLog(timeSpent string) {
+func (issue Issue) NewWorkLog(logTime *time.Time, timeSpent string) (WorkLog, error) {
 	payload := map[string]string{
 		"timeSpent":      timeSpent,
 		"adjustEstimate": "leave",
+		"started":        logTime.Format("2006-01-02T15:04:05.000-0700"),
 	}
 	payloadJson, _ := json.Marshal(payload)
 	requestBody := bytes.NewBuffer(payloadJson)
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog", Config.JiraUrl, issue.Key)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog?notifyUsers=false", Config.JiraUrl, issue.Key)
 	headers := map[string]string{
 		"Authorization": getJiraAuthorizationHeader(),
 		"Content-Type":  "application/json",
 	}
 
-	SendHttpRequest("POST", requestUrl, requestBody, headers, 201)
-	fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, issue.Key)
+	response, err := SendHttpRequest("POST", requestUrl, requestBody, headers, 201)
+	if err != nil {
+		return WorkLog{}, err
+	}
+
+	var newWorklog NewWorkLog
+	err = json.Unmarshal(response, &newWorklog)
+	if err != nil {
+		return WorkLog{}, err
+	}
+	//fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, issue.Key)
+	// FIXME it seems that this not not a tempo id, but some jira internal id
+	jiraWorklogId, err := strconv.Atoi(newWorklog.ID)
+	if err != nil {
+		return WorkLog{}, err
+	}
+
+	worklog := WorkLog{
+		JiraWorklogid: jiraWorklogId,
+		StartDate:     logTime.Format(dateLayout),
+		StartTime:     logTime.Format("15:04:05"),
+		Author: struct { // FIXME oh my god what a mess
+			Self        string `json:"self"`
+			AccountId   string `json:"accountId"`
+			DisplayName string `json:"displayName"`
+		}{Self: newWorklog.Self, AccountId: newWorklog.Author.Accountid, DisplayName: newWorklog.Author.Displayname},
+		TimeSpentSeconds: newWorklog.Timespentseconds,
+		Issue: struct { // FIXME oh my god what a mess
+			Self string `json:"self"`
+			Key  string `json:"key"`
+			ID   int    `json:"id"`
+		}{Self: "", Key: issue.Key, ID: 0},
+	}
+	return worklog, nil
 }
 
 type JQLSearch struct {
@@ -68,7 +102,6 @@ type Issue struct {
 			StatusCategory struct {
 				Self      string `json:"self"`
 				ID        int    `json:"id"`
-				Key       string `json:"key"`
 				ColorName string `json:"colorName"`
 				Name      string `json:"name"`
 			} `json:"statusCategory"`
@@ -76,7 +109,7 @@ type Issue struct {
 	} `json:"fields"`
 }
 
-func GetLatestIssues() JQLResponse {
+func GetLatestIssues() (JQLResponse, error) {
 	payload := &JQLSearch{
 		Expand:       []string{"names"},
 		Jql:          "assignee in (currentUser()) ORDER BY updated DESC, created DESC",
@@ -92,26 +125,73 @@ func GetLatestIssues() JQLResponse {
 		"Authorization": getJiraAuthorizationHeader(),
 		"Content-Type":  "application/json",
 	}
-	response := SendHttpRequest("POST", requestUrl, requestBody, headers, 200)
+	response, err := SendHttpRequest("POST", requestUrl, requestBody, headers, 200)
+	if err != nil {
+		return JQLResponse{}, err
+	}
 	var jqlResponse JQLResponse
 	err = json.Unmarshal(response, &jqlResponse)
 	if err != nil {
-		panic(err)
+		return JQLResponse{}, err
 	}
-	return jqlResponse
+	return jqlResponse, nil
 }
 
-func GetIssue(issueKey string) Issue {
+type NewWorkLog struct {
+	Self   string `json:"self"`
+	Author struct {
+		Self         string `json:"self"`
+		Accountid    string `json:"accountId"`
+		Emailaddress string `json:"emailAddress"`
+		Avatarurls   struct {
+			Four8X48  string `json:"48x48"`
+			Two4X24   string `json:"24x24"`
+			One6X16   string `json:"16x16"`
+			Three2X32 string `json:"32x32"`
+		} `json:"avatarUrls"`
+		Displayname string `json:"displayName"`
+		Active      bool   `json:"active"`
+		Timezone    string `json:"timeZone"`
+		Accounttype string `json:"accountType"`
+	} `json:"author"`
+	Updateauthor struct {
+		Self         string `json:"self"`
+		Accountid    string `json:"accountId"`
+		Emailaddress string `json:"emailAddress"`
+		Avatarurls   struct {
+			Four8X48  string `json:"48x48"`
+			Two4X24   string `json:"24x24"`
+			One6X16   string `json:"16x16"`
+			Three2X32 string `json:"32x32"`
+		} `json:"avatarUrls"`
+		Displayname string `json:"displayName"`
+		Active      bool   `json:"active"`
+		Timezone    string `json:"timeZone"`
+		Accounttype string `json:"accountType"`
+	} `json:"updateAuthor"`
+	Created          string `json:"created"`
+	Updated          string `json:"updated"`
+	Started          string `json:"started"`
+	Timespent        string `json:"timeSpent"`
+	Timespentseconds int    `json:"timeSpentSeconds"`
+	ID               string `json:"id"`
+	Issueid          string `json:"issueId"`
+}
+
+func GetIssue(issueKey string) (Issue, error) {
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s?fields=summary,status", Config.JiraUrl, issueKey)
 	headers := map[string]string{
 		"Authorization": getJiraAuthorizationHeader(),
 		"Content-Type":  "application/json",
 	}
-	response := SendHttpRequest("GET", requestUrl, nil, headers, 200)
-	var jiraIssue Issue
-	err := json.Unmarshal(response, &jiraIssue)
+	response, err := SendHttpRequest("GET", requestUrl, nil, headers, 200)
 	if err != nil {
-		log.Fatalln(err)
+		return Issue{}, err
 	}
-	return jiraIssue
+	var jiraIssue Issue
+	err = json.Unmarshal(response, &jiraIssue)
+	if err != nil {
+		return Issue{}, err
+	}
+	return jiraIssue, nil
 }

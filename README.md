@@ -1,6 +1,6 @@
 # gojira
 
-Small cli helper for adding/updating work logs in Jira / Tempo. 
+Small cli helper for adding/updating work logs in Jira / Tempo.
 Based on [urfave/cli](https://github.com/urfave/cli/) and [manifoldco/promptui](https://github.com/manifoldco/promptui).
 
 ## Features
@@ -23,14 +23,16 @@ Displays today's work logs - select one to edit existing work log.
 
 Adds or updates existing `ISSUE` work log with given `TIME_SPENT`. Is `TIME_SPENT` is not provided you will be prompted
 for it.
-- `ISSUE` could be straight Issue Key like `TICKET-999`, jira url like `https://instance.atlassian.net/browse/TICKET-999`
+
+- `ISSUE` could be straight Issue Key like `TICKET-999`, jira url
+  like `https://instance.atlassian.net/browse/TICKET-999`
   or any other string containing single issue key. Uppercase is important!
 - `TIME_SPENT` accepts jira format like `1h30m / 2h 20m`.
 
 ## Installation
 
 [Check releases page](https://github.com/jzyinq/gojira/releases)
-or clone repository and run `make install`. 
+or clone repository and run `make install`.
 
 ## Configuration
 
@@ -54,19 +56,36 @@ curl --request GET \
   --url "$GOJIRA_JIRA_INSTANCE_URL/rest/api/3/user/bulk/migration?username=$GOJIRA_JIRA_LOGIN" \
   --header "Authorization: Basic $(echo -n $GOJIRA_JIRA_LOGIN:$GOJIRA_JIRA_TOKEN | base64)"
 ```
+
 If you receive `unknown` as `accountId`, just get it from your jira profile url instead:
+
 ```
 https://<INSTANCE>.atlassian.net/jira/people/<ACCOUNT_ID>
 ```
+
 Just remember to urldecode it. Save it and you should ready to go!
 
 ## [Changelog](./CHANGELOG.md)
 
 ## Todo list
 
-- [ ] tests
-- [ ] gojira worklog delete option
+- [ ] unify workLogs and worklogsIssues structs - use one for both
+  - Reduce jira/tempo spaghetti and unnecessary structs and functions
+- While deleting freshly set worklog, fetch it's data from jira to delete it properly - currently there is:
+  ```
+  The worklog has either been deleted or you no longer have permission to view it
+  ```
 - [ ] ticket status change prompt after logging time
+- [x] Add worklogs from ui
+- [ ] tests
+- [x] gojira worklog delete option
+- [x] recent jira task list for easy time logging
+- [x] delete worklogs
+- [x] error handling
+- [x] call for worklogs for whole ~week~ month instead of day
+- [x] show calendar with colorized dates
+    - fix colors git
+    - [x] show by colors if worklog is incomplete/full/overhours for date-
 - [x] accept full jira url in `gojira log` and scrap issue key from it
 - [x] prompt validation
 - [x] while logging time check if worklog exists - if yes, append logged time (config.UpdateExistingWorkLog)
@@ -75,3 +94,5 @@ Just remember to urldecode it. Save it and you should ready to go!
 - [x] interactive edit worklog prompt
 - [x] detect git branch name (jira ticket)
 - [x] display todays logged working hours
+- [x] NewWorklog view - add input for date and date period optionally
+  

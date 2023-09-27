@@ -1,0 +1,62 @@
+package gojira
+
+import (
+	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli/v2"
+	"log"
+	"os"
+	"time"
+)
+
+type gojira struct {
+	cli            *cli.App
+	ui             *UserInteface
+	time           *time.Time
+	workLogs       WorkLogs
+	workLogsIssues WorkLogsIssues
+}
+
+func Run() {
+	// Open the log file
+	logFile, err := os.OpenFile("/tmp/gojira.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		logrus.Fatalf("Error opening log file: %v", err)
+	}
+	defer logFile.Close()
+	// Set the log output to write to the file
+	logrus.SetOutput(logFile)
+	// Now log messages will be written to the file
+	logrus.Info("Gojira started")
+	appTimer := time.Now().Local()
+	app.ui = &UserInteface{}
+	app.time = &appTimer
+	app.cli = &cli.App{
+		Name: "gojira",
+		Usage: `quickly log time to jira/tempo through cli.
+
+   Calling without arguments will try to detect issue from git branch, 
+   otherwise it will display list of last updated issues you're are assigned to.`,
+		Version: "0.3.1",
+		Before: func(context *cli.Context) error {
+			if context.Args().First() != "config" {
+				// dont' check envs on ConfigCommand
+				PrepareConfig()
+			}
+			return nil
+		},
+		Commands: []*cli.Command{
+			LogWorkCommand,
+			IssuesCommand,
+			WorkLogsCommand,
+			ConfigCommand,
+			ViewIssueCommand,
+		},
+		Action: DefaultAction,
+	}
+	err = app.cli.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+var app gojira

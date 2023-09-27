@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `gojira worklogs` now have a calendar which tracks month of currently selected date 
+  - days are colored depending on time logged
+    - `white` are without any logs 
+    - `yellow` are for incomplete logs 8h hours is considered as full day 
+    - `purple` shows days with exceeded worklogs (> 8 hours) 
+    - `grey` is for weekends by default 
+  - calendar also shows currently log time against estimated work hours for whole month
+- error modal for nicer error display in `gojira worklogs`
+
+### Changed
+- refactor pass which cleans up a bit ui functions
 
 ## [0.3.1] - 2022-03-09
 ### Changed
