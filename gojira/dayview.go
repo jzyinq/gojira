@@ -267,7 +267,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	})
 	form.SetBorder(true).SetTitle("New worklog").SetTitleAlign(tview.AlignLeft)
 	_, _, pwidth, pheight := app.ui.pages.GetRect()
-	form.SetRect(pwidth/2, pheight/2-3, 36, 7)
+	form.SetRect(pwidth/2, pheight/2-3, 36, 9)
 	app.ui.pages.AddPage("worklog-form", form, false, true)
 	return form
 }
