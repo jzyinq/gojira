@@ -95,4 +95,8 @@ Just remember to urldecode it. Save it and you should ready to go!
 - [x] detect git branch name (jira ticket)
 - [x] display todays logged working hours
 - [x] NewWorklog view - add input for date and date period optionally
-  
+- [ ] godtools cli semantics update
+  - `gojira log -i TICKET` -> `gojira log -i TICKET`
+  - `gojira log -i TICKET -t 1h30m`
+  - `gojira` -> `gojira recent`
+  - `gojira` -> `gojira --help`
