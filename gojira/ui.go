@@ -5,14 +5,15 @@ import (
 )
 
 type UserInteface struct {
-	app       *tview.Application
-	flex      *tview.Flex
-	pages     *tview.Pages
-	table     *tview.Table
-	calendar  *Calendar
-	summary   *Summary
-	dayView   *DayView
-	errorView *ErrorView
+	app        *tview.Application
+	flex       *tview.Flex
+	pages      *tview.Pages
+	table      *tview.Table
+	calendar   *Calendar
+	summary    *Summary
+	dayView    *DayView
+	errorView  *ErrorView
+	LoaderView *LoaderView
 }
 
 func newUi() {
@@ -24,6 +25,7 @@ func newUi() {
 	app.ui.summary = NewSummary()
 	app.ui.dayView = NewDayView()
 	app.ui.errorView = NewErrorView()
+	app.ui.LoaderView = NewLoaderView()
 
 	app.ui.flex = tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).

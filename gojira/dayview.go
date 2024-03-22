@@ -100,12 +100,13 @@ func loadWorklogs() {
 		go func() {
 			defer func() { <-loadingWorklogs }()
 			app.ui.flex.SetTitle(" gojira - fetching data... ")
+			app.ui.LoaderView.Show("Fetching worklogs...")
 			err := NewWorkLogIssues()
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 			}
 			app.ui.dayView.update()
-			app.ui.flex.SetTitle(" gojira ")
+			app.ui.LoaderView.Hide()
 		}()
 	default:
 		// The goroutine is already loadingWorklogs, do nothing
