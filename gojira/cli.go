@@ -241,7 +241,7 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 			}
 		}
 	}
-	worklog, err := issue.NewWorkLog(logTime, timeSpent)
+	worklog, err := NewWorkLog(issue.Key, logTime, timeSpent)
 	if err != nil {
 		return err
 	}
