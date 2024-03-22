@@ -71,3 +71,13 @@ func (tc *TempoClient) UpdateWorklog(worklog *WorkLog, timeSpent string) error {
 	_, err := SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
 	return err
 }
+
+func (tc *TempoClient) DeleteWorklog(tempoWorkLogId int) error {
+	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, tempoWorkLogId)
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
+		"Content-Type":  "application/json",
+	}
+	_, err := SendHttpRequest("DELETE", requestUrl, nil, headers, 204)
+	return err
+}

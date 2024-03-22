@@ -2,7 +2,6 @@ package gojira
 
 import (
 	"errors"
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"log"
 	"regexp"
@@ -203,25 +202,15 @@ func (wl *WorkLog) Update(timeSpent string) error {
 func (wl *WorkLogs) Delete(worklog *WorkLog) error {
 	logrus.Infof("Deleting worklog ... %+v", worklog)
 	// make update request to tempo if tempoWorklogId is set
-	var requestUrl string
-	var headers map[string]string
-
+	var err error
 	if worklog.TempoWorklogid != 0 {
-		requestUrl = fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, worklog.TempoWorklogid)
-		headers = map[string]string{
-			"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
-			"Content-Type":  "application/json",
-		}
-		_, err := SendHttpRequest("DELETE", requestUrl, nil, headers, 204)
-		if err != nil {
-			logrus.Debug(worklog)
-			return err
-		}
+		err = NewTempoClient().DeleteWorklog(worklog.TempoWorklogid)
 	} else {
-		err := NewJiraClient().DeleteWorklog(worklog.Issue.Key, worklog.JiraWorklogid)
-		if err != nil {
-			return err
-		}
+		err = NewJiraClient().DeleteWorklog(worklog.Issue.Key, worklog.JiraWorklogid)
+	}
+	if err != nil {
+		logrus.Debug(worklog)
+		return err
 	}
 
 	// FIXME delete is kinda buggy - it messes up pointers and we're getting weird results
