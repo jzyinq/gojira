@@ -134,6 +134,7 @@ func (wli *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error
 func GetWorkLogs() (WorkLogs, error) {
 	// get first day of week nd the last for date in app.time
 	fromDate, toDate := MonthRange(app.time)
+	logrus.Debug("getting worklogs from %s to %s...", fromDate, toDate)
 	workLogsResponse, err := NewTempoClient().GetWorklogs(fromDate, toDate)
 	if err != nil {
 		return WorkLogs{}, err
@@ -168,6 +169,7 @@ func TimeSpentToSeconds(timeSpent string) int {
 }
 
 func (wl *WorkLog) Update(timeSpent string) error {
+	logrus.Debugf("updating worklog ... %+v", wl)
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 	var err error
 
@@ -186,7 +188,7 @@ func (wl *WorkLog) Update(timeSpent string) error {
 }
 
 func (wl *WorkLogs) Delete(worklog *WorkLog) error {
-	logrus.Infof("Deleting worklog ... %+v", worklog)
+	logrus.Debugf("deleting worklog ... %+v", worklog)
 	// make update request to tempo if tempoWorklogId is set
 	var err error
 	if worklog.TempoWorklogid != 0 {
