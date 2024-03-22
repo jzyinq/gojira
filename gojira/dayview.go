@@ -255,12 +255,14 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 		AddInputField("Time spent", "", 20, nil, nil).
 		AddButton("Add", newWorklog).
 		AddButton("Cancel", func() {
+			app.ui.app.SetFocus(app.ui.dayView.latestIssuesList)
 			app.ui.pages.RemovePage("worklog-form")
 		})
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
+			app.ui.app.SetFocus(app.ui.dayView.latestIssuesList)
 			break
 		}
 		return event
@@ -312,11 +314,13 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 		AddButton("Delete", deleteWorklog).
 		AddButton("Cancel", func() {
 			app.ui.pages.RemovePage("worklog-form")
+			app.ui.app.SetFocus(app.ui.dayView.worklogList)
 		})
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
+			app.ui.app.SetFocus(app.ui.dayView.worklogList)
 			break
 		}
 		return event
