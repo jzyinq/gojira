@@ -15,14 +15,14 @@ func NewSummary() *Summary {
 			app.ui.app.Draw()
 		}),
 	}
-	summary.SetText("?h/?h")
-	summary.SetTextAlign(tview.AlignRight)
+	summary.SetText("Calendar ?h/?h")
+	summary.SetTextAlign(tview.AlignCenter)
 	return summary
 }
 
 func (s *Summary) update() {
 	s.SetText(
-		fmt.Sprintf("%s/%dh",
+		fmt.Sprintf("Monthly %s/%dh",
 			FormatTimeSpent(app.workLogs.TotalTimeSpent()), workingHoursInMonth(app.time.Year(), app.time.Month()),
 		),
 	)

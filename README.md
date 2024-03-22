@@ -100,3 +100,4 @@ Just remember to urldecode it. Save it and you should ready to go!
   - `gojira log -i TICKET -t 1h30m`
   - `gojira` -> `gojira recent`
   - `gojira` -> `gojira --help`
+- Remove app.ui.flex from the picture

@@ -9,6 +9,7 @@ import (
 
 type Calendar struct {
 	*tview.Table
+	text  *tview.TextView
 	year  int
 	month time.Month
 	day   int
@@ -19,6 +20,7 @@ func NewCalendar() *Calendar {
 
 	calendar := &Calendar{
 		Table: tview.NewTable(),
+		text:  tview.NewTextView().SetText("Calendar"),
 		year:  t.Year(),
 		month: t.Month(),
 		day:   t.Day(),

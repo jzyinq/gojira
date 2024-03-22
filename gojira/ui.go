@@ -35,7 +35,7 @@ func newUi() {
 			0, 5, false)
 
 	grid := tview.NewGrid().
-		SetRows(2, 0, 2).
+		SetRows(1, 0).
 		SetColumns(0, 27).
 		SetBorders(true)
 	grid.SetTitle(" gojira ")
@@ -43,9 +43,10 @@ func newUi() {
 	grid.AddItem(app.ui.pages, 1, 0, 1, 2, 0, 0, false)
 
 	// Layout for screens wider than 100 cells.
-	grid.AddItem(app.ui.pages, 1, 0, 1, 1, 0, 100, false).
+	grid.AddItem(app.ui.pages, 0, 0, 2, 1, 0, 100, false).
+		AddItem(app.ui.summary, 0, 1, 1, 1, 0, 100, false).
 		AddItem(app.ui.calendar, 1, 1, 1, 1, 0, 100, false)
 
 	app.ui.flex.SetBorder(true).SetTitle(" gojira ")
-	app.ui.app.SetRoot(grid, true).SetFocus(app.ui.pages)
+	app.ui.app.SetRoot(grid, true).SetFocus(app.ui.pages) //FIXME set on proper item after rarrangements
 }

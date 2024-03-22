@@ -60,7 +60,8 @@ func NewDayView() *DayView {
 				return nil
 			}
 			app.ui.app.SetFocus(dayView.worklogList)
-			dayView.worklogStatus.SetText(fmt.Sprintf(">%s", dayView.worklogStatus.GetText(true)))
+			// FIXME not necessary since you can't jump between calendar days on latest issues
+			//dayView.worklogStatus.SetText(fmt.Sprintf("%s", dayView.worklogStatus.GetText(true)))
 			dayView.worklogList.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
 			dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
 			return nil
