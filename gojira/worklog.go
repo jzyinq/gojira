@@ -12,74 +12,13 @@ import (
 	"time"
 )
 
-type WorkLogRequest struct {
-	Self   string `json:"self"`
-	Author struct {
-		Self         string `json:"self"`
-		Accountid    string `json:"accountId"`
-		Emailaddress string `json:"emailAddress"`
-		Avatarurls   struct {
-			Four8X48  string `json:"48x48"`
-			Two4X24   string `json:"24x24"`
-			One6X16   string `json:"16x16"`
-			Three2X32 string `json:"32x32"`
-		} `json:"avatarUrls"`
-		Displayname string `json:"displayName"`
-		Active      bool   `json:"active"`
-		Timezone    string `json:"timeZone"`
-		Accounttype string `json:"accountType"`
-	} `json:"author"`
-	Updateauthor struct {
-		Self         string `json:"self"`
-		Accountid    string `json:"accountId"`
-		Emailaddress string `json:"emailAddress"`
-		Avatarurls   struct {
-			Four8X48  string `json:"48x48"`
-			Two4X24   string `json:"24x24"`
-			One6X16   string `json:"16x16"`
-			Three2X32 string `json:"32x32"`
-		} `json:"avatarUrls"`
-		Displayname string `json:"displayName"`
-		Active      bool   `json:"active"`
-		Timezone    string `json:"timeZone"`
-		Accounttype string `json:"accountType"`
-	} `json:"updateAuthor"`
-	Created          string `json:"created"`
-	Updated          string `json:"updated"`
-	Started          string `json:"started"`
-	Timespent        string `json:"timeSpent"`
-	Timespentseconds int    `json:"timeSpentSeconds"`
-	ID               string `json:"id"`
-	Issueid          string `json:"issueId"`
-}
-
 func NewWorkLog(issueKey string, logTime *time.Time, timeSpent string) (WorkLog, error) {
-	payload := map[string]string{
-		"timeSpent":      timeSpent,
-		"adjustEstimate": "leave",
-		"started":        logTime.Format("2006-01-02T15:04:05.000-0700"),
-	}
-	payloadJson, _ := json.Marshal(payload)
-	requestBody := bytes.NewBuffer(payloadJson)
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog?notifyUsers=false", Config.JiraUrl, issueKey)
-	headers := map[string]string{
-		"Authorization": getJiraAuthorizationHeader(),
-		"Content-Type":  "application/json",
-	}
-
-	response, err := SendHttpRequest("POST", requestUrl, requestBody, headers, 201)
+	workLogResponse, err := CreateWorklog(issueKey, logTime, timeSpent)
 	if err != nil {
 		return WorkLog{}, err
 	}
 
-	var workLogRequest WorkLogRequest
-	err = json.Unmarshal(response, &workLogRequest)
-	if err != nil {
-		return WorkLog{}, err
-	}
-	//fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, issue.Key)
-	// FIXME it seems that this not not a tempo id, but some jira internal id
-	jiraWorklogId, err := strconv.Atoi(workLogRequest.ID)
+	jiraWorklogId, err := strconv.Atoi(workLogResponse.ID)
 	if err != nil {
 		return WorkLog{}, err
 	}
@@ -92,8 +31,8 @@ func NewWorkLog(issueKey string, logTime *time.Time, timeSpent string) (WorkLog,
 			Self        string `json:"self"`
 			AccountId   string `json:"accountId"`
 			DisplayName string `json:"displayName"`
-		}{Self: workLogRequest.Self, AccountId: workLogRequest.Author.Accountid, DisplayName: workLogRequest.Author.Displayname},
-		TimeSpentSeconds: workLogRequest.Timespentseconds,
+		}{Self: workLogResponse.Self, AccountId: workLogResponse.Author.Accountid, DisplayName: workLogResponse.Author.Displayname},
+		TimeSpentSeconds: workLogResponse.Timespentseconds,
 		Issue: struct { // FIXME oh my god what a mess
 			Self string `json:"self"`
 			Key  string `json:"key"`
