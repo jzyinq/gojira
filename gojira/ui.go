@@ -32,8 +32,20 @@ func newUi() {
 		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(app.ui.summary.TextView, 0, 1, false).
 			AddItem(app.ui.calendar.Table, 0, 10, false),
-			0, 3, false)
+			0, 5, false)
+
+	grid := tview.NewGrid().
+		SetRows(2, 0, 2).
+		SetColumns(0, 28).
+		SetBorders(true)
+
+	// Layout for screens narrower than 100 cells (menu and side bar are hidden).
+	grid.AddItem(app.ui.pages, 1, 0, 1, 2, 0, 0, false)
+
+	// Layout for screens wider than 100 cells.
+	grid.AddItem(app.ui.pages, 1, 0, 1, 1, 0, 100, false).
+		AddItem(app.ui.calendar, 1, 1, 1, 1, 0, 100, false)
 
 	app.ui.flex.SetBorder(true).SetTitle(" gojira ")
-	app.ui.app.SetRoot(app.ui.flex, true)
+	app.ui.app.SetRoot(grid, true)
 }
