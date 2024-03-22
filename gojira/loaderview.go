@@ -16,13 +16,10 @@ type LoaderView struct {
 
 func NewLoaderView() *LoaderView {
 	customModal := func(p tview.Primitive, width, height int) tview.Primitive {
-		return tview.NewFlex().
-			AddItem(nil, 0, 1, false).
-			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(nil, 0, 1, false).
-				AddItem(p, height, 1, true).
-				AddItem(nil, 0, 1, false), width, 1, true).
-			AddItem(nil, 0, 1, false)
+		return tview.NewGrid().
+			SetColumns(0, width, 0).
+			SetRows(0, height, 0).
+			AddItem(p, 1, 1, 1, 1, 0, 0, true)
 	}
 	text := tview.NewTextView()
 	text.SetBorder(true)

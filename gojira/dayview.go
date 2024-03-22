@@ -99,13 +99,13 @@ func loadWorklogs() {
 	case loadingWorklogs <- true:
 		go func() {
 			defer func() { <-loadingWorklogs }()
-			app.ui.LoaderView.Show("Fetching worklogs...")
+			app.ui.loaderView.Show("Fetching worklogs...")
 			err := NewWorkLogIssues()
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 			}
 			app.ui.dayView.update()
-			app.ui.LoaderView.Hide()
+			app.ui.loaderView.Hide()
 		}()
 	default:
 		// The goroutine is already loadingWorklogs, do nothing
@@ -224,8 +224,8 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 		logTime := form.GetFormItem(0).(*tview.InputField).GetText()
 		timeSpent := form.GetFormItem(1).(*tview.InputField).GetText()
 		go func() {
-			app.ui.LoaderView.Show("Adding worklog...")
-			defer app.ui.LoaderView.Hide()
+			app.ui.loaderView.Show("Adding worklog...")
+			defer app.ui.loaderView.Hide()
 			issue, err := NewJiraClient().GetIssue(issues[row].Key)
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
@@ -281,8 +281,8 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 	updateWorklog := func() {
 		timeSpent := form.GetFormItem(0).(*tview.InputField).GetText()
 		go func() {
-			app.ui.LoaderView.Show("Updating worklog...")
-			defer app.ui.LoaderView.Hide()
+			app.ui.loaderView.Show("Updating worklog...")
+			defer app.ui.loaderView.Hide()
 			err := workLogIssues[row].WorkLog.Update(timeSpent)
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
@@ -296,8 +296,8 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 
 	deleteWorklog := func() {
 		go func() {
-			app.ui.LoaderView.Show("Deleting worklog...")
-			defer app.ui.LoaderView.Hide()
+			app.ui.loaderView.Show("Deleting worklog...")
+			defer app.ui.loaderView.Hide()
 			err := app.workLogs.Delete(workLogIssues[row].WorkLog)
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())

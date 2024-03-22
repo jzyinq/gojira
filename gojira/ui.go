@@ -13,7 +13,7 @@ type UserInteface struct {
 	summary    *Summary
 	dayView    *DayView
 	errorView  *ErrorView
-	LoaderView *LoaderView
+	loaderView *LoaderView
 }
 
 func newUi() {
@@ -25,7 +25,7 @@ func newUi() {
 	app.ui.summary = NewSummary()
 	app.ui.dayView = NewDayView()
 	app.ui.errorView = NewErrorView()
-	app.ui.LoaderView = NewLoaderView()
+	app.ui.loaderView = NewLoaderView()
 
 	grid := tview.NewGrid().
 		SetRows(1, 0).
