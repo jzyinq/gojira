@@ -3,6 +3,7 @@ package gojira
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/sirupsen/logrus"
 )
 
 // Modal is a centered message window used to inform the user or prompt them
@@ -38,6 +39,7 @@ func NewModal() *Modal {
 		Box:       tview.NewBox().SetBorder(true),
 		textColor: tview.Styles.PrimaryTextColor,
 		textView:  tview.NewTextView(),
+		focus:     false,
 	}
 
 	return m
@@ -75,18 +77,24 @@ func (m *Modal) SetText(text string) *Modal {
 
 // SetFocus shifts the focus to the button with the given index.
 func (m *Modal) SetFocus(index int) *Modal {
+	logrus.Info("logrus: Modal.SetFocus - %s ", m.focus)
 	m.focus = true
 	return m
 }
 
 // Focus is called when this primitive receives focus.
 func (m *Modal) Focus(delegate func(p tview.Primitive)) {
-
+	m.focus = true
 }
 
 // HasFocus returns whether or not this primitive has focus.
 func (m *Modal) HasFocus() bool {
+	logrus.Info("logrus: Modal.HasFocus - %s ", m.focus)
 	return m.focus
+}
+
+func (m *Modal) Blur() {
+	m.focus = false
 }
 
 // Draw draws this primitive onto the screen.
