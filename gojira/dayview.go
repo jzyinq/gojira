@@ -224,8 +224,9 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 
 		logTime := form.GetFormItem(0).(*tview.InputField).GetText()
 		timeSpent := form.GetFormItem(1).(*tview.InputField).GetText()
-		app.ui.flex.SetTitle(" gojira - adding worklog... ")
 		go func() {
+			app.ui.LoaderView.Show("Adding worklog...")
+			defer app.ui.LoaderView.Hide()
 			issue, err := NewJiraClient().GetIssue(issues[row].Key)
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
@@ -241,7 +242,6 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 				logrus.Infof("Logging work for %s / %s / %s", day.Format(dateLayout), issue.Key, timeSpent)
 				issue.LogWork(&day, timeSpent)
 			}
-			app.ui.flex.SetTitle(" gojira ")
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 				return
@@ -281,8 +281,9 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 
 	updateWorklog := func() {
 		timeSpent := form.GetFormItem(0).(*tview.InputField).GetText()
-		app.ui.flex.SetTitle(" gojira - updating worklog... ")
 		go func() {
+			app.ui.LoaderView.Show("Updating worklog...")
+			defer app.ui.LoaderView.Hide()
 			err := workLogIssues[row].WorkLog.Update(timeSpent)
 			app.ui.flex.SetTitle(" gojira ")
 			if err != nil {
@@ -296,8 +297,9 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 	}
 
 	deleteWorklog := func() {
-		app.ui.flex.SetTitle(" gojira - deleting worklog... ")
 		go func() {
+			app.ui.LoaderView.Show("Deleting worklog...")
+			defer app.ui.LoaderView.Hide()
 			err := app.workLogs.Delete(workLogIssues[row].WorkLog)
 			app.ui.flex.SetTitle(" gojira ")
 			if err != nil {

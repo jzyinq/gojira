@@ -19,6 +19,14 @@ func NewLoaderView() *LoaderView {
 	return errorView
 }
 
+func (e *LoaderView) Wrap(msg string, callable func()) {
+	go func() {
+		e.Show(msg)
+		defer e.Hide()
+		callable()
+	}()
+}
+
 func (e *LoaderView) Show(msg string) {
 	app.ui.pages.SendToFront("loader")
 	e.SetText(fmt.Sprintf("Hi! I'm the loader - please wait...\n%s", msg))
