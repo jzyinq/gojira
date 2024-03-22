@@ -42,6 +42,8 @@ func NewModal() *Modal {
 		focus:     false,
 	}
 
+	m.textView.SetBorder(true)
+	m.textView.SetTextAlign(tview.AlignCenter)
 	return m
 }
 
@@ -109,6 +111,5 @@ func (m *Modal) Draw(screen tcell.Screen) {
 	m.Box.DrawForSubclass(screen, m)
 	x, y, width, height = m.GetInnerRect()
 	m.textView.SetRect(x, y, width, height)
-	m.textView.SetTextAlign(tview.AlignCenter)
 	m.textView.Draw(screen)
 }
