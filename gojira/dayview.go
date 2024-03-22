@@ -251,7 +251,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	}
 
 	form = tview.NewForm().
-		AddInputField("Date", app.time.Format(dateLayout), 30, nil, nil).
+		AddInputField("Date", app.time.Format(dateLayout), 20, nil, nil).
 		AddInputField("Time spent", "", 20, nil, nil).
 		AddButton("Add", newWorklog).
 		AddButton("Cancel", func() {
