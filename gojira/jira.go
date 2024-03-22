@@ -78,44 +78,6 @@ type Issue struct {
 	} `json:"fields"`
 }
 
-func (jc *JiraClient) GetLatestIssues() (JQLResponse, error) {
-	payload := &JQLSearch{
-		Expand:       []string{"names"},
-		Jql:          "assignee in (currentUser()) ORDER BY updated DESC, created DESC",
-		MaxResults:   10,
-		FieldsByKeys: false,
-		Fields:       []string{"summary", "status"},
-		StartAt:      0,
-	}
-	payloadJson, err := json.Marshal(payload)
-	requestBody := bytes.NewBuffer(payloadJson)
-	requestUrl := fmt.Sprintf("%s/rest/api/2/search", Config.JiraUrl)
-	response, err := SendHttpRequest("POST", requestUrl, requestBody, jc.getHttpHeaders(), 200)
-	if err != nil {
-		return JQLResponse{}, err
-	}
-	var jqlResponse JQLResponse
-	err = json.Unmarshal(response, &jqlResponse)
-	if err != nil {
-		return JQLResponse{}, err
-	}
-	return jqlResponse, nil
-}
-
-func (jc *JiraClient) GetIssue(issueKey string) (Issue, error) {
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s?fields=summary,status", Config.JiraUrl, issueKey)
-	response, err := SendHttpRequest("GET", requestUrl, nil, jc.getHttpHeaders(), 200)
-	if err != nil {
-		return Issue{}, err
-	}
-	var jiraIssue Issue
-	err = json.Unmarshal(response, &jiraIssue)
-	if err != nil {
-		return Issue{}, err
-	}
-	return jiraIssue, nil
-}
-
 type WorkLogResponse struct {
 	Self   string `json:"self"`
 	Author struct {
@@ -155,6 +117,44 @@ type WorkLogResponse struct {
 	Timespentseconds int    `json:"timeSpentSeconds"`
 	ID               string `json:"id"` // can it be an int? it's a number
 	Issueid          string `json:"issueId"`
+}
+
+func (jc *JiraClient) GetLatestIssues() (JQLResponse, error) {
+	payload := &JQLSearch{
+		Expand:       []string{"names"},
+		Jql:          "assignee in (currentUser()) ORDER BY updated DESC, created DESC",
+		MaxResults:   10,
+		FieldsByKeys: false,
+		Fields:       []string{"summary", "status"},
+		StartAt:      0,
+	}
+	payloadJson, err := json.Marshal(payload)
+	requestBody := bytes.NewBuffer(payloadJson)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/search", Config.JiraUrl)
+	response, err := SendHttpRequest("POST", requestUrl, requestBody, jc.getHttpHeaders(), 200)
+	if err != nil {
+		return JQLResponse{}, err
+	}
+	var jqlResponse JQLResponse
+	err = json.Unmarshal(response, &jqlResponse)
+	if err != nil {
+		return JQLResponse{}, err
+	}
+	return jqlResponse, nil
+}
+
+func (jc *JiraClient) GetIssue(issueKey string) (Issue, error) {
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s?fields=summary,status", Config.JiraUrl, issueKey)
+	response, err := SendHttpRequest("GET", requestUrl, nil, jc.getHttpHeaders(), 200)
+	if err != nil {
+		return Issue{}, err
+	}
+	var jiraIssue Issue
+	err = json.Unmarshal(response, &jiraIssue)
+	if err != nil {
+		return Issue{}, err
+	}
+	return jiraIssue, nil
 }
 
 func (jc *JiraClient) CreateWorklog(issueKey string, logTime *time.Time, timeSpent string) (WorkLogResponse, error) {

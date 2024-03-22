@@ -1,8 +1,6 @@
 package gojira
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
@@ -82,16 +80,6 @@ type WorkLogUpdate struct {
 	TimeSpentSeconds int    `json:"timeSpentSeconds"`
 }
 
-type WorkLogsResponse struct {
-	Self     string `json:"self"`
-	Metadata struct {
-		Count  int `json:"count"`
-		Offset int `json:"offset"`
-		Limit  int `json:"limit"`
-	} `json:"metadata"`
-	WorkLogs []WorkLog `json:"results"`
-}
-
 type WorkLogIssue struct {
 	WorkLog *WorkLog
 	Issue   Issue
@@ -160,18 +148,7 @@ func (wli *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error
 func GetWorkLogs() (WorkLogs, error) {
 	// get first day of week nd the last for date in app.time
 	fromDate, toDate := MonthRange(app.time)
-	// tempo is required only for fetching workklogs by date range
-	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s&limit=1000", Config.TempoUrl, Config.JiraAccountId, fromDate.Format(dateLayout), toDate.Format(dateLayout))
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
-		"Content-Type":  "application/json",
-	}
-	response, err := SendHttpRequest("GET", requestUrl, nil, headers, 200)
-	if err != nil {
-		return WorkLogs{}, err
-	}
-	var workLogsResponse WorkLogsResponse
-	err = json.Unmarshal(response, &workLogsResponse)
+	workLogsResponse, err := NewTempoClient().GetWorklogs(fromDate, toDate)
 	if err != nil {
 		return WorkLogs{}, err
 	}
@@ -206,35 +183,19 @@ func TimeSpentToSeconds(timeSpent string) int {
 
 func (wl *WorkLog) Update(timeSpent string) error {
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
+	var err error
 
-	// updating meetings does not work even through tempo? w00t
 	if wl.TempoWorklogid != 0 {
-		payload := WorkLogUpdate{
-			IssueKey:         wl.Issue.Key,
-			StartDate:        wl.StartDate,
-			StartTime:        wl.StartTime,
-			Description:      wl.Description,
-			AuthorAccountId:  wl.Author.AccountId,
-			TimeSpentSeconds: timeSpentInSeconds,
-		}
-		payloadJson, _ := json.Marshal(payload)
-		requestBody := bytes.NewBuffer(payloadJson)
-		requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, wl.TempoWorklogid)
-		headers := map[string]string{
-			"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
-			"Content-Type":  "application/json",
-		}
-		_, err := SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
-		if err != nil {
-			return err
-		}
+		// make update request to tempo if tempoWorklogId is set
+		err = NewTempoClient().UpdateWorklog(wl, timeSpent)
 	} else {
-		err := NewJiraClient().UpdateWorklog(wl.Issue.Key, wl.JiraWorklogid, timeSpentInSeconds)
-		if err != nil {
-			return err
-		}
+		// make update request to jira if tempoWorklogId is not set
+		err = NewJiraClient().UpdateWorklog(wl.Issue.Key, wl.JiraWorklogid, timeSpentInSeconds)
 	}
 
+	if err != nil {
+		return err
+	}
 	wl.TimeSpentSeconds = timeSpentInSeconds
 	return nil
 }
