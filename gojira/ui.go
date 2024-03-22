@@ -27,18 +27,23 @@ func newUi() {
 	app.ui.errorView = NewErrorView()
 	app.ui.loaderView = NewLoaderView()
 
+	//customModal := func(p tview.Primitive, width, height int) tview.Primitive {
+	//	return tview.NewGrid().
+	//		SetColumns(0, width, 0).
+	//		SetRows(0, height, 0).
+	//		AddItem(p, 1, 1, 1, 1, 0, 0, true)
+	//}
 	grid := tview.NewGrid().
-		SetRows(1, 0).
-		SetColumns(0, 27).
+		SetRows(1, 0, 0).
+		SetColumns(0, 0, 27).
 		SetBorders(true)
-	grid.SetTitle(" gojira ")
+
 	// Layout for screens narrower than 100 cells (menu and side bar are hidden).
-	grid.AddItem(app.ui.pages, 1, 0, 1, 2, 0, 0, false)
+	grid.AddItem(app.ui.pages, 0, 0, 2, 3, 0, 0, false)
 
 	// Layout for screens wider than 100 cells.
-	grid.AddItem(app.ui.pages, 0, 0, 2, 1, 0, 100, false).
-		AddItem(app.ui.summary, 0, 1, 1, 1, 0, 100, false).
-		AddItem(app.ui.calendar, 1, 1, 1, 1, 0, 100, false)
-
+	grid.AddItem(app.ui.pages, 0, 0, 3, 2, 0, 100, false).
+		AddItem(app.ui.summary, 0, 2, 1, 1, 0, 100, false).
+		AddItem(app.ui.calendar, 1, 2, 2, 1, 0, 100, false)
 	app.ui.app.SetRoot(grid, true).SetFocus(app.ui.pages) //FIXME set on proper item after rearrangements
 }
