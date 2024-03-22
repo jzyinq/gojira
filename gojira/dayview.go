@@ -79,6 +79,7 @@ func NewDayView() *DayView {
 				timePeriod = time.Hour * 24
 			}
 			newTime := app.time.Add(timePeriod)
+			logrus.Info("Changing date to ", newTime)
 			app.time = &newTime
 			loadWorklogs()
 			app.ui.calendar.update()

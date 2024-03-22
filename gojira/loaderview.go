@@ -8,7 +8,7 @@ import (
 )
 
 type LoaderView struct {
-	*Modal
+	*LoaderModal
 	ctx    context.Context
 	cancel context.CancelFunc
 }

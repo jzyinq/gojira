@@ -116,7 +116,7 @@ func (wli *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error
 	if date.Before(wli.startDate) || date.After(wli.endDate) {
 		return nil, errors.New("Date is out of worklogs range")
 	}
-	truncatedDate := (*date).Truncate(24 * time.Hour)
+	truncatedDate := (*date).Truncate(23 * time.Hour)
 	for i, issue := range wli.issues {
 		// FIXME should be in local timezone PariseInLocation - but it's not working
 		logDate, err := time.Parse(dateLayout, issue.WorkLog.StartDate)
@@ -124,7 +124,8 @@ func (wli *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error
 		if err != nil {
 			return nil, err
 		}
-		if truncatedDate.Equal(logDate.Truncate(24 * time.Hour)) {
+		if truncatedDate.Equal(logDate.Truncate(23 * time.Hour)) {
+			logrus.Info("truncatedDate ", truncatedDate)
 			issuesOnDate = append(issuesOnDate, &wli.issues[i])
 		}
 	}
