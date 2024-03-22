@@ -3,7 +3,7 @@ package gojira
 import (
 	"context"
 	"fmt"
-	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 	"time"
 )
 
@@ -16,7 +16,7 @@ type LoaderView struct {
 func NewLoaderView() *LoaderView {
 	loaderView := &LoaderView{NewModal(), nil, nil}
 	loaderView.SetBorder(false)
-	loaderView.SetBackgroundColor(tcell.ColorBlueViolet.TrueColor())
+	loaderView.SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
 	app.ui.pages.AddPage("loader", loaderView, true, false)
 	return loaderView
 }

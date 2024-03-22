@@ -42,8 +42,8 @@ func newUi() {
 	grid.AddItem(app.ui.pages, 0, 0, 2, 3, 0, 0, false)
 
 	// Layout for screens wider than 100 cells.
-	grid.AddItem(app.ui.pages, 0, 0, 3, 2, 0, 100, false).
+	grid.AddItem(app.ui.pages, 0, 0, 3, 2, 0, 100, true).
 		AddItem(app.ui.summary, 0, 2, 1, 1, 0, 100, false).
 		AddItem(app.ui.calendar, 1, 2, 2, 1, 0, 100, false)
-	app.ui.app.SetRoot(grid, true).SetFocus(app.ui.pages) //FIXME set on proper item after rearrangements
+	app.ui.app.SetRoot(grid, true).SetFocus(app.ui.pages)
 }

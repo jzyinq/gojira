@@ -17,7 +17,7 @@ type Modal struct {
 	frame *tview.Frame
 
 	// The form embedded in the modal's frame.
-	form *tview.Form
+	textView *tview.TextView
 
 	// The message text (original, not word-wrapped).
 	text string
@@ -28,64 +28,30 @@ type Modal struct {
 	// The optional callback for when the user clicked one of the buttons. It
 	// receives the index of the clicked button and the button's label.
 	done func(buttonIndex int, buttonLabel string)
+
+	focus bool
 }
 
 // NewModal returns a new modal message window.
 func NewModal() *Modal {
 	m := &Modal{
-		Box:       tview.NewBox().SetBorder(true).SetBackgroundColor(tview.Styles.ContrastBackgroundColor),
+		Box:       tview.NewBox().SetBorder(true),
 		textColor: tview.Styles.PrimaryTextColor,
+		textView:  tview.NewTextView(),
 	}
-	m.form = tview.NewForm().
-		SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
-		SetButtonTextColor(tview.Styles.PrimaryTextColor)
-	m.form.SetBackgroundColor(tview.Styles.ContrastBackgroundColor).SetBorderPadding(0, 0, 0, 0)
-	m.form.SetCancelFunc(func() {
-		if m.done != nil {
-			m.done(-1, "")
-		}
-	})
-	m.frame = tview.NewFrame(m.form).SetBorders(0, 0, 1, 0, 0, 0)
-	m.frame.SetBackgroundColor(tview.Styles.ContrastBackgroundColor).
-		SetBorderPadding(1, 1, 1, 1)
+
 	return m
 }
 
 // SetBackgroundColor sets the color of the modal frame background.
 func (m *Modal) SetBackgroundColor(color tcell.Color) *Modal {
-	m.form.SetBackgroundColor(color)
-	m.frame.SetBackgroundColor(color)
 	return m
 }
 
 // SetTextColor sets the color of the message text.
 func (m *Modal) SetTextColor(color tcell.Color) *Modal {
 	m.textColor = color
-	return m
-}
-
-// SetButtonBackgroundColor sets the background color of the buttons.
-func (m *Modal) SetButtonBackgroundColor(color tcell.Color) *Modal {
-	m.form.SetButtonBackgroundColor(color)
-	return m
-}
-
-// SetButtonTextColor sets the color of the button texts.
-func (m *Modal) SetButtonTextColor(color tcell.Color) *Modal {
-	m.form.SetButtonTextColor(color)
-	return m
-}
-
-// SetButtonStyle sets the style of the buttons when they are not focused.
-func (m *Modal) SetButtonStyle(style tcell.Style) *Modal {
-	m.form.SetButtonStyle(style)
-	return m
-}
-
-// SetButtonActivatedStyle sets the style of the buttons when they are focused.
-func (m *Modal) SetButtonActivatedStyle(style tcell.Style) *Modal {
-	m.form.SetButtonActivatedStyle(style)
+	m.textView.SetTextColor(color)
 	return m
 }
 
@@ -103,79 +69,38 @@ func (m *Modal) SetDoneFunc(handler func(buttonIndex int, buttonLabel string)) *
 // words are wrapped, too, based on the final size of the window.
 func (m *Modal) SetText(text string) *Modal {
 	m.text = text
-	return m
-}
-
-// AddButtons adds buttons to the window. There must be at least one button and
-// a "done" handler so the window can be closed again.
-func (m *Modal) AddButtons(labels []string) *Modal {
-	for index, label := range labels {
-		func(i int, l string) {
-			m.form.AddButton(label, func() {
-				if m.done != nil {
-					m.done(i, l)
-				}
-			})
-			button := m.form.GetButton(m.form.GetButtonCount() - 1)
-			button.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-				switch event.Key() {
-				case tcell.KeyDown, tcell.KeyRight:
-					return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
-				case tcell.KeyUp, tcell.KeyLeft:
-					return tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone)
-				}
-				return event
-			})
-		}(index, label)
-	}
-	return m
-}
-
-// ClearButtons removes all buttons from the window.
-func (m *Modal) ClearButtons() *Modal {
-	m.form.ClearButtons()
+	m.textView.SetText(text)
 	return m
 }
 
 // SetFocus shifts the focus to the button with the given index.
 func (m *Modal) SetFocus(index int) *Modal {
-	m.form.SetFocus(index)
+	m.focus = true
 	return m
 }
 
 // Focus is called when this primitive receives focus.
 func (m *Modal) Focus(delegate func(p tview.Primitive)) {
-	delegate(m.form)
+
 }
 
 // HasFocus returns whether or not this primitive has focus.
 func (m *Modal) HasFocus() bool {
-	return m.form.HasFocus()
+	return m.focus
 }
 
 // Draw draws this primitive onto the screen.
 func (m *Modal) Draw(screen tcell.Screen) {
 	screenWidth, screenHeight := screen.Size()
 	width := screenWidth / 3
-	// width is now without the box border.
-
-	// Reset the text and find out how wide it is.
-	m.frame.Clear()
-	lines := tview.WordWrap(m.text, width)
-	for _, line := range lines {
-		m.frame.AddText(line, true, tview.AlignCenter, m.textColor)
-	}
-
-	// Set the modal's position and size.
-	height := len(lines) + 6
-	width += 4
+	height := 12
 	x := (screenWidth - width) / 2
 	y := (screenHeight - height) / 2
 	m.SetRect(x, y, width, height)
-
 	// Draw the frame.
 	m.Box.DrawForSubclass(screen, m)
 	x, y, width, height = m.GetInnerRect()
-	m.frame.SetRect(x, y, width, height)
-	m.frame.Draw(screen)
+	m.textView.SetRect(x, y, width, height)
+	m.textView.SetTextAlign(tview.AlignCenter)
+	m.textView.Draw(screen)
 }
