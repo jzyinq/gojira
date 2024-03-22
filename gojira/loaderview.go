@@ -3,21 +3,32 @@ package gojira
 import (
 	"context"
 	"fmt"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"time"
 )
 
 type LoaderView struct {
-	*tview.Modal
+	tview.Primitive
+	text   *tview.TextView
 	ctx    context.Context
 	cancel context.CancelFunc
 }
 
 func NewLoaderView() *LoaderView {
-	loaderView := &LoaderView{tview.NewModal(), nil, nil}
-	loaderView.SetBorder(false)
-	loaderView.SetBackgroundColor(tcell.ColorBlueViolet.TrueColor())
+	customModal := func(p tview.Primitive, width, height int) tview.Primitive {
+		return tview.NewFlex().
+			AddItem(nil, 0, 1, false).
+			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+				AddItem(nil, 0, 1, false).
+				AddItem(p, height, 1, true).
+				AddItem(nil, 0, 1, false), width, 1, true).
+			AddItem(nil, 0, 1, false)
+	}
+	text := tview.NewTextView()
+	text.SetBorder(true)
+	text.SetTextAlign(tview.AlignCenter)
+
+	loaderView := &LoaderView{customModal(text, 36, 13), text, nil, nil}
 	app.ui.pages.AddPage("loader", loaderView, true, false)
 	return loaderView
 }
@@ -41,7 +52,7 @@ func (e *LoaderView) Show(msg string) {
 				return
 			default:
 				for _, r := range `-\|/` {
-					e.SetText(fmt.Sprintf("%s%s\n %s", GojiraAscii, msg, string(r)))
+					e.text.SetText(fmt.Sprintf("%s\n%s\n%s", GojiraAscii, msg, string(r)))
 					app.ui.app.Draw()
 					time.Sleep(100 * time.Millisecond)
 				}
