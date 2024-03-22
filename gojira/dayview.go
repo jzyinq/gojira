@@ -236,7 +236,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 				return
 			}
 			for day := dateRange.StartDate; day.Before(dateRange.EndDate.AddDate(0, 0, 1)); day = day.AddDate(0, 0, 1) {
-				logrus.Infof("Logging work for %s / %s / %s", day.Format(dateLayout), issue, timeSpent)
+				logrus.Infof("Logging work for %s / %s / %s", day.Format(dateLayout), issue.Key, timeSpent)
 				issue.LogWork(&day, timeSpent)
 			}
 			app.ui.flex.SetTitle(" gojira ")
