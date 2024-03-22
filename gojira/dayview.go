@@ -284,7 +284,6 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 			app.ui.LoaderView.Show("Updating worklog...")
 			defer app.ui.LoaderView.Hide()
 			err := workLogIssues[row].WorkLog.Update(timeSpent)
-			app.ui.flex.SetTitle(" gojira ")
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 				return
@@ -300,7 +299,6 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 			app.ui.LoaderView.Show("Deleting worklog...")
 			defer app.ui.LoaderView.Hide()
 			err := app.workLogs.Delete(workLogIssues[row].WorkLog)
-			app.ui.flex.SetTitle(" gojira ")
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 				return

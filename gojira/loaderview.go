@@ -52,7 +52,7 @@ func (e *LoaderView) Show(msg string) {
 				return
 			default:
 				for _, r := range `-\|/` {
-					e.text.SetText(fmt.Sprintf("%s\n%s\n%s", GojiraAscii, msg, string(r)))
+					e.text.SetText(fmt.Sprintf("%s%s\n%s", GojiraAscii, msg, string(r)))
 					app.ui.app.Draw()
 					time.Sleep(100 * time.Millisecond)
 				}
