@@ -13,7 +13,7 @@ import (
 )
 
 func NewWorkLog(issueKey string, logTime *time.Time, timeSpent string) (WorkLog, error) {
-	workLogResponse, err := CreateWorklog(issueKey, logTime, timeSpent)
+	workLogResponse, err := NewJiraClient().CreateWorklog(issueKey, logTime, timeSpent)
 	if err != nil {
 		return WorkLog{}, err
 	}
@@ -207,11 +207,6 @@ func TimeSpentToSeconds(timeSpent string) int {
 func (wl *WorkLog) Update(timeSpent string) error {
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 
-	// make update request to tempo if tempoWorklogId is set
-	var requestBody *bytes.Buffer
-	var requestUrl string
-	var headers map[string]string
-
 	// updating meetings does not work even through tempo? w00t
 	if wl.TempoWorklogid != 0 {
 		payload := WorkLogUpdate{
@@ -223,28 +218,21 @@ func (wl *WorkLog) Update(timeSpent string) error {
 			TimeSpentSeconds: timeSpentInSeconds,
 		}
 		payloadJson, _ := json.Marshal(payload)
-		requestBody = bytes.NewBuffer(payloadJson)
-		requestUrl = fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, wl.TempoWorklogid)
-		headers = map[string]string{
+		requestBody := bytes.NewBuffer(payloadJson)
+		requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, wl.TempoWorklogid)
+		headers := map[string]string{
 			"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
 			"Content-Type":  "application/json",
 		}
+		_, err := SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
+		if err != nil {
+			return err
+		}
 	} else {
-		payload := JiraWorklogUpdate{
-			TimeSpentSeconds: timeSpentInSeconds,
+		err := NewJiraClient().UpdateWorklog(wl.Issue.Key, wl.JiraWorklogid, timeSpentInSeconds)
+		if err != nil {
+			return err
 		}
-		payloadJson, _ := json.Marshal(payload)
-		requestBody = bytes.NewBuffer(payloadJson)
-		// FIXME use tempo api to update worklog, unless there is not tempoId in worklog
-		requestUrl = fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false", Config.JiraUrl, wl.Issue.Key, wl.JiraWorklogid)
-		headers = map[string]string{
-			"Authorization": getJiraAuthorizationHeader(),
-			"Content-Type":  "application/json",
-		}
-	}
-	_, err := SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
-	if err != nil {
-		return err
 	}
 
 	wl.TimeSpentSeconds = timeSpentInSeconds
@@ -263,17 +251,16 @@ func (wl *WorkLogs) Delete(worklog *WorkLog) error {
 			"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
 			"Content-Type":  "application/json",
 		}
-	} else {
-		requestUrl = fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false", Config.JiraUrl, worklog.Issue.Key, worklog.JiraWorklogid)
-		headers = map[string]string{
-			"Authorization": getJiraAuthorizationHeader(),
-			"Content-Type":  "application/json",
+		_, err := SendHttpRequest("DELETE", requestUrl, nil, headers, 204)
+		if err != nil {
+			logrus.Debug(worklog)
+			return err
 		}
-	}
-	_, err := SendHttpRequest("DELETE", requestUrl, nil, headers, 204)
-	if err != nil {
-		logrus.Debug(worklog)
-		return err
+	} else {
+		err := NewJiraClient().DeleteWorklog(worklog.Issue.Key, worklog.JiraWorklogid)
+		if err != nil {
+			return err
+		}
 	}
 
 	// FIXME delete is kinda buggy - it messes up pointers and we're getting weird results

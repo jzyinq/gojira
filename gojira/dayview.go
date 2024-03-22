@@ -145,7 +145,7 @@ func (d *DayView) update() {
 
 func (d *DayView) loadLatest() {
 	d.latestIssuesStatus.SetText("Latest issues").SetDynamicColors(true)
-	issues, err := GetLatestIssues()
+	issues, err := NewJiraClient().GetLatestIssues()
 	if err != nil {
 		app.ui.errorView.ShowError(err.Error())
 		return
@@ -224,7 +224,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 		timeSpent := form.GetFormItem(1).(*tview.InputField).GetText()
 		app.ui.flex.SetTitle(" gojira - adding worklog... ")
 		go func() {
-			issue, err := GetIssue(issues[row].Key)
+			issue, err := NewJiraClient().GetIssue(issues[row].Key)
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 				return

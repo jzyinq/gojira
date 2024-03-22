@@ -50,7 +50,7 @@ func NewWorkLogIssues() error {
 	for i, _ := range app.workLogs.logs {
 		waitGroup.Add(1)
 		go func(workLog *WorkLog) {
-			issue, err := GetIssue(workLog.Issue.Key)
+			issue, err := NewJiraClient().GetIssue(workLog.Issue.Key)
 			if err != nil {
 				errCh <- err // Send the error to the channel.
 				return
@@ -75,7 +75,7 @@ var IssuesCommand = &cli.Command{
 	Name:  "issues",
 	Usage: "Show currently assigned issues",
 	Action: func(context *cli.Context) error {
-		lastTickets, err := GetLatestIssues()
+		lastTickets, err := NewJiraClient().GetLatestIssues()
 		if err != nil {
 			return err
 		}
@@ -111,7 +111,7 @@ var LogWorkCommand = &cli.Command{
 		if issueKey == "" {
 			log.Fatalln("No issue key given / detected in git branch.")
 		}
-		issue, err := GetIssue(issueKey)
+		issue, err := NewJiraClient().GetIssue(issueKey)
 		if err != nil {
 			return err
 		}
@@ -163,7 +163,7 @@ var DefaultAction = func(c *cli.Context) error {
 var GitOrIssueListAction = func(c *cli.Context) error {
 	issueKey := ResolveIssueKey(c)
 	if issueKey != "" {
-		issue, err := GetIssue(issueKey)
+		issue, err := NewJiraClient().GetIssue(issueKey)
 		if err != nil {
 			return err
 		}
