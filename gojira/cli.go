@@ -11,6 +11,16 @@ import (
 	"time"
 )
 
+const GojiraAscii = "" +
+	"   _____       _ _           \n" +
+	"  / ____|     (_|_)          \n" +
+	" | |  __  ___  _ _ _ __ __ _ \n" +
+	" | | |_ |/ _ \\| | | '__/ _` |\n" +
+	" | |__| | (_) | | | | | (_| |\n" +
+	"  \\_____|\\___/| |_|_|  \\__,_|\n" +
+	"             _/ |     v0.4.0 \n" +
+	"            |__/             \n\n"
+
 var WorkLogsCommand = &cli.Command{
 	Name:  "worklogs",
 	Usage: "Edit your today's work log",

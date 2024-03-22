@@ -50,5 +50,5 @@ func newUi() {
 		AddItem(app.ui.calendar, 1, 1, 1, 1, 0, 100, false)
 
 	app.ui.flex.SetBorder(true).SetTitle(" gojira ")
-	app.ui.app.SetRoot(grid, true).SetFocus(app.ui.pages) //FIXME set on proper item after rarrangements
+	app.ui.app.SetRoot(grid, true).SetFocus(app.ui.pages) //FIXME set on proper item after rearrangements
 }

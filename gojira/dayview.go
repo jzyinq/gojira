@@ -99,7 +99,6 @@ func loadWorklogs() {
 	case loadingWorklogs <- true:
 		go func() {
 			defer func() { <-loadingWorklogs }()
-			app.ui.flex.SetTitle(" gojira - fetching data... ")
 			app.ui.LoaderView.Show("Fetching worklogs...")
 			err := NewWorkLogIssues()
 			if err != nil {
