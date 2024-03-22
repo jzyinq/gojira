@@ -31,6 +31,15 @@ type WorkLogsResponse struct {
 	WorkLogs []WorkLog `json:"results"`
 }
 
+type WorkLogUpdateRequest struct {
+	IssueKey         string `json:"issueKey"`
+	StartDate        string `json:"startDate"`
+	StartTime        string `json:"startTime"`
+	Description      string `json:"description"`
+	AuthorAccountId  string `json:"authorAccountId"`
+	TimeSpentSeconds int    `json:"timeSpentSeconds"`
+}
+
 func (tc *TempoClient) GetWorklogs(fromDate, toDate time.Time) (WorkLogsResponse, error) {
 	// tempo is required only because of fetching worklogs by date range
 	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s&limit=1000", tc.Url, tc.JiraAccountId, fromDate.Format(dateLayout), toDate.Format(dateLayout))
@@ -53,7 +62,7 @@ func (tc *TempoClient) GetWorklogs(fromDate, toDate time.Time) (WorkLogsResponse
 func (tc *TempoClient) UpdateWorklog(worklog *WorkLog, timeSpent string) error {
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 
-	payload := WorkLogUpdate{
+	payload := WorkLogUpdateRequest{
 		IssueKey:         worklog.Issue.Key,
 		StartDate:        worklog.StartDate,
 		StartTime:        worklog.StartTime,

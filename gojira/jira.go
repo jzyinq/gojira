@@ -119,6 +119,10 @@ type WorkLogResponse struct {
 	Issueid          string `json:"issueId"`
 }
 
+type JiraWorklogUpdate struct {
+	TimeSpentSeconds int `json:"timeSpentSeconds"`
+}
+
 func (jc *JiraClient) GetLatestIssues() (JQLResponse, error) {
 	payload := &JQLSearch{
 		Expand:       []string{"names"},

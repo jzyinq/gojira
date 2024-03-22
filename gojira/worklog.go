@@ -66,19 +66,6 @@ type WorkLog struct {
 	} `json:"attributes"`
 }
 
-type JiraWorklogUpdate struct {
-	TimeSpentSeconds int `json:"timeSpentSeconds"`
-}
-
-type WorkLogUpdate struct {
-	IssueKey         string `json:"issueKey"`
-	StartDate        string `json:"startDate"`
-	StartTime        string `json:"startTime"`
-	Description      string `json:"description"`
-	AuthorAccountId  string `json:"authorAccountId"`
-	TimeSpentSeconds int    `json:"timeSpentSeconds"`
-}
-
 type WorkLogIssue struct {
 	WorkLog *WorkLog
 	Issue   Issue
@@ -191,7 +178,6 @@ func (wl *WorkLog) Update(timeSpent string) error {
 		// make update request to jira if tempoWorklogId is not set
 		err = NewJiraClient().UpdateWorklog(wl.Issue.Key, wl.JiraWorklogid, timeSpentInSeconds)
 	}
-
 	if err != nil {
 		return err
 	}
