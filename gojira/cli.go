@@ -57,7 +57,7 @@ func NewWorkLogIssues() error {
 	waitGroup := sync.WaitGroup{}
 	var errors []error
 	errCh := make(chan error, len(app.workLogs.logs))
-	for i, _ := range app.workLogs.logs {
+	for i := range app.workLogs.logs {
 		waitGroup.Add(1)
 		go func(workLog *WorkLog) {
 			issue, err := NewJiraClient().GetIssue(workLog.Issue.Key)

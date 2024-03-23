@@ -149,7 +149,7 @@ func GetWorkLogs() (WorkLogs, error) {
 		return WorkLogs{}, err
 	}
 	var worklogs []*WorkLog
-	for i, _ := range workLogsResponse.WorkLogs {
+	for i := range workLogsResponse.WorkLogs {
 		worklogs = append(worklogs, &workLogsResponse.WorkLogs[i])
 	}
 	return WorkLogs{startDate: fromDate, endDate: toDate, logs: worklogs}, nil
