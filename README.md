@@ -70,15 +70,16 @@ Just remember to urldecode it. Save it and you should ready to go!
 
 ## Todo list
 
-- [ ] unify workLogs and worklogsIssues structs - use one for both
-    - Reduce jira/tempo spaghetti and unnecessary structs and functions
-- While deleting freshly set worklog, fetch it's data from jira to delete it properly - currently there is:
-  ```
-  The worklog has either been deleted or you no longer have permission to view it
-  ```
 - [ ] ticket status change prompt after logging time
-- [x] Add worklogs from ui
 - [ ] tests
+- [ ] unify workLogs and worklogsIssues structs - use one for both
+  - Reduce jira/tempo spaghetti and unnecessary structs and functions
+- [ ] godtools cli semantics update
+  - `gojira log -i TICKET` -> `gojira log -i TICKET`
+  - `gojira log -i TICKET -t 1h30m`
+  - `gojira` -> `gojira recent`
+  - `gojira` -> `gojira --help`
+- [x] Add worklogs from ui
 - [x] gojira worklog delete option
 - [x] recent jira task list for easy time logging
 - [x] delete worklogs
@@ -98,9 +99,7 @@ Just remember to urldecode it. Save it and you should ready to go!
 - [x] NewWorklog view - add input for date and date period optionally
 - [x] Remove app.ui.flex from the picture
 - [x] Hour summary to present day without counting worklogs from the future
-- [ ] Simplify Jira & Tempo structs
-- [ ] godtools cli semantics update
-    - `gojira log -i TICKET` -> `gojira log -i TICKET`
-    - `gojira log -i TICKET -t 1h30m`
-    - `gojira` -> `gojira recent`
-    - `gojira` -> `gojira --help`
+- [x] While deleting freshly set worklog, fetch it's data from jira to delete it properly - currently there is:
+  ```
+  The worklog has either been deleted or you no longer have permission to view it
+  ```
