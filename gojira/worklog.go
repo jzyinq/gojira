@@ -102,17 +102,8 @@ func (wl *WorkLogs) LogsOnDate(date *time.Time) ([]*WorkLog, error) {
 	return logsOnDate, nil
 }
 
-// function that will summarize all timeSpentSeconds in logs slice and return it
-func (wl *WorkLogs) TotalTimeSpent() int {
-	var totalTime int
-	for _, log := range wl.logs {
-		totalTime += log.TimeSpentSeconds
-	}
-	return totalTime
-}
-
 func (wl *WorkLogs) TotalTimeSpentToPresentDay() int {
-	var totalTime int
+	totalTime := 0
 	for _, log := range wl.logs {
 		logDate, err := time.Parse(dateLayout, log.StartDate)
 		if err != nil {

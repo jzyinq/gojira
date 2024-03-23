@@ -59,6 +59,9 @@ func FormatTimeSpent(timeSpentSeconds int) string {
 	timeInHours := float64(timeSpentSeconds) / 60 / 60
 	intPart, floatPart := math.Modf(timeInHours)
 	timeSpent := ""
+	if timeSpentSeconds == 0 {
+		return "0"
+	}
 	if intPart > 0 {
 		timeSpent = fmt.Sprintf("%vh", intPart)
 	}
@@ -132,21 +135,6 @@ func MonthRange(t *time.Time) (time.Time, time.Time) {
 	firstDayOfCurrentMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
 	firstDayOfNextMonth := firstDayOfCurrentMonth.AddDate(0, 1, 0)
 	return firstDayOfCurrentMonth, firstDayOfNextMonth
-}
-
-func workingHoursInMonth(year int, month time.Month) int {
-	t := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
-
-	totalWorkHours := 0
-
-	for t.Month() == month {
-		if t.Weekday() != time.Saturday && t.Weekday() != time.Sunday {
-			totalWorkHours += 8
-		}
-		t = t.AddDate(0, 0, 1)
-	}
-
-	return totalWorkHours
 }
 
 func workingHoursInMonthToPresentDay(year int, month time.Month) int {
