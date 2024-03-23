@@ -6,9 +6,9 @@ import (
 
 type UserInteface struct {
 	app        *tview.Application
-	flex       *tview.Flex
 	pages      *tview.Pages
 	table      *tview.Table
+	grid       *tview.Grid
 	calendar   *Calendar
 	summary    *Summary
 	dayView    *DayView
@@ -33,17 +33,17 @@ func newUi() {
 	//		SetRows(0, height, 0).
 	//		AddItem(p, 1, 1, 1, 1, 0, 0, true)
 	//}
-	grid := tview.NewGrid().
+	app.ui.grid = tview.NewGrid().
 		SetRows(1, 0, 0).
 		SetColumns(0, 0, 27).
 		SetBorders(true)
 
 	// Layout for screens narrower than 100 cells (menu and side bar are hidden).
-	grid.AddItem(app.ui.pages, 0, 0, 2, 3, 0, 0, false)
+	app.ui.grid.AddItem(app.ui.pages, 0, 0, 2, 3, 0, 0, false)
 
 	// Layout for screens wider than 100 cells.
-	grid.AddItem(app.ui.pages, 0, 0, 3, 2, 0, 100, true).
+	app.ui.grid.AddItem(app.ui.pages, 0, 0, 3, 2, 0, 100, true).
 		AddItem(app.ui.summary, 0, 2, 1, 1, 0, 100, false).
 		AddItem(app.ui.calendar, 1, 2, 2, 1, 0, 100, false)
-	app.ui.app.SetRoot(grid, true).SetFocus(app.ui.pages)
+	app.ui.app.SetRoot(app.ui.grid, true).SetFocus(app.ui.pages)
 }

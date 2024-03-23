@@ -273,8 +273,10 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 		return event
 	})
 	form.SetBorder(true).SetTitle("New worklog").SetTitleAlign(tview.AlignLeft)
-	_, _, pwidth, pheight := app.ui.pages.GetRect()
-	form.SetRect(pwidth/2, pheight/2-3, 36, 9)
+	_, _, pwidth, pheight := app.ui.grid.GetRect()
+	formWidth := 36
+	formHeight := 9
+	form.SetRect(pwidth/2-(formWidth/2), pheight/2-3, formWidth, formHeight)
 	app.ui.pages.AddPage("worklog-form", form, false, true)
 	return form
 }
@@ -331,8 +333,10 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 		return event
 	})
 	form.SetBorder(true).SetTitle("Update worklog").SetTitleAlign(tview.AlignLeft)
-	_, _, pwidth, pheight := app.ui.pages.GetRect()
-	form.SetRect(pwidth/2, pheight/2-3, 36, 7)
+	_, _, pwidth, pheight := app.ui.grid.GetRect()
+	formWidth := 36
+	formHeight := 7
+	form.SetRect(pwidth/2-(formWidth/2), pheight/2-3, formWidth, formHeight)
 	app.ui.pages.AddPage("worklog-form", form, false, true)
 	return form
 }
