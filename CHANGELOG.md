@@ -14,9 +14,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
     - `grey` is for weekends by default 
   - calendar also shows currently log time against estimated work hours for whole month
 - error modal for nicer error display in `gojira worklogs`
+- loader modal for handling http requests in `gojira worklogs`
 
 ### Changed
 - refactor pass which cleans up a bit ui functions
+- app time is based on the UTC instead of local time - it's a tentative fix for near midnight scenarios
+- extracted Jira & Tempo API calls to separate packages
+- use latest go (1.22)
+ 
+### Fixed 
+- Mostly `gojira worklogs` fixes: 
+  - UI is now based on grid instead of flex - should be more responsive 
+  - Rearrange UI elements for better readability
 
 ## [0.3.1] - 2022-03-09
 ### Changed
