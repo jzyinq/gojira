@@ -28,7 +28,7 @@ func Run() {
 	// Now log messages will be written to the file
 	logrus.Info("Gojira started")
 	appTimer := time.Now().UTC()
-	logrus.Info("Current time %s", appTimer)
+	logrus.Debug("Current time %s", appTimer)
 	app.ui = &UserInteface{}
 	app.time = &appTimer
 	app.cli = &cli.App{
@@ -43,7 +43,18 @@ func Run() {
 				// dont' check envs on ConfigCommand
 				PrepareConfig()
 			}
+			if context.IsSet("debug") {
+				logrus.SetLevel(logrus.DebugLevel)
+			}
 			return nil
+		},
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "debug",
+				Aliases: []string{"d"},
+				Value:   false,
+				Usage:   "Enable debug log level",
+			},
 		},
 		Commands: []*cli.Command{
 			LogWorkCommand,

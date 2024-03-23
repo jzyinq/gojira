@@ -125,7 +125,7 @@ func (wli *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error
 			return nil, err
 		}
 		if truncatedDate.Equal(logDate.Truncate(24 * time.Hour)) {
-			logrus.Info("truncatedDate ", truncatedDate)
+			logrus.Debug("truncatedDate ", truncatedDate)
 			issuesOnDate = append(issuesOnDate, &wli.issues[i])
 		}
 	}
@@ -135,7 +135,7 @@ func (wli *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error
 func GetWorkLogs() (WorkLogs, error) {
 	// get first day of week nd the last for date in app.time
 	fromDate, toDate := MonthRange(app.time)
-	logrus.Debug("getting worklogs from %s to %s...", fromDate, toDate)
+	logrus.Infof("getting worklogs from %s to %s...", fromDate, toDate)
 	workLogsResponse, err := NewTempoClient().GetWorklogs(fromDate, toDate)
 	if err != nil {
 		return WorkLogs{}, err

@@ -1,7 +1,8 @@
 # gojira
 
 Small cli helper for adding/updating work logs in Jira / Tempo.
-Based on [urfave/cli](https://github.com/urfave/cli/), [manifoldco/promptui](https://github.com/manifoldco/promptui) and [rivo/tview](https://github.com/rivo/tview)
+Based on [urfave/cli](https://github.com/urfave/cli/), [manifoldco/promptui](https://github.com/manifoldco/promptui)
+and [rivo/tview](https://github.com/rivo/tview)
 
 ## Features
 
@@ -70,7 +71,7 @@ Just remember to urldecode it. Save it and you should ready to go!
 ## Todo list
 
 - [ ] unify workLogs and worklogsIssues structs - use one for both
-  - Reduce jira/tempo spaghetti and unnecessary structs and functions
+    - Reduce jira/tempo spaghetti and unnecessary structs and functions
 - While deleting freshly set worklog, fetch it's data from jira to delete it properly - currently there is:
   ```
   The worklog has either been deleted or you no longer have permission to view it
@@ -95,9 +96,9 @@ Just remember to urldecode it. Save it and you should ready to go!
 - [x] detect git branch name (jira ticket)
 - [x] display todays logged working hours
 - [x] NewWorklog view - add input for date and date period optionally
+- [x] Remove app.ui.flex from the picture-
 - [ ] godtools cli semantics update
-  - `gojira log -i TICKET` -> `gojira log -i TICKET`
-  - `gojira log -i TICKET -t 1h30m`
-  - `gojira` -> `gojira recent`
-  - `gojira` -> `gojira --help`
-- Remove app.ui.flex from the picture
+    - `gojira log -i TICKET` -> `gojira log -i TICKET`
+    - `gojira log -i TICKET -t 1h30m`
+    - `gojira` -> `gojira recent`
+    - `gojira` -> `gojira --help`

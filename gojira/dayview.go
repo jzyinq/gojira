@@ -79,7 +79,7 @@ func NewDayView() *DayView {
 				timePeriod = time.Hour * 24
 			}
 			newTime := app.time.Add(timePeriod)
-			logrus.Info("Changing date to ", newTime)
+			logrus.Debug("Changing date to ", newTime)
 			app.time = &newTime
 			loadWorklogs()
 			app.ui.calendar.update()
@@ -239,8 +239,11 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 				return
 			}
 			for day := dateRange.StartDate; day.Before(dateRange.EndDate.AddDate(0, 0, 1)); day = day.AddDate(0, 0, 1) {
-				logrus.Infof("Logging work for %s / %s / %s", day.Format(dateLayout), issue.Key, timeSpent)
-				issue.LogWork(&day, timeSpent)
+				err := issue.LogWork(&day, timeSpent)
+				if err != nil {
+					app.ui.errorView.ShowError(err.Error())
+					return
+				}
 			}
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())

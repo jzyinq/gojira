@@ -15,8 +15,10 @@ func SendHttpRequest(
 	headers map[string]string,
 	successfulStatusCode int) ([]byte, error) {
 	client := &http.Client{}
-	logrus.Infof("Sending %s request to %s", requestMethod, requestUrl)
-	logrus.Infof("Request body:\n%s", requestBody)
+	logrus.Debugf("sending %s request to %s", requestMethod, requestUrl)
+	if requestBody != nil {
+		logrus.Debugf("request body: %s", requestBody)
+	}
 	req, err := http.NewRequest(requestMethod, requestUrl, requestBody)
 	if err != nil {
 		return nil, err
