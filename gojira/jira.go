@@ -163,7 +163,7 @@ func (jc *JiraClient) GetIssue(issueKey string) (Issue, error) {
 
 func (jc *JiraClient) CreateWorklog(issueKey string, logTime *time.Time, timeSpent string) (WorkLogResponse, error) {
 	payload := map[string]string{
-		"timeSpent":      timeSpent,
+		"timeSpent":      FormatTimeSpent(TimeSpentToSeconds(timeSpent)),
 		"adjustEstimate": "leave",
 		"started":        logTime.Format("2006-01-02T15:04:05.000-0700"),
 	}

@@ -3,6 +3,7 @@ package gojira
 import (
 	"fmt"
 	"github.com/rivo/tview"
+	"strings"
 )
 
 type Summary struct {
@@ -21,9 +22,9 @@ func NewSummary() *Summary {
 }
 
 func (s *Summary) update() {
-	s.SetText(
-		fmt.Sprintf("Monthly %s/%dh",
-			FormatTimeSpent(app.workLogs.TotalTimeSpent()), workingHoursInMonth(app.time.Year(), app.time.Month()),
-		),
-	)
+	totalTimeSpent := FormatTimeSpent(app.workLogs.TotalTimeSpent())
+	// that's a hack to remove spaces between hours and minutes
+	totalTimeSpent = strings.Join(strings.Fields(totalTimeSpent), "")
+	workingHours := workingHoursInMonth(app.time.Year(), app.time.Month())
+	s.SetText(fmt.Sprintf("Monthly %s/%dh", totalTimeSpent, workingHours))
 }
