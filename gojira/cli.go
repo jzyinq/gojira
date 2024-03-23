@@ -134,7 +134,10 @@ var LogWorkCommand = &cli.Command{
 			}
 		}
 
-		issue.LogWork(app.time, timeSpent)
+		err = issue.LogWork(app.time, timeSpent)
+		if err != nil {
+			return err
+		}
 		return nil
 	},
 }
@@ -200,7 +203,7 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 var ViewIssueInBrowserAction = func(c *cli.Context) error {
 	issueKey := ResolveIssueKey(c)
 	if issueKey != "" {
-		OpenUrl(fmt.Sprintf("%s/browse/%s", Config.JiraUrl, issueKey))
+		OpenURL(fmt.Sprintf("%s/browse/%s", Config.JiraUrl, issueKey))
 	}
 	return nil
 }
@@ -209,6 +212,7 @@ var ConfigCommand = &cli.Command{
 	Name:  "config",
 	Usage: "configuration help",
 	Action: func(context *cli.Context) error {
+		//nolint:lll
 		fmt.Print(`gojira needs a couple of env variables right now that you have to configure:
 #1 Export below values in your .bashrc / .zshrc / .profile file:
 
@@ -258,7 +262,7 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 	// add this workload to global object
 	app.workLogs.logs = append(app.workLogs.logs, &worklog)
 	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{Issue: issue, WorkLog: &worklog})
-	todayWorklog, err = app.workLogs.LogsOnDate(logTime)
+	_, err = app.workLogs.LogsOnDate(logTime)
 	if err != nil {
 		return err
 	}

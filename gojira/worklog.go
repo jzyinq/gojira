@@ -28,7 +28,10 @@ func NewWorkLog(issueKey string, logTime *time.Time, timeSpent string) (WorkLog,
 			Self        string `json:"self"`
 			AccountId   string `json:"accountId"`
 			DisplayName string `json:"displayName"`
-		}{Self: workLogResponse.Self, AccountId: workLogResponse.Author.Accountid, DisplayName: workLogResponse.Author.Displayname},
+		}{
+			Self: workLogResponse.Self, AccountId: workLogResponse.Author.Accountid,
+			DisplayName: workLogResponse.Author.Displayname,
+		},
 		TimeSpentSeconds: workLogResponse.Timespentseconds,
 		Issue: struct { // FIXME oh my god what a mess
 			Self string `json:"self"`
@@ -153,7 +156,7 @@ func GetWorkLogs() (WorkLogs, error) {
 }
 
 func TimeSpentToSeconds(timeSpent string) int {
-	r, _ := regexp.Compile("(([0-9]+)h)?\\s?(([0-9]+)m)?")
+	r, _ := regexp.Compile(`(([0-9]+)h)?\s?(([0-9]+)m)?`)
 	match := r.FindStringSubmatch(timeSpent)
 	var timeSpentSeconds int = 0
 

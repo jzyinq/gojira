@@ -25,7 +25,6 @@ func NewJiraClient() *JiraClient {
 }
 
 func (jc *JiraClient) getHttpHeaders() map[string]string {
-
 	authorizationToken := fmt.Sprintf("%s:%s", Config.JiraLogin, Config.JiraToken)
 	authorizationHeader := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(authorizationToken)))
 	return map[string]string{
@@ -133,6 +132,9 @@ func (jc *JiraClient) GetLatestIssues() (JQLResponse, error) {
 		StartAt:      0,
 	}
 	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		return JQLResponse{}, err
+	}
 	requestBody := bytes.NewBuffer(payloadJson)
 	requestUrl := fmt.Sprintf("%s/rest/api/2/search", Config.JiraUrl)
 	response, err := SendHttpRequest("POST", requestUrl, requestBody, jc.getHttpHeaders(), 200)
@@ -190,13 +192,15 @@ func (jc *JiraClient) UpdateWorklog(issueKey string, jiraWorklogId int, timeSpen
 	payloadJson, _ := json.Marshal(payload)
 	requestBody := bytes.NewBuffer(payloadJson)
 	// FIXME use tempo api to update worklog, unless there is not tempoId in worklog
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false", Config.JiraUrl, issueKey, jiraWorklogId)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false",
+		Config.JiraUrl, issueKey, jiraWorklogId)
 	_, err := SendHttpRequest("PUT", requestUrl, requestBody, jc.getHttpHeaders(), 200)
 	return err
 }
 
 func (jc *JiraClient) DeleteWorklog(issueKey string, jiraWorklogId int) error {
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false", Config.JiraUrl, issueKey, jiraWorklogId)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false",
+		Config.JiraUrl, issueKey, jiraWorklogId)
 	_, err := SendHttpRequest("DELETE", requestUrl, nil, jc.getHttpHeaders(), 204)
 	return err
 }

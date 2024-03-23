@@ -95,13 +95,13 @@ func GetTicketFromGitBranch() string {
 	return FindIssueKeyInString(string(gitBranch))
 }
 
-func FindIssueKeyInString(possibleUrl string) string {
+func FindIssueKeyInString(possibleURL string) string {
 	r, _ := regexp.Compile("([A-Z]+-[0-9]+)")
-	match := r.FindString(possibleUrl)
+	match := r.FindString(possibleURL)
 	return match
 }
 
-func OpenUrl(url string) {
+func OpenURL(url string) {
 	// silence browser logs
 	browser.Stdout = nil
 	browser.Stderr = nil

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -30,13 +29,15 @@ func SendHttpRequest(
 	if err != nil {
 		return nil, err
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != successfulStatusCode {
-		logrus.Errorf("There was an error when performing request:\n%s %s\nResponse code was: %d\nResponse body:\n%s", requestMethod, requestUrl, resp.StatusCode, string(body))
-		return nil, fmt.Errorf("There was an error when performing request:\n%s %s\nResponse code was: %d\nResponse body:\n%s", requestMethod, requestUrl, resp.StatusCode, string(body))
+		logrus.Errorf("There was an error when performing request:\n%s %s\nResponse code was: %d\n"+
+			"Response body:\n%s", requestMethod, requestUrl, resp.StatusCode, string(body))
+		return nil, fmt.Errorf("There was an error when performing request:\n%s %s\nResponse code was: %d\n"+
+			"Response body:\n%s", requestMethod, requestUrl, resp.StatusCode, string(body))
 	}
 	return body, nil
 }

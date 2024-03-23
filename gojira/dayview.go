@@ -55,15 +55,19 @@ func NewDayView() *DayView {
 		if event.Key() == tcell.KeyTab {
 			if app.ui.app.GetFocus() == dayView.worklogList {
 				app.ui.app.SetFocus(dayView.latestIssuesList)
-				dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
-				dayView.worklogList.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+				dayView.latestIssuesList.SetSelectedStyle(
+					tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+				dayView.worklogList.SetSelectedStyle(
+					tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
 				return nil
 			}
 			app.ui.app.SetFocus(dayView.worklogList)
 			// FIXME not necessary since you can't jump between calendar days on latest issues
 			//dayView.worklogStatus.SetText(fmt.Sprintf("%s", dayView.worklogStatus.GetText(true)))
-			dayView.worklogList.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
-			dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+			dayView.worklogList.SetSelectedStyle(
+				tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+			dayView.latestIssuesList.SetSelectedStyle(
+				tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
 			return nil
 		}
 		return event
@@ -83,7 +87,6 @@ func NewDayView() *DayView {
 			app.time = &newTime
 			loadWorklogs()
 			app.ui.calendar.update()
-			break
 		}
 		return event
 	})
@@ -126,7 +129,8 @@ func (d *DayView) update() {
 			tview.NewTableCell((logs)[r].Issue.Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
 		d.worklogList.SetCell(r, 2,
-			tview.NewTableCell(FormatTimeSpent((logs)[r].WorkLog.TimeSpentSeconds)).SetTextColor(color).SetAlign(tview.AlignLeft),
+			tview.NewTableCell(
+				FormatTimeSpent((logs)[r].WorkLog.TimeSpentSeconds)).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
 	}
 	d.worklogList.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
@@ -201,7 +205,6 @@ func ParseDateRange(dateStr string) (DateRange, error) {
 		if err != nil {
 			return DateRange{}, fmt.Errorf("error parsing end date: %w", err)
 		}
-
 	} else {
 		// Parse the single date
 		startDate, err = time.Parse(layout, dateStr)
@@ -221,7 +224,6 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	var form *tview.Form
 
 	newWorklog := func() {
-
 		logTime := form.GetFormItem(0).(*tview.InputField).GetText()
 		timeSpent := form.GetFormItem(1).(*tview.InputField).GetText()
 		go func() {
@@ -268,7 +270,6 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.app.SetFocus(app.ui.dayView.latestIssuesList)
-			break
 		}
 		return event
 	})
@@ -328,7 +329,6 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.app.SetFocus(app.ui.dayView.worklogList)
-			break
 		}
 		return event
 	})

@@ -7,7 +7,6 @@ import (
 type UserInteface struct {
 	app        *tview.Application
 	pages      *tview.Pages
-	table      *tview.Table
 	grid       *tview.Grid
 	calendar   *Calendar
 	summary    *Summary

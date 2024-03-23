@@ -10,7 +10,7 @@ import (
 
 func PromptForTimeSpent(promptLabel string) (string, error) {
 	validate := func(input string) error {
-		r, _ := regexp.Compile("^(([0-9]+)h)?\\s?(([0-9]+)m)?$")
+		r, _ := regexp.Compile(`^(([0-9]+)h)?\s?(([0-9]+)m)?$`)
 		match := r.MatchString(input)
 		if !match {
 			return errors.New("Invalid timeSpent format - try 1h / 1h30m / 30m")

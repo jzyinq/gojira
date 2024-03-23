@@ -18,7 +18,7 @@ type gojira struct {
 
 func Run() {
 	// Open the log file
-	logFile, err := os.OpenFile("/tmp/gojira.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	logFile, err := os.OpenFile("/tmp/gojira.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		logrus.Fatalf("Error opening log file: %v", err)
 	}
@@ -28,7 +28,7 @@ func Run() {
 	// Now log messages will be written to the file
 	logrus.Info("Gojira started")
 	appTimer := time.Now().UTC()
-	logrus.Debug("Current time %s", appTimer)
+	logrus.Debugf("Current time %s", appTimer)
 	app.ui = &UserInteface{}
 	app.time = &appTimer
 	app.cli = &cli.App{
