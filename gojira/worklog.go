@@ -126,7 +126,6 @@ func (wli *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error
 	}
 	truncatedDate := (*date).Truncate(24 * time.Hour)
 	for i, issue := range wli.issues {
-		// FIXME should be in local timezone PariseInLocation - but it's not working
 		logDate, err := time.Parse(dateLayout, issue.WorkLog.StartDate)
 		logDate = logDate.Truncate(24 * time.Hour)
 		if err != nil {

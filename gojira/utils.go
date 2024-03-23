@@ -76,9 +76,9 @@ func FormatTimeSpent(timeSpentSeconds int) string {
 
 func ResolveIssueKey(c *cli.Context) string {
 	issueKey := ""
-	if c.App.Metadata["JiraIssue"] != nil {
-		issueKey = fmt.Sprintf("%s", c.App.Metadata["JiraTicket"])
-	}
+	//if c.App.Metadata["JiraIssue"] != nil {
+	//	issueKey = fmt.Sprintf("%s", c.App.Metadata["JiraTicket"])
+	//}
 	issueKey = FindIssueKeyInString(c.Args().Get(0))
 	if issueKey == "" {
 		issueKey = GetTicketFromGitBranch()
