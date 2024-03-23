@@ -25,12 +25,11 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-#    - revive
-    - ifshort
+#    - revive # This will wait for it's turn to be enabled
     - staticcheck
     - gosec
     - dogsled
-    - godox
+#    - godox # too much FIXMEs in the code now :D
     - megacheck
     - govet
     - gocyclo

@@ -17,7 +17,7 @@ type DayView struct {
 	latestIssuesStatus *tview.TextView
 }
 
-func NewDayView() *DayView {
+func NewDayView() *DayView { //nolint:funlen
 	dayView := &DayView{
 		worklogList: tview.NewTable(),
 		worklogStatus: tview.NewTextView().SetChangedFunc(func() {
