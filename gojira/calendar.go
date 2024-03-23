@@ -68,10 +68,13 @@ func (c *Calendar) update() {
 				panic(err)
 			}
 			timeSpent := CalculateTimeSpent(worklogs)
-			color := GetTimeSpentColor(timeSpent)
+			color := GetTimeSpentColor(timeSpent, 8)
 			cell.SetTextColor(color)
-			if (dayOfWeek == 5 || dayOfWeek == 6) && color == tcell.ColorWhite {
+			if (dayOfWeek == 5 || dayOfWeek == 6) && timeSpent == 0 {
 				cell.SetTextColor(tcell.ColorGrey)
+				if calendarDay.Before(time.Now().Local()) {
+					cell.SetTextColor(tcell.ColorBlack)
+				}
 			}
 		}
 		if i == c.day {

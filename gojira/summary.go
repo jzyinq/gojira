@@ -27,4 +27,5 @@ func (s *Summary) update() {
 	totalTimeSpent = strings.Join(strings.Fields(totalTimeSpent), "")
 	workingHours := workingHoursInMonthToPresentDay(app.time.Year(), app.time.Month())
 	s.SetText(fmt.Sprintf("Total %s/%dh", totalTimeSpent, workingHours))
+	s.SetTextColor(GetTimeSpentColor(app.workLogs.TotalTimeSpentToPresentDay(), workingHours))
 }

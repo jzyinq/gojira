@@ -29,27 +29,27 @@ func CalculateTimeSpent(workLogs []*WorkLog) int {
 	return timeSpentInSeconds
 }
 
-func GetTimeSpentColorTag(timeSpentInSeconds int) string {
+func GetTimeSpentColorTag(timeSpentInSeconds int, hours int) string {
 	switch {
-	case timeSpentInSeconds < 8*60*60 && timeSpentInSeconds > 0:
-		return "[yellow]"
-	case timeSpentInSeconds == 8*60*60:
+	case timeSpentInSeconds < hours*60*60 && timeSpentInSeconds > 0:
+		return "[orange]"
+	case timeSpentInSeconds == hours*60*60:
 		return "[green]"
-	case timeSpentInSeconds > 8*60*60:
-		return "[purple]"
+	case timeSpentInSeconds > hours*60*60:
+		return "[blue]"
 	default:
 		return "[white]"
 	}
 }
 
-func GetTimeSpentColor(timeSpentInSeconds int) tcell.Color {
+func GetTimeSpentColor(timeSpentInSeconds int, hours int) tcell.Color {
 	switch {
-	case timeSpentInSeconds < 8*60*60 && timeSpentInSeconds > 0:
-		return tcell.ColorYellow
-	case timeSpentInSeconds == 8*60*60:
+	case timeSpentInSeconds < hours*60*60 && timeSpentInSeconds > 0:
+		return tcell.ColorOrange
+	case timeSpentInSeconds == hours*60*60:
 		return tcell.ColorGreen
-	case timeSpentInSeconds > 8*60*60:
-		return tcell.ColorPurple
+	case timeSpentInSeconds > hours*60*60:
+		return tcell.ColorBlue
 	default:
 		return tcell.ColorWhite
 	}

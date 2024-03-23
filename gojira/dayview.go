@@ -140,7 +140,7 @@ func (d *DayView) update() {
 	d.worklogStatus.SetText(
 		fmt.Sprintf("Worklogs - %s - [%s%s[white]]",
 			app.time.Format("2006-01-02"),
-			GetTimeSpentColorTag(timeSpent),
+			GetTimeSpentColorTag(timeSpent, 8),
 			FormatTimeSpent(timeSpent),
 		)).SetDynamicColors(true)
 }
