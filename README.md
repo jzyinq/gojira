@@ -98,6 +98,7 @@ Just remember to urldecode it. Save it and you should ready to go!
 - [x] NewWorklog view - add input for date and date period optionally
 - [x] Remove app.ui.flex from the picture
 - [x] Hour summary to present day without counting worklogs from the future
+- [ ] Simplify Jira & Tempo structs
 - [ ] godtools cli semantics update
     - `gojira log -i TICKET` -> `gojira log -i TICKET`
     - `gojira log -i TICKET -t 1h30m`
