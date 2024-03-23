@@ -11,6 +11,16 @@ import (
 	"time"
 )
 
+const GojiraAscii = "" +
+	"   _____       _ _           \n" +
+	"  / ____|     (_|_)          \n" +
+	" | |  __  ___  _ _ _ __ __ _ \n" +
+	" | | |_ |/ _ \\| | | '__/ _` |\n" +
+	" | |__| | (_) | | | | | (_| |\n" +
+	"  \\_____|\\___/| |_|_|  \\__,_|\n" +
+	"             _/ |     v0.4.0 \n" +
+	"            |__/             \n\n"
+
 var WorkLogsCommand = &cli.Command{
 	Name:  "worklogs",
 	Usage: "Edit your today's work log",
@@ -47,10 +57,10 @@ func NewWorkLogIssues() error {
 	waitGroup := sync.WaitGroup{}
 	var errors []error
 	errCh := make(chan error, len(app.workLogs.logs))
-	for i, _ := range app.workLogs.logs {
+	for i := range app.workLogs.logs {
 		waitGroup.Add(1)
 		go func(workLog *WorkLog) {
-			issue, err := GetIssue(workLog.Issue.Key)
+			issue, err := NewJiraClient().GetIssue(workLog.Issue.Key)
 			if err != nil {
 				errCh <- err // Send the error to the channel.
 				return
@@ -75,7 +85,7 @@ var IssuesCommand = &cli.Command{
 	Name:  "issues",
 	Usage: "Show currently assigned issues",
 	Action: func(context *cli.Context) error {
-		lastTickets, err := GetLatestIssues()
+		lastTickets, err := NewJiraClient().GetLatestIssues()
 		if err != nil {
 			return err
 		}
@@ -111,7 +121,7 @@ var LogWorkCommand = &cli.Command{
 		if issueKey == "" {
 			log.Fatalln("No issue key given / detected in git branch.")
 		}
-		issue, err := GetIssue(issueKey)
+		issue, err := NewJiraClient().GetIssue(issueKey)
 		if err != nil {
 			return err
 		}
@@ -124,7 +134,10 @@ var LogWorkCommand = &cli.Command{
 			}
 		}
 
-		issue.LogWork(app.time, timeSpent)
+		err = issue.LogWork(app.time, timeSpent)
+		if err != nil {
+			return err
+		}
 		return nil
 	},
 }
@@ -163,7 +176,7 @@ var DefaultAction = func(c *cli.Context) error {
 var GitOrIssueListAction = func(c *cli.Context) error {
 	issueKey := ResolveIssueKey(c)
 	if issueKey != "" {
-		issue, err := GetIssue(issueKey)
+		issue, err := NewJiraClient().GetIssue(issueKey)
 		if err != nil {
 			return err
 		}
@@ -190,7 +203,7 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 var ViewIssueInBrowserAction = func(c *cli.Context) error {
 	issueKey := ResolveIssueKey(c)
 	if issueKey != "" {
-		OpenUrl(fmt.Sprintf("%s/browse/%s", Config.JiraUrl, issueKey))
+		OpenURL(fmt.Sprintf("%s/browse/%s", Config.JiraUrl, issueKey))
 	}
 	return nil
 }
@@ -199,6 +212,7 @@ var ConfigCommand = &cli.Command{
 	Name:  "config",
 	Usage: "configuration help",
 	Action: func(context *cli.Context) error {
+		//nolint:lll
 		fmt.Print(`gojira needs a couple of env variables right now that you have to configure:
 #1 Export below values in your .bashrc / .zshrc / .profile file:
 
@@ -241,14 +255,14 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 			}
 		}
 	}
-	worklog, err := issue.NewWorkLog(logTime, timeSpent)
+	worklog, err := NewWorkLog(issue.Key, logTime, timeSpent)
 	if err != nil {
 		return err
 	}
 	// add this workload to global object
 	app.workLogs.logs = append(app.workLogs.logs, &worklog)
 	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{Issue: issue, WorkLog: &worklog})
-	todayWorklog, err = app.workLogs.LogsOnDate(logTime)
+	_, err = app.workLogs.LogsOnDate(logTime)
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,49 @@
+linters-settings:
+  dupl:
+    threshold: 95
+  funlen:
+    lines: 65
+    statements: 40
+  gocognit:
+    min-complexity: 25
+  goconst:
+    min-occurrences: 4
+  lll:
+    line-length: 120
+
+  depguard:
+    rules:
+      Main:
+        list-mode: lax
+        files:
+          - $all
+          - "!$test"
+        deny:
+          - pkg: reflect
+            desc: Please don't use reflect package
+
+linters:
+  disable-all: true
+  enable:
+#    - revive # This will wait for it's turn to be enabled
+    - staticcheck
+    - gosec
+    - dogsled
+#    - godox # too much FIXMEs in the code now :D
+    - megacheck
+    - govet
+    - gocyclo
+    - lll
+    - funlen
+    - gofmt
+    - gocognit
+    - dupl
+    - depguard
+    - whitespace
+    - goconst
+    - unconvert
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-use-default: false

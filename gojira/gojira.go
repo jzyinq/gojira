@@ -18,7 +18,7 @@ type gojira struct {
 
 func Run() {
 	// Open the log file
-	logFile, err := os.OpenFile("/tmp/gojira.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	logFile, err := os.OpenFile("/tmp/gojira.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		logrus.Fatalf("Error opening log file: %v", err)
 	}
@@ -27,7 +27,8 @@ func Run() {
 	logrus.SetOutput(logFile)
 	// Now log messages will be written to the file
 	logrus.Info("Gojira started")
-	appTimer := time.Now().Local()
+	appTimer := time.Now().UTC()
+	logrus.Debugf("Current time %s", appTimer)
 	app.ui = &UserInteface{}
 	app.time = &appTimer
 	app.cli = &cli.App{
@@ -42,7 +43,18 @@ func Run() {
 				// dont' check envs on ConfigCommand
 				PrepareConfig()
 			}
+			if context.IsSet("debug") {
+				logrus.SetLevel(logrus.DebugLevel)
+			}
 			return nil
+		},
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "debug",
+				Aliases: []string{"d"},
+				Value:   false,
+				Usage:   "Enable debug log level",
+			},
 		},
 		Commands: []*cli.Command{
 			LogWorkCommand,

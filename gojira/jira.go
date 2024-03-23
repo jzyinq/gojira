@@ -5,64 +5,32 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 )
 
-func getJiraAuthorizationHeader() string {
-	authorizationToken := fmt.Sprintf("%s:%s", Config.JiraLogin, Config.JiraToken)
-	authorizationHeader := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(authorizationToken)))
-	return authorizationHeader
+type JiraClient struct {
+	Url       string
+	Login     string
+	Token     string
+	AccountID string
 }
 
-func (issue Issue) NewWorkLog(logTime *time.Time, timeSpent string) (WorkLog, error) {
-	payload := map[string]string{
-		"timeSpent":      timeSpent,
-		"adjustEstimate": "leave",
-		"started":        logTime.Format("2006-01-02T15:04:05.000-0700"),
+func NewJiraClient() *JiraClient {
+	return &JiraClient{
+		Url:       Config.JiraUrl,
+		Login:     Config.JiraLogin,
+		Token:     Config.JiraToken,
+		AccountID: Config.JiraAccountId,
 	}
-	payloadJson, _ := json.Marshal(payload)
-	requestBody := bytes.NewBuffer(payloadJson)
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog?notifyUsers=false", Config.JiraUrl, issue.Key)
-	headers := map[string]string{
-		"Authorization": getJiraAuthorizationHeader(),
+}
+
+func (jc *JiraClient) getHttpHeaders() map[string]string {
+	authorizationToken := fmt.Sprintf("%s:%s", Config.JiraLogin, Config.JiraToken)
+	authorizationHeader := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(authorizationToken)))
+	return map[string]string{
+		"Authorization": authorizationHeader,
 		"Content-Type":  "application/json",
 	}
-
-	response, err := SendHttpRequest("POST", requestUrl, requestBody, headers, 201)
-	if err != nil {
-		return WorkLog{}, err
-	}
-
-	var newWorklog NewWorkLog
-	err = json.Unmarshal(response, &newWorklog)
-	if err != nil {
-		return WorkLog{}, err
-	}
-	//fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, issue.Key)
-	// FIXME it seems that this not not a tempo id, but some jira internal id
-	jiraWorklogId, err := strconv.Atoi(newWorklog.ID)
-	if err != nil {
-		return WorkLog{}, err
-	}
-
-	worklog := WorkLog{
-		JiraWorklogid: jiraWorklogId,
-		StartDate:     logTime.Format(dateLayout),
-		StartTime:     logTime.Format("15:04:05"),
-		Author: struct { // FIXME oh my god what a mess
-			Self        string `json:"self"`
-			AccountId   string `json:"accountId"`
-			DisplayName string `json:"displayName"`
-		}{Self: newWorklog.Self, AccountId: newWorklog.Author.Accountid, DisplayName: newWorklog.Author.Displayname},
-		TimeSpentSeconds: newWorklog.Timespentseconds,
-		Issue: struct { // FIXME oh my god what a mess
-			Self string `json:"self"`
-			Key  string `json:"key"`
-			ID   int    `json:"id"`
-		}{Self: "", Key: issue.Key, ID: 0},
-	}
-	return worklog, nil
 }
 
 type JQLSearch struct {
@@ -109,35 +77,7 @@ type Issue struct {
 	} `json:"fields"`
 }
 
-func GetLatestIssues() (JQLResponse, error) {
-	payload := &JQLSearch{
-		Expand:       []string{"names"},
-		Jql:          "assignee in (currentUser()) ORDER BY updated DESC, created DESC",
-		MaxResults:   10,
-		FieldsByKeys: false,
-		Fields:       []string{"summary", "status"},
-		StartAt:      0,
-	}
-	payloadJson, err := json.Marshal(payload)
-	requestBody := bytes.NewBuffer(payloadJson)
-	requestUrl := fmt.Sprintf("%s/rest/api/2/search", Config.JiraUrl)
-	headers := map[string]string{
-		"Authorization": getJiraAuthorizationHeader(),
-		"Content-Type":  "application/json",
-	}
-	response, err := SendHttpRequest("POST", requestUrl, requestBody, headers, 200)
-	if err != nil {
-		return JQLResponse{}, err
-	}
-	var jqlResponse JQLResponse
-	err = json.Unmarshal(response, &jqlResponse)
-	if err != nil {
-		return JQLResponse{}, err
-	}
-	return jqlResponse, nil
-}
-
-type NewWorkLog struct {
+type WorkLogResponse struct {
 	Self   string `json:"self"`
 	Author struct {
 		Self         string `json:"self"`
@@ -174,17 +114,44 @@ type NewWorkLog struct {
 	Started          string `json:"started"`
 	Timespent        string `json:"timeSpent"`
 	Timespentseconds int    `json:"timeSpentSeconds"`
-	ID               string `json:"id"`
+	ID               string `json:"id"` // can it be an int? it's a number
 	Issueid          string `json:"issueId"`
 }
 
-func GetIssue(issueKey string) (Issue, error) {
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s?fields=summary,status", Config.JiraUrl, issueKey)
-	headers := map[string]string{
-		"Authorization": getJiraAuthorizationHeader(),
-		"Content-Type":  "application/json",
+type JiraWorklogUpdate struct {
+	TimeSpentSeconds int `json:"timeSpentSeconds"`
+}
+
+func (jc *JiraClient) GetLatestIssues() (JQLResponse, error) {
+	payload := &JQLSearch{
+		Expand:       []string{"names"},
+		Jql:          "assignee in (currentUser()) ORDER BY updated DESC, created DESC",
+		MaxResults:   10,
+		FieldsByKeys: false,
+		Fields:       []string{"summary", "status"},
+		StartAt:      0,
 	}
-	response, err := SendHttpRequest("GET", requestUrl, nil, headers, 200)
+	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		return JQLResponse{}, err
+	}
+	requestBody := bytes.NewBuffer(payloadJson)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/search", Config.JiraUrl)
+	response, err := SendHttpRequest("POST", requestUrl, requestBody, jc.getHttpHeaders(), 200)
+	if err != nil {
+		return JQLResponse{}, err
+	}
+	var jqlResponse JQLResponse
+	err = json.Unmarshal(response, &jqlResponse)
+	if err != nil {
+		return JQLResponse{}, err
+	}
+	return jqlResponse, nil
+}
+
+func (jc *JiraClient) GetIssue(issueKey string) (Issue, error) {
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s?fields=summary,status", Config.JiraUrl, issueKey)
+	response, err := SendHttpRequest("GET", requestUrl, nil, jc.getHttpHeaders(), 200)
 	if err != nil {
 		return Issue{}, err
 	}
@@ -194,4 +161,46 @@ func GetIssue(issueKey string) (Issue, error) {
 		return Issue{}, err
 	}
 	return jiraIssue, nil
+}
+
+func (jc *JiraClient) CreateWorklog(issueKey string, logTime *time.Time, timeSpent string) (WorkLogResponse, error) {
+	payload := map[string]string{
+		"timeSpent":      FormatTimeSpent(TimeSpentToSeconds(timeSpent)),
+		"adjustEstimate": "leave",
+		"started":        logTime.Format("2006-01-02T15:04:05.000-0700"),
+	}
+	payloadJson, _ := json.Marshal(payload)
+	requestBody := bytes.NewBuffer(payloadJson)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog?notifyUsers=false", Config.JiraUrl, issueKey)
+	response, err := SendHttpRequest("POST", requestUrl, requestBody, jc.getHttpHeaders(), 201)
+	if err != nil {
+		return WorkLogResponse{}, err
+	}
+
+	var workLogRequest WorkLogResponse
+	err = json.Unmarshal(response, &workLogRequest)
+	if err != nil {
+		return WorkLogResponse{}, err
+	}
+	return workLogRequest, nil
+}
+
+func (jc *JiraClient) UpdateWorklog(issueKey string, jiraWorklogId int, timeSpentInSeconds int) error {
+	payload := JiraWorklogUpdate{
+		TimeSpentSeconds: timeSpentInSeconds,
+	}
+	payloadJson, _ := json.Marshal(payload)
+	requestBody := bytes.NewBuffer(payloadJson)
+	// FIXME use tempo api to update worklog, unless there is not tempoId in worklog
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false",
+		Config.JiraUrl, issueKey, jiraWorklogId)
+	_, err := SendHttpRequest("PUT", requestUrl, requestBody, jc.getHttpHeaders(), 200)
+	return err
+}
+
+func (jc *JiraClient) DeleteWorklog(issueKey string, jiraWorklogId int) error {
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false",
+		Config.JiraUrl, issueKey, jiraWorklogId)
+	_, err := SendHttpRequest("DELETE", requestUrl, nil, jc.getHttpHeaders(), 204)
+	return err
 }

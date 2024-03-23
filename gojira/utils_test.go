@@ -45,7 +45,8 @@ func TestCalculateTimeSpent(t *testing.T) {
 func TestFindIssueKeyInString(t *testing.T) {
 	fixtures := []string{
 		"TICKET-999",
-		"https://instance.atlassian.net/secure/RapidBoard.jspa?rapidView=84&projectKey=TICKET&view=planning&selectedIssue=TICKET-999&issueLimit=100",
+		"https://instance.atlassian.net/secure/RapidBoard.jspa?rapidView=84&projectKey=TICKET&" +
+			"view=planning&selectedIssue=TICKET-999&issueLimit=100",
 		"https://instance.atlassian.net/browse/TICKET-999",
 		"anythingreallyTICKET-999COULDBEHERE",
 		"COULDBEHERE_TICKET-999cq334q5c3v",
@@ -58,7 +59,6 @@ func TestFindIssueKeyInString(t *testing.T) {
 			t.Errorf("Incorrect timeSpent - got %s instead of %s", actualIssueKey, expectedIssueKey)
 		}
 	}
-
 }
 
 func TestTimeSpentToSeconds(t *testing.T) {

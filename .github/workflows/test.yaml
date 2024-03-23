@@ -1,0 +1,15 @@
+name: Test
+on: push
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Install golang
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.22"
+      - name: Run tests
+        run: make tests

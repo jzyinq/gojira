@@ -17,7 +17,7 @@ type DayView struct {
 	latestIssuesStatus *tview.TextView
 }
 
-func NewDayView() *DayView {
+func NewDayView() *DayView { //nolint:funlen
 	dayView := &DayView{
 		worklogList: tview.NewTable(),
 		worklogStatus: tview.NewTextView().SetChangedFunc(func() {
@@ -55,14 +55,19 @@ func NewDayView() *DayView {
 		if event.Key() == tcell.KeyTab {
 			if app.ui.app.GetFocus() == dayView.worklogList {
 				app.ui.app.SetFocus(dayView.latestIssuesList)
-				dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
-				dayView.worklogList.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+				dayView.latestIssuesList.SetSelectedStyle(
+					tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+				dayView.worklogList.SetSelectedStyle(
+					tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
 				return nil
 			}
 			app.ui.app.SetFocus(dayView.worklogList)
-			dayView.worklogStatus.SetText(fmt.Sprintf(">%s", dayView.worklogStatus.GetText(true)))
-			dayView.worklogList.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
-			dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+			// FIXME not necessary since you can't jump between calendar days on latest issues
+			//dayView.worklogStatus.SetText(fmt.Sprintf("%s", dayView.worklogStatus.GetText(true)))
+			dayView.worklogList.SetSelectedStyle(
+				tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+			dayView.latestIssuesList.SetSelectedStyle(
+				tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
 			return nil
 		}
 		return event
@@ -78,10 +83,10 @@ func NewDayView() *DayView {
 				timePeriod = time.Hour * 24
 			}
 			newTime := app.time.Add(timePeriod)
+			logrus.Debug("Changing date to ", newTime)
 			app.time = &newTime
 			loadWorklogs()
 			app.ui.calendar.update()
-			break
 		}
 		return event
 	})
@@ -98,13 +103,13 @@ func loadWorklogs() {
 	case loadingWorklogs <- true:
 		go func() {
 			defer func() { <-loadingWorklogs }()
-			app.ui.flex.SetTitle(" gojira - fetching data... ")
+			app.ui.loaderView.Show("Fetching worklogs...")
 			err := NewWorkLogIssues()
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 			}
 			app.ui.dayView.update()
-			app.ui.flex.SetTitle(" gojira ")
+			app.ui.loaderView.Hide()
 		}()
 	default:
 		// The goroutine is already loadingWorklogs, do nothing
@@ -124,7 +129,8 @@ func (d *DayView) update() {
 			tview.NewTableCell((logs)[r].Issue.Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
 		d.worklogList.SetCell(r, 2,
-			tview.NewTableCell(FormatTimeSpent((logs)[r].WorkLog.TimeSpentSeconds)).SetTextColor(color).SetAlign(tview.AlignLeft),
+			tview.NewTableCell(
+				FormatTimeSpent((logs)[r].WorkLog.TimeSpentSeconds)).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
 	}
 	d.worklogList.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
@@ -138,14 +144,14 @@ func (d *DayView) update() {
 	d.worklogStatus.SetText(
 		fmt.Sprintf("Worklogs - %s - [%s%s[white]]",
 			app.time.Format("2006-01-02"),
-			GetTimeSpentColorTag(timeSpent),
+			GetTimeSpentColorTag(timeSpent, 8),
 			FormatTimeSpent(timeSpent),
 		)).SetDynamicColors(true)
 }
 
 func (d *DayView) loadLatest() {
 	d.latestIssuesStatus.SetText("Latest issues").SetDynamicColors(true)
-	issues, err := GetLatestIssues()
+	issues, err := NewJiraClient().GetLatestIssues()
 	if err != nil {
 		app.ui.errorView.ShowError(err.Error())
 		return
@@ -199,7 +205,6 @@ func ParseDateRange(dateStr string) (DateRange, error) {
 		if err != nil {
 			return DateRange{}, fmt.Errorf("error parsing end date: %w", err)
 		}
-
 	} else {
 		// Parse the single date
 		startDate, err = time.Parse(layout, dateStr)
@@ -219,12 +224,12 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	var form *tview.Form
 
 	newWorklog := func() {
-
 		logTime := form.GetFormItem(0).(*tview.InputField).GetText()
 		timeSpent := form.GetFormItem(1).(*tview.InputField).GetText()
-		app.ui.flex.SetTitle(" gojira - adding worklog... ")
 		go func() {
-			issue, err := GetIssue(issues[row].Key)
+			app.ui.loaderView.Show("Adding worklog...")
+			defer app.ui.loaderView.Hide()
+			issue, err := NewJiraClient().GetIssue(issues[row].Key)
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 				return
@@ -236,10 +241,12 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 				return
 			}
 			for day := dateRange.StartDate; day.Before(dateRange.EndDate.AddDate(0, 0, 1)); day = day.AddDate(0, 0, 1) {
-				logrus.Infof("Logging work for %s / %s / %s", day.Format(dateLayout), issue, timeSpent)
-				issue.LogWork(&day, timeSpent)
+				err := issue.LogWork(&day, timeSpent)
+				if err != nil {
+					app.ui.errorView.ShowError(err.Error())
+					return
+				}
 			}
-			app.ui.flex.SetTitle(" gojira ")
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 				return
@@ -251,23 +258,26 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	}
 
 	form = tview.NewForm().
-		AddInputField("Date", app.time.Format(dateLayout), 30, nil, nil).
+		AddInputField("Date", app.time.Format(dateLayout), 20, nil, nil).
 		AddInputField("Time spent", "", 20, nil, nil).
 		AddButton("Add", newWorklog).
 		AddButton("Cancel", func() {
+			app.ui.app.SetFocus(app.ui.dayView.latestIssuesList)
 			app.ui.pages.RemovePage("worklog-form")
 		})
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
-			break
+			app.ui.app.SetFocus(app.ui.dayView.latestIssuesList)
 		}
 		return event
 	})
 	form.SetBorder(true).SetTitle("New worklog").SetTitleAlign(tview.AlignLeft)
-	_, _, pwidth, pheight := app.ui.pages.GetRect()
-	form.SetRect(pwidth/2, pheight/2-3, 36, 9)
+	_, _, pwidth, pheight := app.ui.grid.GetRect()
+	formWidth := 36
+	formHeight := 9
+	form.SetRect(pwidth/2-(formWidth/2), pheight/2-3, formWidth, formHeight)
 	app.ui.pages.AddPage("worklog-form", form, false, true)
 	return form
 }
@@ -277,10 +287,10 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 
 	updateWorklog := func() {
 		timeSpent := form.GetFormItem(0).(*tview.InputField).GetText()
-		app.ui.flex.SetTitle(" gojira - updating worklog... ")
 		go func() {
+			app.ui.loaderView.Show("Updating worklog...")
+			defer app.ui.loaderView.Hide()
 			err := workLogIssues[row].WorkLog.Update(timeSpent)
-			app.ui.flex.SetTitle(" gojira ")
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 				return
@@ -292,10 +302,10 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 	}
 
 	deleteWorklog := func() {
-		app.ui.flex.SetTitle(" gojira - deleting worklog... ")
 		go func() {
+			app.ui.loaderView.Show("Deleting worklog...")
+			defer app.ui.loaderView.Hide()
 			err := app.workLogs.Delete(workLogIssues[row].WorkLog)
-			app.ui.flex.SetTitle(" gojira ")
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 				return
@@ -312,18 +322,21 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 		AddButton("Delete", deleteWorklog).
 		AddButton("Cancel", func() {
 			app.ui.pages.RemovePage("worklog-form")
+			app.ui.app.SetFocus(app.ui.dayView.worklogList)
 		})
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
-			break
+			app.ui.app.SetFocus(app.ui.dayView.worklogList)
 		}
 		return event
 	})
 	form.SetBorder(true).SetTitle("Update worklog").SetTitleAlign(tview.AlignLeft)
-	_, _, pwidth, pheight := app.ui.pages.GetRect()
-	form.SetRect(pwidth/2, pheight/2-3, 36, 7)
+	_, _, pwidth, pheight := app.ui.grid.GetRect()
+	formWidth := 36
+	formHeight := 7
+	form.SetRect(pwidth/2-(formWidth/2), pheight/2-3, formWidth, formHeight)
 	app.ui.pages.AddPage("worklog-form", form, false, true)
 	return form
 }

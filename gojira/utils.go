@@ -29,27 +29,27 @@ func CalculateTimeSpent(workLogs []*WorkLog) int {
 	return timeSpentInSeconds
 }
 
-func GetTimeSpentColorTag(timeSpentInSeconds int) string {
+func GetTimeSpentColorTag(timeSpentInSeconds int, hours int) string {
 	switch {
-	case timeSpentInSeconds < 8*60*60 && timeSpentInSeconds > 0:
-		return "[yellow]"
-	case timeSpentInSeconds == 8*60*60:
+	case timeSpentInSeconds < hours*60*60 && timeSpentInSeconds > 0:
+		return "[orange]"
+	case timeSpentInSeconds == hours*60*60:
 		return "[green]"
-	case timeSpentInSeconds > 8*60*60:
-		return "[purple]"
+	case timeSpentInSeconds > hours*60*60:
+		return "[blue]"
 	default:
 		return "[white]"
 	}
 }
 
-func GetTimeSpentColor(timeSpentInSeconds int) tcell.Color {
+func GetTimeSpentColor(timeSpentInSeconds int, hours int) tcell.Color {
 	switch {
-	case timeSpentInSeconds < 8*60*60 && timeSpentInSeconds > 0:
-		return tcell.ColorYellow
-	case timeSpentInSeconds == 8*60*60:
+	case timeSpentInSeconds < hours*60*60 && timeSpentInSeconds > 0:
+		return tcell.ColorOrange
+	case timeSpentInSeconds == hours*60*60:
 		return tcell.ColorGreen
-	case timeSpentInSeconds > 8*60*60:
-		return tcell.ColorPurple
+	case timeSpentInSeconds > hours*60*60:
+		return tcell.ColorBlue
 	default:
 		return tcell.ColorWhite
 	}
@@ -59,6 +59,9 @@ func FormatTimeSpent(timeSpentSeconds int) string {
 	timeInHours := float64(timeSpentSeconds) / 60 / 60
 	intPart, floatPart := math.Modf(timeInHours)
 	timeSpent := ""
+	if timeSpentSeconds == 0 {
+		return "0"
+	}
 	if intPart > 0 {
 		timeSpent = fmt.Sprintf("%vh", intPart)
 	}
@@ -73,9 +76,9 @@ func FormatTimeSpent(timeSpentSeconds int) string {
 
 func ResolveIssueKey(c *cli.Context) string {
 	issueKey := ""
-	if c.App.Metadata["JiraIssue"] != nil {
-		issueKey = fmt.Sprintf("%s", c.App.Metadata["JiraTicket"])
-	}
+	//if c.App.Metadata["JiraIssue"] != nil {
+	//	issueKey = fmt.Sprintf("%s", c.App.Metadata["JiraTicket"])
+	//}
 	issueKey = FindIssueKeyInString(c.Args().Get(0))
 	if issueKey == "" {
 		issueKey = GetTicketFromGitBranch()
@@ -92,13 +95,13 @@ func GetTicketFromGitBranch() string {
 	return FindIssueKeyInString(string(gitBranch))
 }
 
-func FindIssueKeyInString(possibleUrl string) string {
+func FindIssueKeyInString(possibleURL string) string {
 	r, _ := regexp.Compile("([A-Z]+-[0-9]+)")
-	match := r.FindString(possibleUrl)
+	match := r.FindString(possibleURL)
 	return match
 }
 
-func OpenUrl(url string) {
+func OpenURL(url string) {
 	// silence browser logs
 	browser.Stdout = nil
 	browser.Stderr = nil
@@ -134,17 +137,15 @@ func MonthRange(t *time.Time) (time.Time, time.Time) {
 	return firstDayOfCurrentMonth, firstDayOfNextMonth
 }
 
-func workingHoursInMonth(year int, month time.Month) int {
+func workingHoursInMonthToPresentDay(year int, month time.Month) int {
 	t := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
-
 	totalWorkHours := 0
 
-	for t.Month() == month {
+	for t.Month() == month && t.Before(time.Now().Local()) {
 		if t.Weekday() != time.Saturday && t.Weekday() != time.Sunday {
 			totalWorkHours += 8
 		}
 		t = t.AddDate(0, 0, 1)
 	}
-
 	return totalWorkHours
 }

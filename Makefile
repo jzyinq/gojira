@@ -10,5 +10,9 @@ build: ## build gojira binary
 install: build
 	@sudo cp dist/gojira /usr/local/bin/
 
-test: ## run tests
+tests: ## run tests
 	@go test -cover ./...
+
+fixer: ## run static analysis
+	@echo "Static analysis..."
+	@golangci-lint run --config .golangci.yml --out-format=colored-line-number --concurrency 8

@@ -1,7 +1,8 @@
 # gojira
 
 Small cli helper for adding/updating work logs in Jira / Tempo.
-Based on [urfave/cli](https://github.com/urfave/cli/) and [manifoldco/promptui](https://github.com/manifoldco/promptui).
+Based on [urfave/cli](https://github.com/urfave/cli/), [manifoldco/promptui](https://github.com/manifoldco/promptui)
+and [rivo/tview](https://github.com/rivo/tview)
 
 ## Features
 
@@ -69,15 +70,16 @@ Just remember to urldecode it. Save it and you should ready to go!
 
 ## Todo list
 
+- [ ] ticket status change prompt after logging time
+- [ ] tests
 - [ ] unify workLogs and worklogsIssues structs - use one for both
   - Reduce jira/tempo spaghetti and unnecessary structs and functions
-- While deleting freshly set worklog, fetch it's data from jira to delete it properly - currently there is:
-  ```
-  The worklog has either been deleted or you no longer have permission to view it
-  ```
-- [ ] ticket status change prompt after logging time
+- [ ] godtools cli semantics update
+  - `gojira log -i TICKET` -> `gojira log -i TICKET`
+  - `gojira log -i TICKET -t 1h30m`
+  - `gojira` -> `gojira recent`
+  - `gojira` -> `gojira --help`
 - [x] Add worklogs from ui
-- [ ] tests
 - [x] gojira worklog delete option
 - [x] recent jira task list for easy time logging
 - [x] delete worklogs
@@ -95,8 +97,9 @@ Just remember to urldecode it. Save it and you should ready to go!
 - [x] detect git branch name (jira ticket)
 - [x] display todays logged working hours
 - [x] NewWorklog view - add input for date and date period optionally
-- [ ] godtools cli semantics update
-  - `gojira log -i TICKET` -> `gojira log -i TICKET`
-  - `gojira log -i TICKET -t 1h30m`
-  - `gojira` -> `gojira recent`
-  - `gojira` -> `gojira --help`
+- [x] Remove app.ui.flex from the picture
+- [x] Hour summary to present day without counting worklogs from the future
+- [x] While deleting freshly set worklog, fetch it's data from jira to delete it properly - currently there is:
+  ```
+  The worklog has either been deleted or you no longer have permission to view it
+  ```

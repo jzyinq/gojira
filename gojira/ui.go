@@ -5,14 +5,14 @@ import (
 )
 
 type UserInteface struct {
-	app       *tview.Application
-	flex      *tview.Flex
-	pages     *tview.Pages
-	table     *tview.Table
-	calendar  *Calendar
-	summary   *Summary
-	dayView   *DayView
-	errorView *ErrorView
+	app        *tview.Application
+	pages      *tview.Pages
+	grid       *tview.Grid
+	calendar   *Calendar
+	summary    *Summary
+	dayView    *DayView
+	errorView  *ErrorView
+	loaderView *LoaderView
 }
 
 func newUi() {
@@ -24,16 +24,25 @@ func newUi() {
 	app.ui.summary = NewSummary()
 	app.ui.dayView = NewDayView()
 	app.ui.errorView = NewErrorView()
+	app.ui.loaderView = NewLoaderView()
 
-	app.ui.flex = tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-			AddItem(app.ui.pages, 0, 5, true),
-			0, 9, true).
-		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-			AddItem(app.ui.summary.TextView, 0, 1, false).
-			AddItem(app.ui.calendar.Table, 0, 10, false),
-			0, 3, false)
+	//customModal := func(p tview.Primitive, width, height int) tview.Primitive {
+	//	return tview.NewGrid().
+	//		SetColumns(0, width, 0).
+	//		SetRows(0, height, 0).
+	//		AddItem(p, 1, 1, 1, 1, 0, 0, true)
+	//}
+	app.ui.grid = tview.NewGrid().
+		SetRows(1, 0, 0).
+		SetColumns(0, 0, 27).
+		SetBorders(true)
 
-	app.ui.flex.SetBorder(true).SetTitle(" gojira ")
-	app.ui.app.SetRoot(app.ui.flex, true)
+	// Layout for screens narrower than 100 cells (menu and side bar are hidden).
+	app.ui.grid.AddItem(app.ui.pages, 0, 0, 2, 3, 0, 0, false)
+
+	// Layout for screens wider than 100 cells.
+	app.ui.grid.AddItem(app.ui.pages, 0, 0, 3, 2, 0, 100, true).
+		AddItem(app.ui.summary, 0, 2, 1, 1, 0, 100, false).
+		AddItem(app.ui.calendar, 1, 2, 2, 1, 0, 100, false)
+	app.ui.app.SetRoot(app.ui.grid, true).SetFocus(app.ui.pages)
 }

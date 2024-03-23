@@ -1,0 +1,43 @@
+name: Release
+on:
+  push:
+    tags: [ "**" ]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Update project version if cmd/version.go exists
+        shell: bash
+        run: |
+          if [ -f "cmd/version.go" ]; then
+            printf "package cmd\n\nconst projectVersion = \"$(echo $GITHUB_REF | cut -d / -f 3)\"" > cmd/version.go
+          fi
+      - name: Build binary (linux/amd64)
+        shell: bash
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o gojira-linux-amd64 main.go
+      - name: Build binary (darwin/amd64)
+        shell: bash
+        run: |
+          GOOS=darwin GOARCH=amd64 go build -o gojira-darwin-amd64 main.go
+      - name: Build binary (darwin/arm64)
+        shell: bash
+        run: |
+          GOOS=darwin GOARCH=arm64 go build -o gojira-darwin-arm64 main.go
+      - name: Release the binary if on tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+              gojira-linux-amd64 gojira-darwin-amd64 gojira-darwin-arm64 --generate-notes
