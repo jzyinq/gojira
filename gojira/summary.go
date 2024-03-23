@@ -22,9 +22,9 @@ func NewSummary() *Summary {
 }
 
 func (s *Summary) update() {
-	totalTimeSpent := FormatTimeSpent(app.workLogs.TotalTimeSpent())
+	totalTimeSpent := FormatTimeSpent(app.workLogs.TotalTimeSpentToPresentDay())
 	// that's a hack to remove spaces between hours and minutes
 	totalTimeSpent = strings.Join(strings.Fields(totalTimeSpent), "")
-	workingHours := workingHoursInMonth(app.time.Year(), app.time.Month())
-	s.SetText(fmt.Sprintf("Monthly %s/%dh", totalTimeSpent, workingHours))
+	workingHours := workingHoursInMonthToPresentDay(app.time.Year(), app.time.Month())
+	s.SetText(fmt.Sprintf("Total %s/%dh", totalTimeSpent, workingHours))
 }

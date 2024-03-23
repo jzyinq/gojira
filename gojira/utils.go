@@ -148,3 +148,16 @@ func workingHoursInMonth(year int, month time.Month) int {
 
 	return totalWorkHours
 }
+
+func workingHoursInMonthToPresentDay(year int, month time.Month) int {
+	t := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+	totalWorkHours := 0
+
+	for t.Month() == month && t.Before(time.Now().Local()) {
+		if t.Weekday() != time.Saturday && t.Weekday() != time.Sunday {
+			totalWorkHours += 8
+		}
+		t = t.AddDate(0, 0, 1)
+	}
+	return totalWorkHours
+}

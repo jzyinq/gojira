@@ -111,6 +111,20 @@ func (wl *WorkLogs) TotalTimeSpent() int {
 	return totalTime
 }
 
+func (wl *WorkLogs) TotalTimeSpentToPresentDay() int {
+	var totalTime int
+	for _, log := range wl.logs {
+		logDate, err := time.Parse(dateLayout, log.StartDate)
+		if err != nil {
+			logrus.Error(err)
+		}
+		if logDate.Before(time.Now().Local()) {
+			totalTime += log.TimeSpentSeconds
+		}
+	}
+	return totalTime
+}
+
 func (wli *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error) {
 	var issuesOnDate []*WorkLogIssue
 	if date.Before(wli.startDate) || date.After(wli.endDate) {
