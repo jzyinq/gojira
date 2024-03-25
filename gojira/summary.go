@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/rivo/tview"
 	"strings"
+	"time"
 )
 
 type Summary struct {
@@ -16,7 +17,7 @@ func NewSummary() *Summary {
 			app.ui.app.Draw()
 		}),
 	}
-	summary.SetText("Calendar ?h/?h")
+	summary.SetText("Loading...")
 	summary.SetTextAlign(tview.AlignCenter)
 	return summary
 }
@@ -26,6 +27,32 @@ func (s *Summary) update() {
 	// that's a hack to remove spaces between hours and minutes
 	totalTimeSpent = strings.Join(strings.Fields(totalTimeSpent), "")
 	workingHours := workingHoursInMonthToPresentDay(app.time.Year(), app.time.Month())
-	s.SetText(fmt.Sprintf("Total %s/%dh", totalTimeSpent, workingHours))
+	difference := workingHoursAbsoluteDiff(workingHours)
+	status := fmt.Sprintf("Total %s/%dh", totalTimeSpent, workingHours)
+	if difference != 0 {
+		status = fmt.Sprintf("Total %s/%dh (%s)", totalTimeSpent, workingHours, FormatTimeSpent(difference))
+	}
+	s.SetText(status)
 	s.SetTextColor(GetTimeSpentColor(app.workLogs.TotalTimeSpentToPresentDay(), workingHours))
+}
+
+func workingHoursInMonthToPresentDay(year int, month time.Month) int {
+	t := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+	totalWorkHours := 0
+
+	for t.Month() == month && t.Before(time.Now().Local()) {
+		if t.Weekday() != time.Saturday && t.Weekday() != time.Sunday {
+			totalWorkHours += 8
+		}
+		t = t.AddDate(0, 0, 1)
+	}
+	return totalWorkHours
+}
+
+func workingHoursAbsoluteDiff(workingHours int) int {
+	difference := workingHours*60*60 - app.workLogs.TotalTimeSpentToPresentDay()
+	if difference < 0 {
+		difference = -difference
+	}
+	return difference
 }
