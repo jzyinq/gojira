@@ -112,40 +112,8 @@ func OpenURL(url string) {
 	}
 }
 
-func WeekRange(today time.Time) (time.Time, time.Time) {
-	y, w := today.ISOWeek()
-	firstDay := time.Date(y, 1, 1, 0, 0, 0, 0, time.UTC)
-	for firstDay.Weekday() != time.Monday {
-		firstDay = firstDay.AddDate(0, 0, -1)
-	}
-
-	for {
-		y1, w1 := firstDay.ISOWeek()
-		if y1 == y && w1 == w {
-			break
-		}
-		firstDay = firstDay.AddDate(0, 0, 1)
-	}
-
-	lastDay := firstDay.AddDate(0, 0, 6) // Adding 6 days to get to Sunday
-	return firstDay.Truncate(24 * time.Hour), lastDay.Truncate(24 * time.Hour)
-}
-
 func MonthRange(t *time.Time) (time.Time, time.Time) {
 	firstDayOfCurrentMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
 	firstDayOfNextMonth := firstDayOfCurrentMonth.AddDate(0, 1, 0)
 	return firstDayOfCurrentMonth, firstDayOfNextMonth
-}
-
-func workingHoursInMonthToPresentDay(year int, month time.Month) int {
-	t := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
-	totalWorkHours := 0
-
-	for t.Month() == month && t.Before(time.Now().Local()) {
-		if t.Weekday() != time.Saturday && t.Weekday() != time.Sunday {
-			totalWorkHours += 8
-		}
-		t = t.AddDate(0, 0, 1)
-	}
-	return totalWorkHours
 }
