@@ -250,6 +250,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 				return
 			}
 			d.update()
+			app.ui.summary.update()
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.calendar.update()
 		}()
@@ -296,6 +297,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 			d.update()
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.calendar.update()
+			app.ui.summary.update()
 		}()
 	}
 
@@ -311,6 +313,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 			d.update()
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.calendar.update()
+			app.ui.summary.update()
 		}()
 	}
 
