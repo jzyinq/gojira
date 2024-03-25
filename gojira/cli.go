@@ -44,7 +44,9 @@ func NewWorkLogIssues() error {
 		return nil
 	}
 	if app.workLogsIssues.startDate != startDate || app.workLogsIssues.endDate != endDate {
+		app.ui.loaderView.Show("Fetching worklogs...")
 		app.workLogs, err = GetWorkLogs()
+		app.ui.loaderView.Hide()
 		if err != nil {
 			return err
 		}

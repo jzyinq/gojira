@@ -103,13 +103,11 @@ func loadWorklogs() {
 	case loadingWorklogs <- true:
 		go func() {
 			defer func() { <-loadingWorklogs }()
-			app.ui.loaderView.Show("Fetching worklogs...")
 			err := NewWorkLogIssues()
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 			}
 			app.ui.dayView.update()
-			app.ui.loaderView.Hide()
 		}()
 	default:
 		// The goroutine is already loadingWorklogs, do nothing
