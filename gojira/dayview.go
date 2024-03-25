@@ -7,6 +7,7 @@ import (
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -176,8 +177,9 @@ func (d *DayView) loadLatest() {
 
 // DateRange is a struct for holding the start and end dates
 type DateRange struct {
-	StartDate time.Time
-	EndDate   time.Time
+	StartDate    time.Time
+	EndDate      time.Time
+	NumberOfDays int
 }
 
 func ParseDateRange(dateStr string) (DateRange, error) {
@@ -212,9 +214,13 @@ func ParseDateRange(dateStr string) (DateRange, error) {
 		endDate = startDate
 	}
 
+	// count number of dayhs between StartDate and EndDate
+	numberOfDays := int(endDate.Sub(startDate).Hours() / 24)
+
 	return DateRange{
-		StartDate: startDate,
-		EndDate:   endDate,
+		StartDate:    startDate,
+		EndDate:      endDate,
+		NumberOfDays: numberOfDays,
 	}, nil
 }
 
@@ -232,20 +238,25 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 				app.ui.errorView.ShowError(err.Error())
 				return
 			}
-			// TODO use ParseDateRange and LogWork for each day in range
+
 			dateRange, err := ParseDateRange(logTime)
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 				return
 			}
-			for day := dateRange.StartDate; day.Before(dateRange.EndDate.AddDate(0, 0, 1)); day = day.AddDate(0, 0, 1) {
-				//FIXME go routine each day + add counter that will wait for all go routines to finish
-				app.ui.loaderView.UpdateText(fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout)))
-				err := issue.LogWork(&day, timeSpent)
-				if err != nil {
-					app.ui.errorView.ShowError(err.Error())
-					return
-				}
+
+			var wg sync.WaitGroup
+			var errAdd error
+			day := dateRange.StartDate
+			for i := 0; i <= dateRange.NumberOfDays; i++ {
+				wg.Add(1)
+				go func(day time.Time) { // Pass the current day as a parameter to the goroutine
+					defer wg.Done() // Decrement the WaitGroup counter when the goroutine completes
+					errAdd = issue.LogWork(&day, timeSpent)
+					if errAdd != nil {
+					}
+				}(day) // Call the anonymous function as a goroutine, passing the current day
+				day = day.AddDate(0, 0, 1)
 			}
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
