@@ -79,6 +79,7 @@ Just remember to urldecode it. Save it and you should ready to go!
   - `gojira log -i TICKET -t 1h30m`
   - `gojira` -> `gojira recent`
   - `gojira` -> `gojira --help`
+- [ ] trigger ui updates after worklog change more efficiently 
 - [x] Add worklogs from ui
 - [x] gojira worklog delete option
 - [x] recent jira task list for easy time logging
