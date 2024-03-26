@@ -7,7 +7,6 @@ import (
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -230,14 +229,6 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	newWorklog := func() {
 		logTime := form.GetFormItem(0).(*tview.InputField).GetText()
 		timeSpent := form.GetFormItem(1).(*tview.InputField).GetText()
-		dateRange, err := ParseDateRange(logTime)
-		if err != nil {
-			app.ui.errorView.ShowError(err.Error())
-			return
-		}
-		var wg sync.WaitGroup
-		errorChan := make(chan error, dateRange.NumberOfDays+1)
-		day := dateRange.StartDate
 		go func() {
 			app.ui.loaderView.Show("Adding worklog...")
 			defer app.ui.loaderView.Hide()
@@ -246,49 +237,29 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 				app.ui.errorView.ShowError(err.Error())
 				return
 			}
-			if dateRange.NumberOfDays == 1 {
+			// TODO use ParseDateRange and LogWork for each day in range
+			dateRange, err := ParseDateRange(logTime)
+			if err != nil {
+				app.ui.errorView.ShowError(err.Error())
+				return
+			}
+			for day := dateRange.StartDate; day.Before(dateRange.EndDate.AddDate(0, 0, 1)); day = day.AddDate(0, 0, 1) {
 				err := issue.LogWork(&day, timeSpent)
-				logEntry := fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout))
 				app.ui.loaderView.UpdateText(fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout)))
 				if err != nil {
-					logrus.Error(fmt.Sprintf("%s\nError adding worklog: %s", logEntry, err))
-				} else {
-					logrus.Info(logEntry)
-				}
-			} else {
-				for i := 0; i <= dateRange.NumberOfDays; i++ {
-					wg.Add(1)
-					go func(day time.Time) {
-						defer wg.Done()
-						err := issue.LogWork(&day, timeSpent)
-						logEntry := fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout))
-						app.ui.loaderView.UpdateText(fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout)))
-						if err != nil {
-							logrus.Error(fmt.Sprintf("%s\nError adding worklog: %s", logEntry, err))
-							errorChan <- err
-						} else {
-							logrus.Info(logEntry)
-						}
-					}(day)
-					day = day.AddDate(0, 0, 1)
-				}
-				if err != nil {
-					app.ui.errorView.ShowError("Error adding worklog - check /tmp/gojira.log for details")
+					app.ui.errorView.ShowError(err.Error())
 					return
 				}
+			}
+			if err != nil {
+				app.ui.errorView.ShowError(err.Error())
+				return
 			}
 			d.update()
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.calendar.update()
 			app.ui.summary.update()
 		}()
-		go func() {
-			wg.Wait()
-			close(errorChan)
-		}()
-		for err := range errorChan {
-			logrus.Error(err)
-		}
 	}
 
 	form = tview.NewForm().

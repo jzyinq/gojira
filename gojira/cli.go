@@ -264,10 +264,5 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 	// add this workload to global object
 	app.workLogs.logs = append(app.workLogs.logs, &worklog)
 	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{Issue: issue, WorkLog: &worklog})
-	_, err = app.workLogs.LogsOnDate(logTime)
-	if err != nil {
-		return err
-	}
-	//fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(todayWorklog)))
 	return nil
 }
