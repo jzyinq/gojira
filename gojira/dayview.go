@@ -246,25 +246,36 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 				app.ui.errorView.ShowError(err.Error())
 				return
 			}
-			for i := 0; i <= dateRange.NumberOfDays; i++ {
-				wg.Add(1)
-				go func(day time.Time) {
-					defer wg.Done()
-					err := issue.LogWork(&day, timeSpent)
-					logEntry := fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout))
-					app.ui.loaderView.UpdateText(fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout)))
-					if err != nil {
-						logrus.Error(fmt.Sprintf("%s\nError adding worklog: %s", logEntry, err))
-						errorChan <- err
-					} else {
-						logrus.Info(logEntry)
-					}
-				}(day)
-				day = day.AddDate(0, 0, 1)
-			}
-			if err != nil {
-				app.ui.errorView.ShowError("Error adding worklog - check /tmp/gojira.log for details")
-				return
+			if dateRange.NumberOfDays == 1 {
+				err := issue.LogWork(&day, timeSpent)
+				logEntry := fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout))
+				app.ui.loaderView.UpdateText(fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout)))
+				if err != nil {
+					logrus.Error(fmt.Sprintf("%s\nError adding worklog: %s", logEntry, err))
+				} else {
+					logrus.Info(logEntry)
+				}
+			} else {
+				for i := 0; i <= dateRange.NumberOfDays; i++ {
+					wg.Add(1)
+					go func(day time.Time) {
+						defer wg.Done()
+						err := issue.LogWork(&day, timeSpent)
+						logEntry := fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout))
+						app.ui.loaderView.UpdateText(fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout)))
+						if err != nil {
+							logrus.Error(fmt.Sprintf("%s\nError adding worklog: %s", logEntry, err))
+							errorChan <- err
+						} else {
+							logrus.Info(logEntry)
+						}
+					}(day)
+					day = day.AddDate(0, 0, 1)
+				}
+				if err != nil {
+					app.ui.errorView.ShowError("Error adding worklog - check /tmp/gojira.log for details")
+					return
+				}
 			}
 			d.update()
 			app.ui.pages.RemovePage("worklog-form")
