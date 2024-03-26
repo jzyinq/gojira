@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.5.2] - 2024-03-26
+### Changed
+- More detailed loader while adding worklogs in a batch
+
+### Fixed
+- Version number is now properly synced with the latest release
+
 ## [0.5.1] - 2024-03-25
 ### Fixed
 - Summary not updating with worklog changes
@@ -71,7 +78,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Initial release of gojira
 
-[Unreleased]: https://github.com/jzyinq/gojira/compare/0.5.1...master
+[Unreleased]: https://github.com/jzyinq/gojira/compare/0.5.2...master
+[0.5.2]: https://github.com/jzyinq/gojira/compare/0.5.1...0.5.2
 [0.5.1]: https://github.com/jzyinq/gojira/compare/0.5.0...0.5.1
 [0.5.0]: https://github.com/jzyinq/gojira/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/jzyinq/gojira/compare/0.3.1...0.4.0

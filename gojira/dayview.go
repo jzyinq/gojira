@@ -176,8 +176,9 @@ func (d *DayView) loadLatest() {
 
 // DateRange is a struct for holding the start and end dates
 type DateRange struct {
-	StartDate time.Time
-	EndDate   time.Time
+	StartDate    time.Time
+	EndDate      time.Time
+	NumberOfDays int
 }
 
 func ParseDateRange(dateStr string) (DateRange, error) {
@@ -212,9 +213,13 @@ func ParseDateRange(dateStr string) (DateRange, error) {
 		endDate = startDate
 	}
 
+	// count number of dayhs between StartDate and EndDate
+	numberOfDays := int(endDate.Sub(startDate).Hours() / 24)
+
 	return DateRange{
-		StartDate: startDate,
-		EndDate:   endDate,
+		StartDate:    startDate,
+		EndDate:      endDate,
+		NumberOfDays: numberOfDays,
 	}, nil
 }
 
@@ -240,6 +245,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 			}
 			for day := dateRange.StartDate; day.Before(dateRange.EndDate.AddDate(0, 0, 1)); day = day.AddDate(0, 0, 1) {
 				err := issue.LogWork(&day, timeSpent)
+				app.ui.loaderView.UpdateText(fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout)))
 				if err != nil {
 					app.ui.errorView.ShowError(err.Error())
 					return

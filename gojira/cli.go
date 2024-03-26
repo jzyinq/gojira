@@ -11,15 +11,15 @@ import (
 	"time"
 )
 
-const GojiraAscii = "" +
-	"   _____       _ _           \n" +
-	"  / ____|     (_|_)          \n" +
-	" | |  __  ___  _ _ _ __ __ _ \n" +
-	" | | |_ |/ _ \\| | | '__/ _` |\n" +
-	" | |__| | (_) | | | | | (_| |\n" +
-	"  \\_____|\\___/| |_|_|  \\__,_|\n" +
-	"             _/ |     v0.4.0 \n" +
-	"            |__/             \n\n"
+var AppAsciiArt = fmt.Sprintf(""+
+	"   _____       _ _           \n"+
+	"  / ____|     (_|_)          \n"+
+	" | |  __  ___  _ _ _ __ __ _ \n"+
+	" | | |_ |/ _ \\| | | '__/ _` |\n"+
+	" | |__| | (_) | | | | | (_| |\n"+
+	"  \\_____|\\___/| |_|_|  \\__,_|\n"+
+	"             _/ |     v%s \n"+
+	"            |__/             \n\n", projectVersion)
 
 var WorkLogsCommand = &cli.Command{
 	Name:  "worklogs",
@@ -264,10 +264,5 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 	// add this workload to global object
 	app.workLogs.logs = append(app.workLogs.logs, &worklog)
 	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{Issue: issue, WorkLog: &worklog})
-	_, err = app.workLogs.LogsOnDate(logTime)
-	if err != nil {
-		return err
-	}
-	//fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(todayWorklog)))
 	return nil
 }

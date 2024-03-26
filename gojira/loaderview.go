@@ -11,10 +11,11 @@ type LoaderView struct {
 	*LoaderModal
 	ctx    context.Context
 	cancel context.CancelFunc
+	text   string
 }
 
 func NewLoaderView() *LoaderView {
-	loaderView := &LoaderView{NewModal(), nil, nil}
+	loaderView := &LoaderView{NewModal(), nil, nil, ""}
 	loaderView.SetBorder(false)
 	loaderView.SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
 	app.ui.pages.AddPage("loader", loaderView, true, false)
@@ -32,6 +33,7 @@ func (e *LoaderView) Wrap(msg string, callable func()) {
 
 func (e *LoaderView) Show(msg string) {
 	e.ctx, e.cancel = context.WithCancel(context.Background())
+	e.UpdateText(msg)
 	app.ui.pages.SendToFront("loader")
 	go func() {
 		for {
@@ -40,7 +42,7 @@ func (e *LoaderView) Show(msg string) {
 				return
 			default:
 				for _, r := range `-\|/` {
-					e.SetText(fmt.Sprintf("%s%s\n%s", GojiraAscii, msg, string(r)))
+					e.SetText(fmt.Sprintf("%s%s\n%s", AppAsciiArt, e.text, string(r)))
 					app.ui.app.Draw()
 					time.Sleep(100 * time.Millisecond)
 				}
@@ -49,6 +51,10 @@ func (e *LoaderView) Show(msg string) {
 	}()
 	app.ui.pages.ShowPage("loader")
 	app.ui.app.Draw()
+}
+
+func (e *LoaderView) UpdateText(msg string) {
+	e.text = msg
 }
 
 func (e *LoaderView) Hide() {

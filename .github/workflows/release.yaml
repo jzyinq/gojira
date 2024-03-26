@@ -19,8 +19,8 @@ jobs:
       - name: Update project version if cmd/version.go exists
         shell: bash
         run: |
-          if [ -f "cmd/version.go" ]; then
-            printf "package cmd\n\nconst projectVersion = \"$(echo $GITHUB_REF | cut -d / -f 3)\"" > cmd/version.go
+          if [ -f "gojira/version.go" ]; then
+            printf "package gojira\n\nconst projectVersion = \"$(echo $GITHUB_REF | cut -d / -f 3)\"" > gojira/version.go
           fi
       - name: Build binary (linux/amd64)
         shell: bash
