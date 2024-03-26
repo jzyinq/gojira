@@ -20,7 +20,7 @@ jobs:
         shell: bash
         run: |
           if [ -f "cmd/version.go" ]; then
-            printf "package cmd\n\nconst projectVersion = \"$(echo $GITHUB_REF | cut -d / -f 3)\"" > cmd/version.go
+            printf "package gojira\n\nconst projectVersion = \"$(echo $GITHUB_REF | cut -d / -f 3)\"" > cmd/version.go
           fi
       - name: Build binary (linux/amd64)
         shell: bash
