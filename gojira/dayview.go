@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
 )
@@ -75,21 +74,8 @@ func NewDayView() *DayView { //nolint:funlen
 
 	app.ui.pages.AddPage("worklog-view", flexView, true, true)
 
-	dayView.worklogList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyLeft, tcell.KeyRight:
-			timePeriod := -time.Hour * 24
-			if event.Key() == tcell.KeyRight {
-				timePeriod = time.Hour * 24
-			}
-			newTime := app.time.Add(timePeriod)
-			logrus.Debug("Changing date to ", newTime)
-			app.time = &newTime
-			loadWorklogs()
-			app.ui.calendar.update()
-		}
-		return event
-	})
+	dayView.worklogList.SetInputCapture(controlCalendar)
+	dayView.latestIssuesList.SetInputCapture(controlCalendar)
 
 	dayView.loadLatest()
 
