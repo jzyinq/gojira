@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 - calendar controls not working while focus is on latest issues view
 
+### Changed
+- Set focus on time spent field while adding new worklog
+
 ## [0.5.2] - 2024-03-26
 ### Changed
 - More detailed loader while adding worklogs in a batch

@@ -269,6 +269,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	formWidth := 36
 	formHeight := 9
 	form.SetRect(pwidth/2-(formWidth/2), pheight/2-3, formWidth, formHeight)
+	form.SetFocus(1)
 	app.ui.pages.AddPage("worklog-form", form, false, true)
 	return form
 }
