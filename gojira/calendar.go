@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -89,4 +90,20 @@ func (c *Calendar) update() {
 
 		t = t.AddDate(0, 0, 1)
 	}
+}
+
+func controlCalendar(event *tcell.EventKey) *tcell.EventKey {
+	switch event.Key() {
+	case tcell.KeyLeft, tcell.KeyRight:
+		timePeriod := -time.Hour * 24
+		if event.Key() == tcell.KeyRight {
+			timePeriod = time.Hour * 24
+		}
+		newTime := app.time.Add(timePeriod)
+		logrus.Debug("Changing date to ", newTime)
+		app.time = &newTime
+		loadWorklogs()
+		app.ui.calendar.update()
+	}
+	return event
 }
