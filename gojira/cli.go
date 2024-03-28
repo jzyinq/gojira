@@ -237,7 +237,7 @@ Save it and you should ready to go!
 
 func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 	logrus.Infof("Logging %s of time to ticket %s at %s", timeSpent, issue.Key, logTime)
-	todayWorklog, err := app.workLogs.LogsOnDate(logTime) // FIXME error handling
+	todayWorklog, err := app.workLogs.LogsOnDate(logTime)
 	if err != nil {
 		return err
 	}

@@ -148,7 +148,6 @@ func (jc *JiraClient) UpdateWorklog(issueKey string, jiraWorklogId int, timeSpen
 	}
 	payloadJson, _ := json.Marshal(payload)
 	requestBody := bytes.NewBuffer(payloadJson)
-	// FIXME use tempo api to update worklog, unless there is not tempoId in worklog
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false",
 		Config.JiraUrl, issueKey, jiraWorklogId)
 	_, err := SendHttpRequest("PUT", requestUrl, requestBody, jc.getHttpHeaders(), 200)

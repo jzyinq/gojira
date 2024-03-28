@@ -19,7 +19,6 @@ func newUi() {
 	app.ui.app = tview.NewApplication()
 	app.ui.pages = tview.NewPages()
 
-	//FIXME do I really need those declaration here
 	app.ui.calendar = NewCalendar()
 	app.ui.summary = NewSummary()
 	app.ui.dayView = NewDayView()

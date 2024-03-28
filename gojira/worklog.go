@@ -15,13 +15,13 @@ func NewWorkLog(issueKey string, logTime *time.Time, timeSpent string) (WorkLog,
 		return WorkLog{}, err
 	}
 
-	jiraWorklogId, err := strconv.Atoi(workLogResponse.ID)
+	jiraWorkLogID, err := strconv.Atoi(workLogResponse.ID)
 	if err != nil {
 		return WorkLog{}, err
 	}
 
-	worklog := WorkLog{
-		JiraWorklogid:    jiraWorklogId,
+	workLog := WorkLog{
+		JiraWorklogid:    jiraWorkLogID,
 		StartDate:        logTime.Format(dateLayout),
 		StartTime:        logTime.Format("15:04:05"),
 		TimeSpentSeconds: workLogResponse.Timespentseconds,
@@ -29,7 +29,7 @@ func NewWorkLog(issueKey string, logTime *time.Time, timeSpent string) (WorkLog,
 			Key string `json:"key"`
 		}{Key: issueKey},
 	}
-	return worklog, nil
+	return workLog, nil
 }
 
 type WorkLog struct {
@@ -172,29 +172,29 @@ func (wl *WorkLog) Update(timeSpent string) error {
 	return nil
 }
 
-func (wl *WorkLogs) Delete(worklog *WorkLog) error {
-	logrus.Debugf("deleting worklog ... %+v", worklog)
+func (wl *WorkLogs) Delete(w *WorkLog) error {
+	logrus.Debugf("deleting w ... %+v", w)
 	// make update request to tempo if tempoWorklogId is set
 	var err error
-	if worklog.TempoWorklogid != 0 {
-		err = NewTempoClient().DeleteWorklog(worklog.TempoWorklogid)
+	if w.TempoWorklogid != 0 {
+		err = NewTempoClient().DeleteWorklog(w.TempoWorklogid)
 	} else {
-		err = NewJiraClient().DeleteWorklog(worklog.Issue.Key, worklog.JiraWorklogid)
+		err = NewJiraClient().DeleteWorklog(w.Issue.Key, w.JiraWorklogid)
 	}
 	if err != nil {
-		logrus.Debug(worklog)
+		logrus.Debug(w)
 		return err
 	}
 
 	// FIXME delete is kinda buggy - it messes up pointers and we're getting weird results
 	for i, issue := range app.workLogsIssues.issues {
-		if issue.WorkLog.JiraWorklogid == worklog.JiraWorklogid {
+		if issue.WorkLog.JiraWorklogid == w.JiraWorklogid {
 			app.workLogsIssues.issues = append(app.workLogsIssues.issues[:i], app.workLogsIssues.issues[i+1:]...)
 			break
 		}
 	}
-	for i, log := range wl.logs {
-		if log.JiraWorklogid == worklog.JiraWorklogid {
+	for i, workLog := range wl.logs {
+		if workLog.JiraWorklogid == w.JiraWorklogid {
 			wl.logs = append(wl.logs[:i], wl.logs[i+1:]...)
 			break
 		}

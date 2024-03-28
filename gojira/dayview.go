@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const IssueKeyColumn = 0
+const IssueSummaryColumn = 1
+const TimeSpentColumn = 2
+
 type DayView struct {
 	worklogList        *tview.Table
 	worklogStatus      *tview.TextView
@@ -43,7 +47,7 @@ func NewDayView() *DayView { //nolint:funlen
 		AddItem(dayView.latestIssuesStatus, 1, 1, false).
 		AddItem(dayView.latestIssuesList, 0, 1, false)
 
-	dayView.worklogList.SetCell(0, 0, // FIXME use enums for column names
+	dayView.worklogList.SetCell(0, IssueKeyColumn,
 		tview.NewTableCell("Loading...").SetAlign(tview.AlignLeft),
 	)
 
@@ -61,8 +65,6 @@ func NewDayView() *DayView { //nolint:funlen
 				return nil
 			}
 			app.ui.app.SetFocus(dayView.worklogList)
-			// FIXME not necessary since you can't jump between calendar days on latest issues
-			//dayView.worklogStatus.SetText(fmt.Sprintf("%s", dayView.worklogStatus.GetText(true)))
 			dayView.worklogList.SetSelectedStyle(
 				tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
 			dayView.latestIssuesList.SetSelectedStyle(
@@ -106,18 +108,18 @@ func (d *DayView) update() {
 	d.worklogList.SetSelectable(true, false)
 	color := tcell.ColorWhite
 	for r := 0; r < len(logs); r++ {
-		d.worklogList.SetCell(r, 0, // FIXME use enums for column names
+		d.worklogList.SetCell(r, IssueKeyColumn,
 			tview.NewTableCell((logs)[r].Issue.Key).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
-		d.worklogList.SetCell(r, 1,
+		d.worklogList.SetCell(r, IssueSummaryColumn,
 			tview.NewTableCell((logs)[r].Issue.Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
-		d.worklogList.SetCell(r, 2,
+		d.worklogList.SetCell(r, TimeSpentColumn,
 			tview.NewTableCell(
 				FormatTimeSpent((logs)[r].WorkLog.TimeSpentSeconds)).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
 	}
-	d.worklogList.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
+	d.worklogList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEscape {
 			app.ui.app.Stop()
 		}
@@ -144,14 +146,14 @@ func (d *DayView) loadLatest() {
 	d.latestIssuesList.SetSelectable(true, false)
 	color := tcell.ColorWhite
 	for r := 0; r < len(issues.Issues); r++ {
-		d.latestIssuesList.SetCell(r, 0, // FIXME use enums for column names
+		d.latestIssuesList.SetCell(r, IssueKeyColumn,
 			tview.NewTableCell((issues.Issues)[r].Key).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
-		d.latestIssuesList.SetCell(r, 1,
+		d.latestIssuesList.SetCell(r, IssueSummaryColumn,
 			tview.NewTableCell((issues.Issues)[r].Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
 	}
-	d.latestIssuesList.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
+	d.latestIssuesList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEscape {
 			app.ui.app.Stop()
 		}
