@@ -26,7 +26,7 @@ func TestFormatTimeSpent(t *testing.T) {
 }
 
 func TestCalculateTimeSpent(t *testing.T) {
-	fixture := []*WorkLog{
+	fixture := []*Worklog{
 		{TimeSpentSeconds: 60},   // 1m
 		{TimeSpentSeconds: 3600}, // 1h
 		{TimeSpentSeconds: 7200}, // 2h

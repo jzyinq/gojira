@@ -21,7 +21,7 @@ var AppAsciiArt = fmt.Sprintf(""+
 	"             _/ |     v%s \n"+
 	"            |__/             \n\n", projectVersion)
 
-var WorkLogsCommand = &cli.Command{
+var WorklogsCommand = &cli.Command{
 	Name:  "worklogs",
 	Usage: "Edit your today's work log",
 	Action: func(c *cli.Context) error {
@@ -36,7 +36,7 @@ var WorkLogsCommand = &cli.Command{
 	},
 }
 
-func NewWorkLogIssues() error {
+func NewWorklogIssues() error {
 	// goroutine awesomeness
 	var err error
 	startDate, endDate := MonthRange(app.time)
@@ -45,7 +45,7 @@ func NewWorkLogIssues() error {
 	}
 	if app.workLogsIssues.startDate != startDate || app.workLogsIssues.endDate != endDate {
 		app.ui.loaderView.Show("Fetching worklogs...")
-		app.workLogs, err = GetWorkLogs()
+		app.workLogs, err = GetWorklogs()
 		app.ui.loaderView.Hide()
 		if err != nil {
 			return err
@@ -55,19 +55,19 @@ func NewWorkLogIssues() error {
 	}
 	app.workLogsIssues.startDate = startDate
 	app.workLogsIssues.endDate = endDate
-	app.workLogsIssues.issues = []WorkLogIssue{}
+	app.workLogsIssues.issues = []WorklogIssue{}
 	waitGroup := sync.WaitGroup{}
 	var errors []error
 	errCh := make(chan error, len(app.workLogs.logs))
 	for i := range app.workLogs.logs {
 		waitGroup.Add(1)
-		go func(workLog *WorkLog) {
+		go func(workLog *Worklog) {
 			issue, err := NewJiraClient().GetIssue(workLog.Issue.Key)
 			if err != nil {
 				errCh <- err // Send the error to the channel.
 				return
 			}
-			app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{WorkLog: workLog, Issue: issue})
+			app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorklogIssue{Worklog: workLog, Issue: issue})
 			waitGroup.Done()
 		}(app.workLogs.logs[i])
 	}
@@ -241,7 +241,7 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 	if err != nil {
 		return err
 	}
-	if Config.UpdateExistingWorkLog {
+	if Config.UpdateExistingWorklog {
 		for index, workLog := range todayWorklog {
 			if workLog.Issue.Key == issue.Key {
 				//fmt.Println("Updating existing worklog...")
@@ -257,12 +257,12 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 			}
 		}
 	}
-	worklog, err := NewWorkLog(issue.Key, logTime, timeSpent)
+	worklog, err := NewWorklog(issue.Key, logTime, timeSpent)
 	if err != nil {
 		return err
 	}
 	// add this workload to global object
 	app.workLogs.logs = append(app.workLogs.logs, &worklog)
-	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorkLogIssue{Issue: issue, WorkLog: &worklog})
+	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorklogIssue{Issue: issue, Worklog: &worklog})
 	return nil
 }

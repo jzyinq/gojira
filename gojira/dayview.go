@@ -91,7 +91,7 @@ func loadWorklogs() {
 	case loadingWorklogs <- true:
 		go func() {
 			defer func() { <-loadingWorklogs }()
-			err := NewWorkLogIssues()
+			err := NewWorklogIssues()
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 			}
@@ -116,7 +116,7 @@ func (d *DayView) update() {
 		)
 		d.worklogList.SetCell(r, TimeSpentColumn,
 			tview.NewTableCell(
-				FormatTimeSpent((logs)[r].WorkLog.TimeSpentSeconds)).SetTextColor(color).SetAlign(tview.AlignLeft),
+				FormatTimeSpent((logs)[r].Worklog.TimeSpentSeconds)).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
 	}
 	d.worklogList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
@@ -126,7 +126,7 @@ func (d *DayView) update() {
 	}).SetSelectedFunc(func(row, column int) {
 		NewUpdateWorklogForm(d, logs, row)
 	})
-	timeSpent := CalculateTimeSpent(getWorkLogsFromWorkLogIssues(logs))
+	timeSpent := CalculateTimeSpent(getWorklogsFromWorklogIssues(logs))
 	d.worklogStatus.SetText(
 		fmt.Sprintf("Worklogs - %s - [%s%s[white]]",
 			app.time.Format("2006-01-02"),
@@ -276,7 +276,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	return form
 }
 
-func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *tview.Form {
+func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *tview.Form {
 	var form *tview.Form
 
 	updateWorklog := func() {
@@ -284,7 +284,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 		go func() {
 			app.ui.loaderView.Show("Updating worklog...")
 			defer app.ui.loaderView.Hide()
-			err := workLogIssues[row].WorkLog.Update(timeSpent)
+			err := workLogIssues[row].Worklog.Update(timeSpent)
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 				return
@@ -300,7 +300,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 		go func() {
 			app.ui.loaderView.Show("Deleting worklog...")
 			defer app.ui.loaderView.Hide()
-			err := app.workLogs.Delete(workLogIssues[row].WorkLog)
+			err := app.workLogs.Delete(workLogIssues[row].Worklog)
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error())
 				return
@@ -313,7 +313,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorkLogIssue, row int) *t
 	}
 
 	form = tview.NewForm().
-		AddInputField("Time spent", FormatTimeSpent(workLogIssues[row].WorkLog.TimeSpentSeconds), 20, nil, nil).
+		AddInputField("Time spent", FormatTimeSpent(workLogIssues[row].Worklog.TimeSpentSeconds), 20, nil, nil).
 		AddButton("Update", updateWorklog).
 		AddButton("Delete", deleteWorklog).
 		AddButton("Cancel", func() {

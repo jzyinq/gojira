@@ -16,7 +16,7 @@ func GetEnv(key string) (env string) {
 
 type Configuration struct {
 	JiraUrl, JiraLogin, JiraToken, TempoUrl, TempoToken, JiraAccountId string
-	UpdateExistingWorkLog                                              bool
+	UpdateExistingWorklog                                              bool
 }
 
 var Config *Configuration
@@ -29,6 +29,6 @@ func PrepareConfig() {
 		JiraAccountId:         GetEnv("GOJIRA_JIRA_ACCOUNT_ID"),
 		TempoUrl:              "https://api.tempo.io/core/3",
 		TempoToken:            GetEnv("GOJIRA_TEMPO_TOKEN"),
-		UpdateExistingWorkLog: true,
+		UpdateExistingWorklog: true,
 	}
 }

@@ -9,19 +9,19 @@ import (
 	"time"
 )
 
-func NewWorkLog(issueKey string, logTime *time.Time, timeSpent string) (WorkLog, error) {
+func NewWorklog(issueKey string, logTime *time.Time, timeSpent string) (Worklog, error) {
 	workLogResponse, err := NewJiraClient().CreateWorklog(issueKey, logTime, timeSpent)
 	if err != nil {
-		return WorkLog{}, err
+		return Worklog{}, err
 	}
 
-	jiraWorkLogID, err := strconv.Atoi(workLogResponse.ID)
+	jiraWorklogID, err := strconv.Atoi(workLogResponse.ID)
 	if err != nil {
-		return WorkLog{}, err
+		return Worklog{}, err
 	}
 
-	workLog := WorkLog{
-		JiraWorklogid:    jiraWorkLogID,
+	workLog := Worklog{
+		JiraWorklogID:    jiraWorklogID,
 		StartDate:        logTime.Format(dateLayout),
 		StartTime:        logTime.Format("15:04:05"),
 		TimeSpentSeconds: workLogResponse.Timespentseconds,
@@ -32,9 +32,9 @@ func NewWorkLog(issueKey string, logTime *time.Time, timeSpent string) (WorkLog,
 	return workLog, nil
 }
 
-type WorkLog struct {
+type Worklog struct {
 	TempoWorklogid int `json:"tempoWorklogId"`
-	JiraWorklogid  int `json:"jiraWorklogId"`
+	JiraWorklogID  int `json:"jiraWorklogId"`
 	Issue          struct {
 		Key string `json:"key"`
 	} `json:"issue"`
@@ -47,25 +47,25 @@ type WorkLog struct {
 	} `json:"author"`
 }
 
-type WorkLogIssue struct {
-	WorkLog *WorkLog
+type WorklogIssue struct {
+	Worklog *Worklog
 	Issue   Issue
 }
 
-type WorkLogsIssues struct {
+type WorklogsIssues struct {
 	startDate time.Time
 	endDate   time.Time
-	issues    []WorkLogIssue
+	issues    []WorklogIssue
 }
 
-type WorkLogs struct {
+type Worklogs struct {
 	startDate time.Time
 	endDate   time.Time
-	logs      []*WorkLog
+	logs      []*Worklog
 }
 
-func (wl *WorkLogs) LogsOnDate(date *time.Time) ([]*WorkLog, error) {
-	var logsOnDate []*WorkLog
+func (wl *Worklogs) LogsOnDate(date *time.Time) ([]*Worklog, error) {
+	var logsOnDate []*Worklog
 	truncatedDate := (*date).Truncate(24 * time.Hour)
 	if truncatedDate.Before(wl.startDate) || truncatedDate.After(wl.endDate) {
 		return nil, nil
@@ -83,7 +83,7 @@ func (wl *WorkLogs) LogsOnDate(date *time.Time) ([]*WorkLog, error) {
 	return logsOnDate, nil
 }
 
-func (wl *WorkLogs) TotalTimeSpentToPresentDay() int {
+func (wl *Worklogs) TotalTimeSpentToPresentDay() int {
 	totalTime := 0
 	for _, log := range wl.logs {
 		logDate, err := time.Parse(dateLayout, log.StartDate)
@@ -97,14 +97,14 @@ func (wl *WorkLogs) TotalTimeSpentToPresentDay() int {
 	return totalTime
 }
 
-func (wli *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error) {
-	var issuesOnDate []*WorkLogIssue
+func (wli *WorklogsIssues) IssuesOnDate(date *time.Time) ([]*WorklogIssue, error) {
+	var issuesOnDate []*WorklogIssue
 	if date.Before(wli.startDate) || date.After(wli.endDate) {
 		return nil, errors.New("Date is out of worklogs range")
 	}
 	truncatedDate := (*date).Truncate(24 * time.Hour)
 	for i, issue := range wli.issues {
-		logDate, err := time.Parse(dateLayout, issue.WorkLog.StartDate)
+		logDate, err := time.Parse(dateLayout, issue.Worklog.StartDate)
 		logDate = logDate.Truncate(24 * time.Hour)
 		if err != nil {
 			return nil, err
@@ -117,18 +117,18 @@ func (wli *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error
 	return issuesOnDate, nil
 }
 
-func GetWorkLogs() (WorkLogs, error) {
+func GetWorklogs() (Worklogs, error) {
 	fromDate, toDate := MonthRange(app.time)
 	logrus.Infof("getting worklogs from %s to %s...", fromDate, toDate)
 	workLogsResponse, err := NewTempoClient().GetWorklogs(fromDate, toDate)
 	if err != nil {
-		return WorkLogs{}, err
+		return Worklogs{}, err
 	}
-	var worklogs []*WorkLog
-	for i := range workLogsResponse.WorkLogs {
-		worklogs = append(worklogs, &workLogsResponse.WorkLogs[i])
+	var worklogs []*Worklog
+	for i := range workLogsResponse.Worklogs {
+		worklogs = append(worklogs, &workLogsResponse.Worklogs[i])
 	}
-	return WorkLogs{startDate: fromDate, endDate: toDate, logs: worklogs}, nil
+	return Worklogs{startDate: fromDate, endDate: toDate, logs: worklogs}, nil
 }
 
 func TimeSpentToSeconds(timeSpent string) int {
@@ -153,7 +153,7 @@ func TimeSpentToSeconds(timeSpent string) int {
 	return timeSpentSeconds
 }
 
-func (wl *WorkLog) Update(timeSpent string) error {
+func (wl *Worklog) Update(timeSpent string) error {
 	logrus.Debugf("updating worklog ... %+v", wl)
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 	var err error
@@ -163,7 +163,7 @@ func (wl *WorkLog) Update(timeSpent string) error {
 		err = NewTempoClient().UpdateWorklog(wl, timeSpent)
 	} else {
 		// make update request to jira if tempoWorklogId is not set
-		err = NewJiraClient().UpdateWorklog(wl.Issue.Key, wl.JiraWorklogid, timeSpentInSeconds)
+		err = NewJiraClient().UpdateWorklog(wl.Issue.Key, wl.JiraWorklogID, timeSpentInSeconds)
 	}
 	if err != nil {
 		return err
@@ -172,14 +172,14 @@ func (wl *WorkLog) Update(timeSpent string) error {
 	return nil
 }
 
-func (wl *WorkLogs) Delete(w *WorkLog) error {
+func (wl *Worklogs) Delete(w *Worklog) error {
 	logrus.Debugf("deleting w ... %+v", w)
 	// make update request to tempo if tempoWorklogId is set
 	var err error
 	if w.TempoWorklogid != 0 {
 		err = NewTempoClient().DeleteWorklog(w.TempoWorklogid)
 	} else {
-		err = NewJiraClient().DeleteWorklog(w.Issue.Key, w.JiraWorklogid)
+		err = NewJiraClient().DeleteWorklog(w.Issue.Key, w.JiraWorklogID)
 	}
 	if err != nil {
 		logrus.Debug(w)
@@ -188,13 +188,13 @@ func (wl *WorkLogs) Delete(w *WorkLog) error {
 
 	// FIXME delete is kinda buggy - it messes up pointers and we're getting weird results
 	for i, issue := range app.workLogsIssues.issues {
-		if issue.WorkLog.JiraWorklogid == w.JiraWorklogid {
+		if issue.Worklog.JiraWorklogID == w.JiraWorklogID {
 			app.workLogsIssues.issues = append(app.workLogsIssues.issues[:i], app.workLogsIssues.issues[i+1:]...)
 			break
 		}
 	}
 	for i, workLog := range wl.logs {
-		if workLog.JiraWorklogid == w.JiraWorklogid {
+		if workLog.JiraWorklogID == w.JiraWorklogID {
 			wl.logs = append(wl.logs[:i], wl.logs[i+1:]...)
 			break
 		}

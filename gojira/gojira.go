@@ -12,8 +12,8 @@ type gojira struct {
 	cli            *cli.App
 	ui             *UserInteface
 	time           *time.Time
-	workLogs       WorkLogs
-	workLogsIssues WorkLogsIssues
+	workLogs       Worklogs
+	workLogsIssues WorklogsIssues
 }
 
 func Run() {
@@ -59,7 +59,7 @@ func Run() {
 		Commands: []*cli.Command{
 			LogWorkCommand,
 			IssuesCommand,
-			WorkLogsCommand,
+			WorklogsCommand,
 			ConfigCommand,
 			ViewIssueCommand,
 		},

@@ -64,7 +64,7 @@ type Issue struct {
 	} `json:"fields"`
 }
 
-type WorkLogResponse struct {
+type WorklogResponse struct {
 	Self   string `json:"self"`
 	Author struct {
 		Self        string `json:"self"`
@@ -120,7 +120,7 @@ func (jc *JiraClient) GetIssue(issueKey string) (Issue, error) {
 	return jiraIssue, nil
 }
 
-func (jc *JiraClient) CreateWorklog(issueKey string, logTime *time.Time, timeSpent string) (WorkLogResponse, error) {
+func (jc *JiraClient) CreateWorklog(issueKey string, logTime *time.Time, timeSpent string) (WorklogResponse, error) {
 	payload := map[string]string{
 		"timeSpent":      FormatTimeSpent(TimeSpentToSeconds(timeSpent)),
 		"adjustEstimate": "leave",
@@ -131,13 +131,13 @@ func (jc *JiraClient) CreateWorklog(issueKey string, logTime *time.Time, timeSpe
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog?notifyUsers=false", Config.JiraUrl, issueKey)
 	response, err := SendHttpRequest("POST", requestUrl, requestBody, jc.getHttpHeaders(), 201)
 	if err != nil {
-		return WorkLogResponse{}, err
+		return WorklogResponse{}, err
 	}
 
-	var workLogRequest WorkLogResponse
+	var workLogRequest WorklogResponse
 	err = json.Unmarshal(response, &workLogRequest)
 	if err != nil {
-		return WorkLogResponse{}, err
+		return WorklogResponse{}, err
 	}
 	return workLogRequest, nil
 }

@@ -13,15 +13,15 @@ import (
 
 const dateLayout = "2006-01-02"
 
-func getWorkLogsFromWorkLogIssues(workLogIssues []*WorkLogIssue) []*WorkLog {
-	var workLogs []*WorkLog
+func getWorklogsFromWorklogIssues(workLogIssues []*WorklogIssue) []*Worklog {
+	var workLogs []*Worklog
 	for _, workLog := range workLogIssues {
-		workLogs = append(workLogs, workLog.WorkLog)
+		workLogs = append(workLogs, workLog.Worklog)
 	}
 	return workLogs
 }
 
-func CalculateTimeSpent(workLogs []*WorkLog) int {
+func CalculateTimeSpent(workLogs []*Worklog) int {
 	timeSpentInSeconds := 0
 	for _, workLog := range workLogs {
 		timeSpentInSeconds += workLog.TimeSpentSeconds

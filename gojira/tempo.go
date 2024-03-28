@@ -21,11 +21,11 @@ func NewTempoClient() *TempoClient {
 	}
 }
 
-type WorkLogsResponse struct {
-	WorkLogs []WorkLog `json:"results"`
+type WorklogsResponse struct {
+	Worklogs []Worklog `json:"results"`
 }
 
-type WorkLogUpdateRequest struct {
+type WorklogUpdateRequest struct {
 	IssueKey         string `json:"issueKey"`
 	StartDate        string `json:"startDate"`
 	StartTime        string `json:"startTime"`
@@ -34,7 +34,7 @@ type WorkLogUpdateRequest struct {
 	TimeSpentSeconds int    `json:"timeSpentSeconds"`
 }
 
-func (tc *TempoClient) GetWorklogs(fromDate, toDate time.Time) (WorkLogsResponse, error) {
+func (tc *TempoClient) GetWorklogs(fromDate, toDate time.Time) (WorklogsResponse, error) {
 	// tempo is required only because of fetching worklogs by date range
 	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s&limit=1000",
 		tc.Url, tc.JiraAccountId, fromDate.Format(dateLayout), toDate.Format(dateLayout))
@@ -44,20 +44,20 @@ func (tc *TempoClient) GetWorklogs(fromDate, toDate time.Time) (WorkLogsResponse
 	}
 	response, err := SendHttpRequest("GET", requestUrl, nil, headers, 200)
 	if err != nil {
-		return WorkLogsResponse{}, err
+		return WorklogsResponse{}, err
 	}
-	var workLogsResponse WorkLogsResponse
+	var workLogsResponse WorklogsResponse
 	err = json.Unmarshal(response, &workLogsResponse)
 	if err != nil {
-		return WorkLogsResponse{}, err
+		return WorklogsResponse{}, err
 	}
 	return workLogsResponse, err
 }
 
-func (tc *TempoClient) UpdateWorklog(worklog *WorkLog, timeSpent string) error {
+func (tc *TempoClient) UpdateWorklog(worklog *Worklog, timeSpent string) error {
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 
-	payload := WorkLogUpdateRequest{
+	payload := WorklogUpdateRequest{
 		IssueKey:         worklog.Issue.Key,
 		StartDate:        worklog.StartDate,
 		StartTime:        worklog.StartTime,
@@ -76,8 +76,8 @@ func (tc *TempoClient) UpdateWorklog(worklog *WorkLog, timeSpent string) error {
 	return err
 }
 
-func (tc *TempoClient) DeleteWorklog(tempoWorkLogId int) error {
-	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, tempoWorkLogId)
+func (tc *TempoClient) DeleteWorklog(tempoWorklogID int) error {
+	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, tempoWorklogID)
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
 		"Content-Type":  "application/json",
