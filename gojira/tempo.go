@@ -22,12 +22,6 @@ func NewTempoClient() *TempoClient {
 }
 
 type WorkLogsResponse struct {
-	Self     string `json:"self"`
-	Metadata struct {
-		Count  int `json:"count"`
-		Offset int `json:"offset"`
-		Limit  int `json:"limit"`
-	} `json:"metadata"`
 	WorkLogs []WorkLog `json:"results"`
 }
 

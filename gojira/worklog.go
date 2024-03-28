@@ -21,52 +21,30 @@ func NewWorkLog(issueKey string, logTime *time.Time, timeSpent string) (WorkLog,
 	}
 
 	worklog := WorkLog{
-		JiraWorklogid: jiraWorklogId,
-		StartDate:     logTime.Format(dateLayout),
-		StartTime:     logTime.Format("15:04:05"),
-		Author: struct { // FIXME oh my god what a mess
-			Self        string `json:"self"`
-			AccountId   string `json:"accountId"`
-			DisplayName string `json:"displayName"`
-		}{
-			Self: workLogResponse.Self, AccountId: workLogResponse.Author.Accountid,
-			DisplayName: workLogResponse.Author.Displayname,
-		},
+		JiraWorklogid:    jiraWorklogId,
+		StartDate:        logTime.Format(dateLayout),
+		StartTime:        logTime.Format("15:04:05"),
 		TimeSpentSeconds: workLogResponse.Timespentseconds,
-		Issue: struct { // FIXME oh my god what a mess
-			Self string `json:"self"`
-			Key  string `json:"key"`
-			ID   int    `json:"id"`
-		}{Self: "", Key: issueKey, ID: 0},
+		Issue: struct {
+			Key string `json:"key"`
+		}{Key: issueKey},
 	}
 	return worklog, nil
 }
 
 type WorkLog struct {
-	Self           string `json:"self"`
-	TempoWorklogid int    `json:"tempoWorklogId"`
-	JiraWorklogid  int    `json:"jiraWorklogId"`
+	TempoWorklogid int `json:"tempoWorklogId"`
+	JiraWorklogid  int `json:"jiraWorklogId"`
 	Issue          struct {
-		Self string `json:"self"`
-		Key  string `json:"key"`
-		ID   int    `json:"id"`
+		Key string `json:"key"`
 	} `json:"issue"`
-	TimeSpentSeconds int       `json:"timeSpentSeconds"`
-	BillableSeconds  int       `json:"billableSeconds"`
-	StartDate        string    `json:"startDate"`
-	StartTime        string    `json:"startTime"`
-	Description      string    `json:"description"`
-	CreatedAt        time.Time `json:"createdAt"`
-	UpdatedAt        time.Time `json:"updatedAt"`
+	TimeSpentSeconds int    `json:"timeSpentSeconds"`
+	StartDate        string `json:"startDate"`
+	StartTime        string `json:"startTime"`
+	Description      string `json:"description"`
 	Author           struct {
-		Self        string `json:"self"`
-		AccountId   string `json:"accountId"`
-		DisplayName string `json:"displayName"`
+		AccountId string `json:"accountId"`
 	} `json:"author"`
-	Attributes struct {
-		Self   string        `json:"self"`
-		Values []interface{} `json:"values"`
-	} `json:"attributes"`
 }
 
 type WorkLogIssue struct {
@@ -140,7 +118,6 @@ func (wli *WorkLogsIssues) IssuesOnDate(date *time.Time) ([]*WorkLogIssue, error
 }
 
 func GetWorkLogs() (WorkLogs, error) {
-	// get first day of week nd the last for date in app.time
 	fromDate, toDate := MonthRange(app.time)
 	logrus.Infof("getting worklogs from %s to %s...", fromDate, toDate)
 	workLogsResponse, err := NewTempoClient().GetWorklogs(fromDate, toDate)

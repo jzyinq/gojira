@@ -55,24 +55,11 @@ type JQLResponse struct {
 }
 
 type Issue struct {
-	Expand string `json:"expand"`
-	ID     string `json:"id"`
-	Self   string `json:"self"`
 	Key    string `json:"key"`
 	Fields struct {
 		Summary string `json:"summary"`
 		Status  struct {
-			Self           string `json:"self"`
-			Description    string `json:"description"`
-			IconUrl        string `json:"iconUrl"`
-			Name           string `json:"name"`
-			ID             string `json:"id"`
-			StatusCategory struct {
-				Self      string `json:"self"`
-				ID        int    `json:"id"`
-				ColorName string `json:"colorName"`
-				Name      string `json:"name"`
-			} `json:"statusCategory"`
+			Name string `json:"name"`
 		} `json:"status"`
 	} `json:"fields"`
 }
@@ -80,42 +67,12 @@ type Issue struct {
 type WorkLogResponse struct {
 	Self   string `json:"self"`
 	Author struct {
-		Self         string `json:"self"`
-		Accountid    string `json:"accountId"`
-		Emailaddress string `json:"emailAddress"`
-		Avatarurls   struct {
-			Four8X48  string `json:"48x48"`
-			Two4X24   string `json:"24x24"`
-			One6X16   string `json:"16x16"`
-			Three2X32 string `json:"32x32"`
-		} `json:"avatarUrls"`
+		Self        string `json:"self"`
+		Accountid   string `json:"accountId"`
 		Displayname string `json:"displayName"`
-		Active      bool   `json:"active"`
-		Timezone    string `json:"timeZone"`
-		Accounttype string `json:"accountType"`
 	} `json:"author"`
-	Updateauthor struct {
-		Self         string `json:"self"`
-		Accountid    string `json:"accountId"`
-		Emailaddress string `json:"emailAddress"`
-		Avatarurls   struct {
-			Four8X48  string `json:"48x48"`
-			Two4X24   string `json:"24x24"`
-			One6X16   string `json:"16x16"`
-			Three2X32 string `json:"32x32"`
-		} `json:"avatarUrls"`
-		Displayname string `json:"displayName"`
-		Active      bool   `json:"active"`
-		Timezone    string `json:"timeZone"`
-		Accounttype string `json:"accountType"`
-	} `json:"updateAuthor"`
-	Created          string `json:"created"`
-	Updated          string `json:"updated"`
-	Started          string `json:"started"`
-	Timespent        string `json:"timeSpent"`
 	Timespentseconds int    `json:"timeSpentSeconds"`
 	ID               string `json:"id"` // can it be an int? it's a number
-	Issueid          string `json:"issueId"`
 }
 
 type JiraWorklogUpdate struct {
