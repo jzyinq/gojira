@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
 )
@@ -80,6 +81,7 @@ type JiraWorklogUpdate struct {
 	TimeSpentSeconds int `json:"timeSpentSeconds"`
 }
 
+// FIXME create GetIssuesByJQL instead GetLatestIssues and GetIssuesByKeys
 func (jc *JiraClient) GetLatestIssues() (JQLResponse, error) {
 	payload := &JQLSearch{
 		Expand:       []string{"names"},
@@ -108,9 +110,12 @@ func (jc *JiraClient) GetLatestIssues() (JQLResponse, error) {
 }
 
 func GetIssuesByKeys(issueKeys []string) (JQLResponse, error) {
+	issueKeysJQL := fmt.Sprintf("key in (%s) ORDER BY updated DESC, created DESC", strings.Join(issueKeys, ","))
+	logrus.Info(issueKeysJQL)
 	payload := &JQLSearch{
 		Expand:       []string{"names"},
-		Jql:          fmt.Sprintf("issue in (%s) ORDER BY updated DESC, created DESC", strings.Join(issueKeys, ",")),
+		Jql:          issueKeysJQL,
+		MaxResults:   len(issueKeys),
 		FieldsByKeys: false,
 		Fields:       []string{"summary", "status"},
 		StartAt:      0,

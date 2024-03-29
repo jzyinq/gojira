@@ -87,24 +87,39 @@ var IssuesCommand = &cli.Command{
 	Name:  "issues",
 	Usage: "Show currently assigned issues",
 	Action: func(context *cli.Context) error {
-		lastTickets, err := NewJiraClient().GetLatestIssues()
+		var uniqueIssues []Issue
+		err := spinner.New().Title("Fetching issues...").Action(func() {
+			lastTickets, err := NewJiraClient().GetLatestIssues()
+			if err != nil {
+				return
+			}
+			app.workLogs, err = GetWorklogs(DayRange(app.time))
+			if err != nil {
+				return
+			}
+			alreadyLoggedIssues := []string{}
+			for _, worklog := range app.workLogs.logs {
+				alreadyLoggedIssues = append(alreadyLoggedIssues, worklog.Issue.Key)
+			}
+			todaysIssues, err := GetIssuesByKeys(alreadyLoggedIssues)
+			if err != nil {
+				return
+			}
+			combinedIssues := append(todaysIssues.Issues, lastTickets.Issues...)
+
+			uniqueIssueKeys := map[string]bool{}
+			for _, issue := range combinedIssues {
+				if _, value := uniqueIssueKeys[issue.Key]; !value {
+					uniqueIssueKeys[issue.Key] = true
+					uniqueIssues = append(uniqueIssues, issue)
+				}
+			}
+		}).Run()
+
 		if err != nil {
 			return err
 		}
-		todaysWorklogs, err := GetWorklogs(DayRange(app.time))
-		if err != nil {
-			return err
-		}
-		alreadyLoggedIssues := []string{}
-		for _, worklog := range todaysWorklogs.logs {
-			alreadyLoggedIssues = append(alreadyLoggedIssues, worklog.Issue.Key)
-		}
-		todaysIssues, err := GetIssuesByKeys(alreadyLoggedIssues)
-		if err != nil {
-			return err
-		}
-		// FIXME - recent worklogs with those already logged
-		issue, err := SelectIssueForm(append(todaysIssues.Issues, lastTickets.Issues...))
+		issue, err := SelectIssueForm(uniqueIssues)
 		if err != nil {
 			return err
 		}
@@ -256,15 +271,11 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 	if Config.UpdateExistingWorklog {
 		for index, workLog := range todayWorklog {
 			if workLog.Issue.Key == issue.Key {
-				//fmt.Println("Updating existing worklog...")
 				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
 				err := todayWorklog[index].Update(timeSpentSum)
 				if err != nil {
 					return err
 				}
-				// FIXME - this should be only in cli mode
-				//fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, workLog.Issue.Key)
-				//fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(todayWorklog)))
 				return nil
 			}
 		}

@@ -42,7 +42,7 @@ func SelectIssueForm(issues []Issue) (Issue, error) {
 		huh.NewGroup(
 			huh.NewSelect[Issue]().
 				Title("Choose issue").
-				Description("Recently updated issues assigned to you:").
+				Description("Recent issues:").
 				Options(formOptions...).
 				Value(&chosenIssue),
 		),
