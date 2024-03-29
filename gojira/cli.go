@@ -133,7 +133,11 @@ var IssuesCommand = &cli.Command{
 			return err
 		}
 		err = spinner.New().Title("Logging work...").Action(func() {
-			err = issue.LogWork(app.time, timeSpent)
+			if initialTimeSpent != "" {
+				err = worklog.Update(timeSpent)
+			} else {
+				err = issue.LogWork(app.time, timeSpent)
+			}
 		}).Run()
 		if err != nil {
 			return err
@@ -275,6 +279,7 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 		return err
 	}
 	if Config.UpdateExistingWorklog {
+		// FIXME should I append worklog or replace it?
 		for index, workLog := range todayWorklog {
 			if workLog.Issue.Key == issue.Key {
 				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
