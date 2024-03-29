@@ -88,21 +88,30 @@ var IssuesCommand = &cli.Command{
 	Usage: "Show recent issues",
 	Action: func(context *cli.Context) error {
 		var uniqueIssues []Issue
-		err := spinner.New().Title("Fetching issues...").Action(func() {
-			lastTickets, err := NewJiraClient().GetLatestIssues()
-			if err != nil {
+		var err error
+		_ = spinner.New().Title("Fetching issues...").Action(func() {
+			lastTickets, innerErr := NewJiraClient().GetLatestIssues()
+			logrus.Infof("Last tickets: %v", lastTickets.Issues)
+			if innerErr != nil {
+				err = innerErr
 				return
 			}
-			app.workLogs, err = GetWorklogs(DayRange(app.time))
-			if err != nil {
+			app.workLogs, innerErr = GetWorklogs(DayRange(app.time))
+			if innerErr != nil {
+				err = innerErr
 				return
 			}
 			var alreadyLoggedIssues []string
 			for _, worklog := range app.workLogs.logs {
 				alreadyLoggedIssues = append(alreadyLoggedIssues, worklog.Issue.Key)
 			}
-			todaysIssues, err := GetIssuesByKeys(alreadyLoggedIssues)
-			if err != nil {
+			//if len(alreadyLoggedIssues) == 0 {
+			//	uniqueIssues = lastTickets.Issues
+			//	return
+			//}
+			todaysIssues, innerErr := NewJiraClient().GetIssuesByKeys(alreadyLoggedIssues)
+			if innerErr != nil {
+				err = innerErr
 				return
 			}
 			combinedIssues := append(todaysIssues.Issues, lastTickets.Issues...)
@@ -115,7 +124,6 @@ var IssuesCommand = &cli.Command{
 				}
 			}
 		}).Run()
-
 		if err != nil {
 			return err
 		}
@@ -239,31 +247,6 @@ var ViewIssueInBrowserAction = func(c *cli.Context) error {
 	return nil
 }
 
-var ConfigCommand = &cli.Command{
-	Name:  "config",
-	Usage: "configuration help",
-	Action: func(context *cli.Context) error {
-		//nolint:lll
-		fmt.Print(`gojira needs a couple of env variables right now that you have to configure:
-#1 Export below values in your .bashrc / .zshrc / .profile file:
-
-export GOJIRA_JIRA_INSTANCE_URL="https://<INSTANCE>.atlassian.net"
-export GOJIRA_JIRA_LOGIN="your@email.com"
-export GOJIRA_JIRA_TOKEN= generate it at https://id.atlassian.com/manage-profile/security/api-tokens
-export GOJIRA_TEMPO_TOKEN= generate it at https://<INSTANCE>.atlassian.net/plugins/servlet/ac/io.tempo.jira/tempo-app#!/configuration/api-integration
-
-#2 Now we need to fetch one last env variable using previously saved values:
-export GOJIRA_JIRA_ACCOUNT_ID= fetch it using this curl: 
-curl --request GET \
-  --url "$GOJIRA_JIRA_INSTANCE_URL/rest/api/3/user/bulk/migration?username=$GOJIRA_JIRA_LOGIN" \
-  --header "Authorization: Basic $(echo -n $GOJIRA_JIRA_LOGIN:$GOJIRA_JIRA_TOKEN | base64)"
-
-Save it and you should ready to go!
-`)
-		return nil
-	},
-}
-
 func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 	logrus.Infof("Logging %s of time to ticket %s at %s", timeSpent, issue.Key, logTime)
 	todayWorklog, err := app.workLogs.LogsOnDate(logTime)
@@ -291,4 +274,29 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 	app.workLogs.logs = append(app.workLogs.logs, &worklog)
 	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorklogIssue{Issue: issue, Worklog: &worklog})
 	return nil
+}
+
+var ConfigCommand = &cli.Command{
+	Name:  "config",
+	Usage: "configuration help",
+	Action: func(context *cli.Context) error {
+		//nolint:lll
+		fmt.Print(`gojira needs a couple of env variables right now that you have to configure:
+#1 Export below values in your .bashrc / .zshrc / .profile file:
+
+export GOJIRA_JIRA_INSTANCE_URL="https://<INSTANCE>.atlassian.net"
+export GOJIRA_JIRA_LOGIN="your@email.com"
+export GOJIRA_JIRA_TOKEN= generate it at https://id.atlassian.com/manage-profile/security/api-tokens
+export GOJIRA_TEMPO_TOKEN= generate it at https://<INSTANCE>.atlassian.net/plugins/servlet/ac/io.tempo.jira/tempo-app#!/configuration/api-integration
+
+#2 Now we need to fetch one last env variable using previously saved values:
+export GOJIRA_JIRA_ACCOUNT_ID= fetch it using this curl: 
+curl --request GET \
+  --url "$GOJIRA_JIRA_INSTANCE_URL/rest/api/3/user/bulk/migration?username=$GOJIRA_JIRA_LOGIN" \
+  --header "Authorization: Basic $(echo -n $GOJIRA_JIRA_LOGIN:$GOJIRA_JIRA_TOKEN | base64)"
+
+Save it and you should ready to go!
+`)
+		return nil
+	},
 }

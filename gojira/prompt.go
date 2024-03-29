@@ -35,7 +35,12 @@ func SelectActionForm(actions []string) (string, error) {
 func IssueWorklogForm(issues []Issue) (Issue, string, error) {
 	formOptions := make([]huh.Option[Issue], len(issues))
 	for i, issue := range issues {
-		formOptions[i] = huh.NewOption(fmt.Sprintf("%s - %s", issue.Key, issue.Fields.Summary), issue)
+		timeSpent := ""
+		worklog := findWorklogByIssueKey(issue.Key)
+		if worklog != nil {
+			timeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
+		}
+		formOptions[i] = huh.NewOption(fmt.Sprintf("%-8s %-10s - %s", timeSpent, issue.Key, issue.Fields.Summary), issue)
 	}
 	chosenIssue := Issue{}
 	timeSpent := ""

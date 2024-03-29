@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
 )
@@ -81,12 +80,11 @@ type JiraWorklogUpdate struct {
 	TimeSpentSeconds int `json:"timeSpentSeconds"`
 }
 
-// FIXME create GetIssuesByJQL instead GetLatestIssues and GetIssuesByKeys
-func (jc *JiraClient) GetLatestIssues() (JQLResponse, error) {
+func (jc *JiraClient) GetIssuesByJQL(jql string, maxResults int) (JQLResponse, error) {
 	payload := &JQLSearch{
 		Expand:       []string{"names"},
-		Jql:          "assignee in (currentUser()) ORDER BY updated DESC, created DESC",
-		MaxResults:   10,
+		Jql:          jql,
+		MaxResults:   maxResults,
 		FieldsByKeys: false,
 		Fields:       []string{"summary", "status"},
 		StartAt:      0,
@@ -109,33 +107,13 @@ func (jc *JiraClient) GetLatestIssues() (JQLResponse, error) {
 	return jqlResponse, nil
 }
 
-func GetIssuesByKeys(issueKeys []string) (JQLResponse, error) {
+func (jc *JiraClient) GetLatestIssues() (JQLResponse, error) {
+	return jc.GetIssuesByJQL("assignee in (currentUser()) ORDER BY updated DESC, created DESC", 10)
+}
+
+func (jc *JiraClient) GetIssuesByKeys(issueKeys []string) (JQLResponse, error) {
 	issueKeysJQL := fmt.Sprintf("key in (%s) ORDER BY updated DESC, created DESC", strings.Join(issueKeys, ","))
-	logrus.Info(issueKeysJQL)
-	payload := &JQLSearch{
-		Expand:       []string{"names"},
-		Jql:          issueKeysJQL,
-		MaxResults:   len(issueKeys),
-		FieldsByKeys: false,
-		Fields:       []string{"summary", "status"},
-		StartAt:      0,
-	}
-	payloadJson, err := json.Marshal(payload)
-	if err != nil {
-		return JQLResponse{}, err
-	}
-	requestBody := bytes.NewBuffer(payloadJson)
-	requestUrl := fmt.Sprintf("%s/rest/api/2/search", Config.JiraUrl)
-	response, err := SendHttpRequest("POST", requestUrl, requestBody, NewJiraClient().getHttpHeaders(), 200)
-	if err != nil {
-		return JQLResponse{}, err
-	}
-	var jqlResponse JQLResponse
-	err = json.Unmarshal(response, &jqlResponse)
-	if err != nil {
-		return JQLResponse{}, err
-	}
-	return jqlResponse, nil
+	return jc.GetIssuesByJQL(issueKeysJQL, len(issueKeys))
 }
 
 func (jc *JiraClient) GetIssue(issueKey string) (Issue, error) {

@@ -67,6 +67,7 @@ func Run() {
 	}
 	err = app.cli.Run(os.Args)
 	if err != nil {
+		logrus.Error(err)
 		log.Fatal(err)
 	}
 }
