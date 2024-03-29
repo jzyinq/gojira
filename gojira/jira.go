@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -95,6 +96,32 @@ func (jc *JiraClient) GetLatestIssues() (JQLResponse, error) {
 	requestBody := bytes.NewBuffer(payloadJson)
 	requestUrl := fmt.Sprintf("%s/rest/api/2/search", Config.JiraUrl)
 	response, err := SendHttpRequest("POST", requestUrl, requestBody, jc.getHttpHeaders(), 200)
+	if err != nil {
+		return JQLResponse{}, err
+	}
+	var jqlResponse JQLResponse
+	err = json.Unmarshal(response, &jqlResponse)
+	if err != nil {
+		return JQLResponse{}, err
+	}
+	return jqlResponse, nil
+}
+
+func GetIssuesByKeys(issueKeys []string) (JQLResponse, error) {
+	payload := &JQLSearch{
+		Expand:       []string{"names"},
+		Jql:          fmt.Sprintf("issue in (%s) ORDER BY updated DESC, created DESC", strings.Join(issueKeys, ",")),
+		FieldsByKeys: false,
+		Fields:       []string{"summary", "status"},
+		StartAt:      0,
+	}
+	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		return JQLResponse{}, err
+	}
+	requestBody := bytes.NewBuffer(payloadJson)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/search", Config.JiraUrl)
+	response, err := SendHttpRequest("POST", requestUrl, requestBody, NewJiraClient().getHttpHeaders(), 200)
 	if err != nil {
 		return JQLResponse{}, err
 	}

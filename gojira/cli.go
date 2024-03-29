@@ -45,7 +45,7 @@ func NewWorklogIssues() error {
 	}
 	if app.workLogsIssues.startDate != startDate || app.workLogsIssues.endDate != endDate {
 		app.ui.loaderView.Show("Fetching worklogs...")
-		app.workLogs, err = GetWorklogs()
+		app.workLogs, err = GetWorklogs(MonthRange(app.time))
 		app.ui.loaderView.Hide()
 		if err != nil {
 			return err
@@ -87,12 +87,24 @@ var IssuesCommand = &cli.Command{
 	Name:  "issues",
 	Usage: "Show currently assigned issues",
 	Action: func(context *cli.Context) error {
-
 		lastTickets, err := NewJiraClient().GetLatestIssues()
 		if err != nil {
 			return err
 		}
-		issue, err := SelectIssueForm(lastTickets.Issues)
+		todaysWorklogs, err := GetWorklogs(DayRange(app.time))
+		if err != nil {
+			return err
+		}
+		alreadyLoggedIssues := []string{}
+		for _, worklog := range todaysWorklogs.logs {
+			alreadyLoggedIssues = append(alreadyLoggedIssues, worklog.Issue.Key)
+		}
+		todaysIssues, err := GetIssuesByKeys(alreadyLoggedIssues)
+		if err != nil {
+			return err
+		}
+		// FIXME - recent worklogs with those already logged
+		issue, err := SelectIssueForm(append(todaysIssues.Issues, lastTickets.Issues...))
 		if err != nil {
 			return err
 		}

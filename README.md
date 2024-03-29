@@ -71,6 +71,7 @@ Just remember to urldecode it. Save it and you should ready to go!
 ## Todo list
 
 - [ ] cli version does not update worklogs if they exist already
+  - [ ] fetch worklogs from current day and propose them for selection
 - [ ] ticket status change prompt after logging time
 - [ ] tests
 - [ ] unify workLogs and worklogsIssues structs - use one for both

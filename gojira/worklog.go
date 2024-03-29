@@ -117,8 +117,7 @@ func (wli *WorklogsIssues) IssuesOnDate(date *time.Time) ([]*WorklogIssue, error
 	return issuesOnDate, nil
 }
 
-func GetWorklogs() (Worklogs, error) {
-	fromDate, toDate := MonthRange(app.time)
+func GetWorklogs(fromDate time.Time, toDate time.Time) (Worklogs, error) {
 	logrus.Infof("getting worklogs from %s to %s...", fromDate, toDate)
 	workLogsResponse, err := NewTempoClient().GetWorklogs(fromDate, toDate)
 	if err != nil {
