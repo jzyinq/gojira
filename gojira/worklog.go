@@ -90,7 +90,7 @@ func (wl *Worklogs) TotalTimeSpentToPresentDay() int {
 		if err != nil {
 			logrus.Error(err)
 		}
-		if logDate.Before(time.Now().Local()) {
+		if logDate.Before(time.Now().UTC()) {
 			totalTime += log.TimeSpentSeconds
 		}
 	}
