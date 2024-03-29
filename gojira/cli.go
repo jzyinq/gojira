@@ -85,7 +85,7 @@ func NewWorklogIssues() error {
 
 var IssuesCommand = &cli.Command{
 	Name:  "issues",
-	Usage: "Show currently assigned issues",
+	Usage: "Show recent issues",
 	Action: func(context *cli.Context) error {
 		var uniqueIssues []Issue
 		err := spinner.New().Title("Fetching issues...").Action(func() {
@@ -97,7 +97,7 @@ var IssuesCommand = &cli.Command{
 			if err != nil {
 				return
 			}
-			alreadyLoggedIssues := []string{}
+			var alreadyLoggedIssues []string
 			for _, worklog := range app.workLogs.logs {
 				alreadyLoggedIssues = append(alreadyLoggedIssues, worklog.Issue.Key)
 			}
