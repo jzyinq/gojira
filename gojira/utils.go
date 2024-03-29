@@ -114,6 +114,6 @@ func OpenURL(url string) {
 
 func MonthRange(t *time.Time) (time.Time, time.Time) {
 	firstDayOfCurrentMonth := time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
-	firstDayOfNextMonth := firstDayOfCurrentMonth.AddDate(0, 1, 0)
-	return firstDayOfCurrentMonth, firstDayOfNextMonth
+	lastDayOfCurrentMonth := firstDayOfCurrentMonth.AddDate(0, 1, 0).Add(-time.Second)
+	return firstDayOfCurrentMonth, lastDayOfCurrentMonth
 }
