@@ -26,9 +26,9 @@ func Run() {
 	// Set the log output to write to the file
 	logrus.SetOutput(logFile)
 	// Now log messages will be written to the file
-	logrus.Info("Gojira started")
 	appTimer := time.Now().UTC()
-	logrus.Debugf("Current time %s", appTimer)
+	logrus.Infof("gojira version %s started", projectVersion)
+	logrus.Infof("current time %s", appTimer)
 	app.ui = &UserInteface{}
 	app.time = &appTimer
 	app.cli = &cli.App{
