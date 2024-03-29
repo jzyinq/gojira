@@ -7,6 +7,30 @@ import (
 	"regexp"
 )
 
+func SelectActionForm(actions []string) (string, error) {
+	formOptions := make([]huh.Option[string], len(actions))
+	for i, action := range actions {
+		formOptions[i] = huh.NewOption(action, action)
+	}
+	chosenAction := ""
+
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("Choose action").
+				Options(formOptions...).
+				Value(&chosenAction),
+		),
+	)
+	form.WithTheme(huh.ThemeDracula())
+	err := form.Run()
+	if err != nil {
+		return chosenAction, err
+	}
+
+	return chosenAction, nil
+}
+
 func SelectIssueForm(issues []Issue) (Issue, error) {
 	formOptions := make([]huh.Option[Issue], len(issues))
 	for i, issue := range issues {

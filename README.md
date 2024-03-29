@@ -1,7 +1,7 @@
 # gojira
 
 Small cli helper for adding/updating work logs in Jira / Tempo.
-Based on [urfave/cli](https://github.com/urfave/cli/), [manifoldco/promptui](https://github.com/manifoldco/promptui)
+Based on [urfave/cli](https://github.com/urfave/cli/), [charmbracelet/huh](https://github.com/charmbracelet/huh)
 and [rivo/tview](https://github.com/rivo/tview)
 
 ## Features

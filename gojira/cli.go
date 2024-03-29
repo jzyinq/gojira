@@ -2,7 +2,7 @@ package gojira
 
 import (
 	"fmt"
-	"github.com/manifoldco/promptui"
+	"github.com/charmbracelet/huh/spinner"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"log"
@@ -100,10 +100,13 @@ var IssuesCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		err = issue.LogWork(app.time, timeSpent)
+		err = spinner.New().Title("Logging work...").Action(func() {
+			err = issue.LogWork(app.time, timeSpent)
+		}).Run()
 		if err != nil {
 			return err
 		}
+		fmt.Printf("Successfully logged %s to ticket %s ", timeSpent, issue.Key)
 		return nil
 	},
 }
@@ -136,11 +139,13 @@ var LogWorkCommand = &cli.Command{
 				return err
 			}
 		}
-
-		err = issue.LogWork(app.time, timeSpent)
+		err = spinner.New().Title("Logging work...").Action(func() {
+			err = issue.LogWork(app.time, timeSpent)
+		}).Run()
 		if err != nil {
 			return err
 		}
+		fmt.Printf("Successfully logged %s to ticket %s ", timeSpent, issue.Key)
 		return nil
 	},
 }
@@ -154,12 +159,7 @@ var DefaultAction = func(c *cli.Context) error {
 	if ticketFromBranch != "" {
 		c.App.Metadata["JiraIssue"] = ticketFromBranch
 		fmt.Printf("Detected possible ticket in git branch name - %s\n", ticketFromBranch)
-		prompt := promptui.Select{
-			Label: "Select Action",
-			Items: []string{"Log Work", "View Issue"},
-		}
-		_, action, err := prompt.Run()
-
+		action, err := SelectActionForm([]string{"Log Work", "View Issue"})
 		if err != nil {
 			fmt.Printf("Prompt failed %v\n", err)
 			return nil
@@ -189,10 +189,13 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 		if err != nil {
 			return nil
 		}
-		err = issue.LogWork(app.time, timeSpent)
+		err = spinner.New().Title("Logging work...").Action(func() {
+			err = issue.LogWork(app.time, timeSpent)
+		}).Run()
 		if err != nil {
 			return err
 		}
+		fmt.Printf("Successfully logged %s to ticket %s ", timeSpent, issue.Key)
 		return nil
 	}
 
