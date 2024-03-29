@@ -3,8 +3,8 @@ package gojira
 import (
 	"errors"
 	"fmt"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/huh"
-	"github.com/sirupsen/logrus"
 	"regexp"
 )
 
@@ -57,22 +57,27 @@ func IssueWorklogForm(issues []Issue) (Issue, string, error) {
 				Title("Choose issue").
 				Description(fmt.Sprintf("Time logged for today: %s", FormatTimeSpent(CalculateTimeSpent(app.workLogs.logs)))).
 				Options(formOptions...).
-				Value(&chosenIssue).Validate(func(issue Issue) error {
-				logrus.Info("Validating issue...")
-				timeSpent = ""
-				worklog := findWorklogByIssueKey(issue.Key)
-				if worklog != nil {
-					timeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
-					logrus.Info("Found worklog, setting initial timeSpent to ", timeSpent)
-				}
-				timeSpentInput.Value(&timeSpent)
-				timeSpentInput.Description(fmt.Sprintf("%s %s", chosenIssue.Key, chosenIssue.Fields.Summary))
-				return nil
-			}),
+				Value(&chosenIssue).
+				Validate(func(issue Issue) error {
+					// it's more like a "prepare next input" function
+					timeSpent = ""
+					worklog := findWorklogByIssueKey(issue.Key)
+					if worklog != nil {
+						timeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
+					}
+					timeSpentInput.Value(&timeSpent)
+					timeSpentInput.Description(fmt.Sprintf("%s %s", chosenIssue.Key, chosenIssue.Fields.Summary))
+					return nil
+				}),
 		),
 		huh.NewGroup(timeSpentInput),
 	)
 	form.WithTheme(huh.ThemeDracula())
+	customizedKeyMap := huh.NewDefaultKeyMap()
+	customizedKeyMap.Input.Prev = key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back"))
+
+	// merge NewDefaultKeyMap with custom keymap
+	form.WithKeyMap(customizedKeyMap)
 	err := form.Run()
 	if err != nil {
 		return chosenIssue, timeSpent, err
