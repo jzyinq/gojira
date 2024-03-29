@@ -123,7 +123,12 @@ var IssuesCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		timeSpent, err := InputTimeSpentForm(issue)
+		initialTimeSpent := ""
+		worklog := findWorklogByIssueKey(issue.Key)
+		if worklog != nil {
+			initialTimeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
+		}
+		timeSpent, err := InputTimeSpentForm(issue, initialTimeSpent)
 		if err != nil {
 			return err
 		}
@@ -160,7 +165,7 @@ var LogWorkCommand = &cli.Command{
 			return err
 		}
 		if timeSpent == "" {
-			timeSpent, err = InputTimeSpentForm(issue)
+			timeSpent, err = InputTimeSpentForm(issue, "")
 			if err != nil {
 				return err
 			}
@@ -209,7 +214,7 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		timeSpent, err := InputTimeSpentForm(issue)
+		timeSpent, err := InputTimeSpentForm(issue, "")
 		if err != nil {
 			return nil
 		}

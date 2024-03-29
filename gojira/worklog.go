@@ -83,6 +83,15 @@ func (wl *Worklogs) LogsOnDate(date *time.Time) ([]*Worklog, error) {
 	return logsOnDate, nil
 }
 
+func findWorklogByIssueKey(issueKey string) *Worklog {
+	for _, log := range app.workLogs.logs {
+		if log.Issue.Key == issueKey {
+			return log
+		}
+	}
+	return nil
+}
+
 func (wl *Worklogs) TotalTimeSpentToPresentDay() int {
 	totalTime := 0
 	for _, log := range wl.logs {

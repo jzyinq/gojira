@@ -56,9 +56,7 @@ func SelectIssueForm(issues []Issue) (Issue, error) {
 	return chosenIssue, nil
 }
 
-func InputTimeSpentForm(issue Issue) (string, error) {
-	timeSpent := ""
-
+func InputTimeSpentForm(issue Issue, timeSpent string) (string, error) {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
