@@ -133,7 +133,8 @@ var IssuesCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Successfully logged %s to ticket %s ", timeSpent, issue.Key)
+		fmt.Printf("Successfully logged %s to ticket %s\n", timeSpent, issue.Key)
+		fmt.Printf("Time logged for today: %s\n", FormatTimeSpent(CalculateTimeSpent(app.workLogs.logs)))
 		return nil
 	},
 }

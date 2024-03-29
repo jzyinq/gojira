@@ -42,7 +42,7 @@ func SelectIssueForm(issues []Issue) (Issue, error) {
 		huh.NewGroup(
 			huh.NewSelect[Issue]().
 				Title("Choose issue").
-				Description("Recent issues:").
+				Description(fmt.Sprintf("Time logged for today: %s", FormatTimeSpent(CalculateTimeSpent(app.workLogs.logs)))).
 				Options(formOptions...).
 				Value(&chosenIssue),
 		),
