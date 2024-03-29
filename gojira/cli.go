@@ -96,7 +96,7 @@ var IssuesCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		timeSpent, err := InputTimeSpentForm()
+		timeSpent, err := InputTimeSpentForm(issue)
 		if err != nil {
 			return err
 		}
@@ -131,10 +131,8 @@ var LogWorkCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("%s %s\n", issue.Key, issue.Fields.Summary)
-		fmt.Printf("Status: %s\n", issue.Fields.Status.Name)
 		if timeSpent == "" {
-			timeSpent, err = InputTimeSpentForm()
+			timeSpent, err = InputTimeSpentForm(issue)
 			if err != nil {
 				return err
 			}
@@ -183,9 +181,7 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Status: %s\nSummary: %s\n", issue.Fields.Status.Name, issue.Fields.Summary)
-		// log time or view issue
-		timeSpent, err := InputTimeSpentForm()
+		timeSpent, err := InputTimeSpentForm(issue)
 		if err != nil {
 			return nil
 		}

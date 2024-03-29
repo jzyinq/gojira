@@ -42,6 +42,7 @@ func SelectIssueForm(issues []Issue) (Issue, error) {
 		huh.NewGroup(
 			huh.NewSelect[Issue]().
 				Title("Choose issue").
+				Description("Recently updated issues assigned to you:").
 				Options(formOptions...).
 				Value(&chosenIssue),
 		),
@@ -55,13 +56,14 @@ func SelectIssueForm(issues []Issue) (Issue, error) {
 	return chosenIssue, nil
 }
 
-func InputTimeSpentForm() (string, error) {
+func InputTimeSpentForm(issue Issue) (string, error) {
 	timeSpent := ""
 
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
 				Title("Log time").
+				Description(fmt.Sprintf("%s %s", issue.Key, issue.Fields.Summary)).
 				Placeholder("1h / 1h30m / 30m").
 				Value(&timeSpent).
 				Validate(func(input string) error {
