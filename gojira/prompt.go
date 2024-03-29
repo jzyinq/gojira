@@ -3,69 +3,58 @@ package gojira
 import (
 	"errors"
 	"fmt"
-	"github.com/manifoldco/promptui"
+	"github.com/charmbracelet/huh"
 	"regexp"
-	"strings"
 )
 
-func PromptForTimeSpent(promptLabel string) (string, error) {
-	validate := func(input string) error {
-		r, _ := regexp.Compile(`^(([0-9]+)h)?\s?(([0-9]+)m)?$`)
-		match := r.MatchString(input)
-		if !match {
-			return errors.New("Invalid timeSpent format - try 1h / 1h30m / 30m")
-		}
-		return nil
+func SelectIssueForm(issues []Issue) (Issue, error) {
+	formOptions := make([]huh.Option[Issue], len(issues))
+	for i, issue := range issues {
+		formOptions[i] = huh.NewOption(fmt.Sprintf("%s - %s", issue.Key, issue.Fields.Summary), issue)
 	}
-	promptInput := promptui.Prompt{
-		Label:    promptLabel,
-		Validate: validate,
-	}
+	chosenIssue := Issue{}
 
-	result, err := promptInput.Run()
-
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[Issue]().
+				Title("Choose issue").
+				Options(formOptions...).
+				Value(&chosenIssue),
+		),
+	)
+	form.WithTheme(huh.ThemeDracula())
+	err := form.Run()
 	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
-		return "", err
+		return chosenIssue, err
 	}
 
-	return FormatTimeSpent(TimeSpentToSeconds(result)), nil
+	return chosenIssue, nil
 }
 
-func PromptForIssueSelection(issues []Issue) (Issue, error) {
-	templates := &promptui.SelectTemplates{
-		Label:    "{{ .Key }}?",
-		Active:   "> {{ .Key | cyan }} {{ .Fields.Summary | green }}",
-		Inactive: " {{ .Key | cyan }} {{ .Fields.Summary | blue }}",
-		Selected: "{{ .Key | cyan }} {{ .Fields.Summary | blue }}",
-		Details: `--------- Details ----------
-{{ "Status:" | faint }}	{{ .Fields.Status.Name }}
-`,
-	}
+func InputTimeSpentForm() (string, error) {
+	timeSpent := ""
 
-	searcher := func(input string, index int) bool {
-		issue := issues[index]
-		name := strings.Replace(strings.ToLower(issue.Key+issue.Fields.Summary), " ", "", -1)
-		input = strings.Replace(strings.ToLower(input), " ", "", -1)
-
-		return strings.Contains(name, input)
-	}
-
-	promptSelect := promptui.Select{
-		Label:     "Recently updated jira tickets assigned to you:",
-		Items:     issues,
-		Templates: templates,
-		Size:      10,
-		Searcher:  searcher,
-		HideHelp:  true,
-	}
-
-	i, _, err := promptSelect.Run()
-
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Log time").
+				Placeholder("1h / 1h30m / 30m").
+				Value(&timeSpent).
+				Validate(func(input string) error {
+					r, _ := regexp.Compile(`^(([0-9]+)h)?\s?(([0-9]+)m)?$`)
+					match := r.MatchString(input)
+					if !match {
+						return errors.New("Invalid timeSpent format - try 1h / 1h30m / 30m")
+					}
+					return nil
+				}),
+		),
+	)
+	form.WithTheme(huh.ThemeDracula())
+	err := form.Run()
 	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
-		return Issue{}, err
+		return timeSpent, err
 	}
 
-	return issues[i], nil
+	return timeSpent, nil
 }

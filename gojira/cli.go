@@ -87,15 +87,16 @@ var IssuesCommand = &cli.Command{
 	Name:  "issues",
 	Usage: "Show currently assigned issues",
 	Action: func(context *cli.Context) error {
+
 		lastTickets, err := NewJiraClient().GetLatestIssues()
 		if err != nil {
 			return err
 		}
-		issue, err := PromptForIssueSelection(lastTickets.Issues)
+		issue, err := SelectIssueForm(lastTickets.Issues)
 		if err != nil {
 			return err
 		}
-		timeSpent, err := PromptForTimeSpent("Add work log")
+		timeSpent, err := InputTimeSpentForm()
 		if err != nil {
 			return err
 		}
@@ -130,7 +131,7 @@ var LogWorkCommand = &cli.Command{
 		fmt.Printf("%s %s\n", issue.Key, issue.Fields.Summary)
 		fmt.Printf("Status: %s\n", issue.Fields.Status.Name)
 		if timeSpent == "" {
-			timeSpent, err = PromptForTimeSpent("Add work log")
+			timeSpent, err = InputTimeSpentForm()
 			if err != nil {
 				return err
 			}
@@ -184,7 +185,7 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 		}
 		fmt.Printf("Status: %s\nSummary: %s\n", issue.Fields.Status.Name, issue.Fields.Summary)
 		// log time or view issue
-		timeSpent, err := PromptForTimeSpent("Add work log")
+		timeSpent, err := InputTimeSpentForm()
 		if err != nil {
 			return nil
 		}
