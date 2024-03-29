@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.5.4] - 2024-03-29
+### Fixed
+- MonthRange function returned first day of next month which causes invalid summaries
+
 ## [0.5.3] - 2024-03-27
 ### Fixed
 - calendar controls not working while focus is on latest issues view
@@ -85,7 +89,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Initial release of gojira
 
-[Unreleased]: https://github.com/jzyinq/gojira/compare/0.5.3...master
+[Unreleased]: https://github.com/jzyinq/gojira/compare/0.5.4...master
+[0.5.4]: https://github.com/jzyinq/gojira/compare/0.5.3...0.5.4
 [0.5.3]: https://github.com/jzyinq/gojira/compare/0.5.2...0.5.3
 [0.5.2]: https://github.com/jzyinq/gojira/compare/0.5.1...0.5.2
 [0.5.1]: https://github.com/jzyinq/gojira/compare/0.5.0...0.5.1
