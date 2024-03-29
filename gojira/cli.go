@@ -119,25 +119,17 @@ var IssuesCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		issue, err := SelectIssueForm(uniqueIssues)
-		if err != nil {
-			return err
-		}
-		initialTimeSpent := ""
-		worklog := findWorklogByIssueKey(issue.Key)
-		if worklog != nil {
-			initialTimeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
-		}
-		timeSpent, err := InputTimeSpentForm(issue, initialTimeSpent)
+		issue, timeSpent, err := IssueWorklogForm(uniqueIssues)
 		if err != nil {
 			return err
 		}
 		err = spinner.New().Title("Logging work...").Action(func() {
-			if initialTimeSpent != "" {
+			worklog := findWorklogByIssueKey(issue.Key)
+			if worklog != nil {
 				err = worklog.Update(timeSpent)
-			} else {
-				err = issue.LogWork(app.time, timeSpent)
+				return
 			}
+			err = issue.LogWork(app.time, timeSpent)
 		}).Run()
 		if err != nil {
 			return err
