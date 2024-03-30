@@ -87,47 +87,40 @@ var IssuesCommand = &cli.Command{
 	Name:  "issues",
 	Usage: "Show recent issues",
 	Action: func(context *cli.Context) error {
-		var uniqueIssues []Issue
+		var recentIssues []Issue
 		var err error
 		_ = spinner.New().Title("Fetching issues...").Action(func() {
-			lastTickets, innerErr := NewJiraClient().GetLatestIssues()
+			var funcErr error
+			app.workLogs, err = GetWorklogs(DayRange(app.time))
+			if err != nil {
+				err = funcErr
+				return
+			}
+			issuesWithWorkLogs, funcErr := GetIssuesWithWorklogs(app.workLogs.logs)
+			if funcErr != nil {
+				err = funcErr
+				return
+			}
+			lastTickets, funcErr := NewJiraClient().GetLatestIssues()
 			logrus.Infof("Last tickets: %v", lastTickets.Issues)
-			if innerErr != nil {
-				err = innerErr
+			if funcErr != nil {
+				err = funcErr
 				return
 			}
-			app.workLogs, innerErr = GetWorklogs(DayRange(app.time))
-			if innerErr != nil {
-				err = innerErr
-				return
-			}
-			var alreadyLoggedIssues []string
-			for _, worklog := range app.workLogs.logs {
-				alreadyLoggedIssues = append(alreadyLoggedIssues, worklog.Issue.Key)
-			}
-			//if len(alreadyLoggedIssues) == 0 {
-			//	uniqueIssues = lastTickets.Issues
-			//	return
-			//}
-			todaysIssues, innerErr := NewJiraClient().GetIssuesByKeys(alreadyLoggedIssues)
-			if innerErr != nil {
-				err = innerErr
-				return
-			}
-			combinedIssues := append(todaysIssues.Issues, lastTickets.Issues...)
+			combinedIssues := append(issuesWithWorkLogs, lastTickets.Issues...)
 
 			uniqueIssueKeys := map[string]bool{}
 			for _, issue := range combinedIssues {
 				if _, value := uniqueIssueKeys[issue.Key]; !value {
 					uniqueIssueKeys[issue.Key] = true
-					uniqueIssues = append(uniqueIssues, issue)
+					recentIssues = append(recentIssues, issue)
 				}
 			}
 		}).Run()
 		if err != nil {
 			return err
 		}
-		issue, timeSpent, err := IssueWorklogForm(uniqueIssues)
+		issue, timeSpent, err := IssueWorklogForm(recentIssues)
 		if err != nil {
 			return err
 		}
@@ -146,6 +139,22 @@ var IssuesCommand = &cli.Command{
 		fmt.Printf("Time logged for today: %s\n", FormatTimeSpent(CalculateTimeSpent(app.workLogs.logs)))
 		return nil
 	},
+}
+
+func GetIssuesWithWorklogs(worklogs []*Worklog) ([]Issue, error) {
+	var err error
+	var worklogIssuesKeys []string
+	for _, worklog := range worklogs {
+		worklogIssuesKeys = append(worklogIssuesKeys, worklog.Issue.Key)
+	}
+	if len(worklogIssuesKeys) == 0 {
+		return []Issue{}, err
+	}
+	todaysIssues, err := NewJiraClient().GetIssuesByKeys(worklogIssuesKeys)
+	if err != nil {
+		return []Issue{}, err
+	}
+	return todaysIssues.Issues, nil
 }
 
 var ViewIssueCommand = &cli.Command{
