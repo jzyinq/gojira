@@ -36,7 +36,7 @@ func IssueWorklogForm(issues []Issue) (Issue, string, error) {
 	formOptions := make([]huh.Option[Issue], len(issues))
 	for i, issue := range issues {
 		timeSpent := ""
-		worklog := findWorklogByIssueKey(issue.Key)
+		worklog := findWorklogByIssueKey(app.workLogs.logs, issue.Key)
 		if worklog != nil {
 			timeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
 		}
@@ -66,7 +66,7 @@ func IssueWorklogForm(issues []Issue) (Issue, string, error) {
 				Validate(func(issue Issue) error {
 					// it's more like a "prepare next input" function
 					timeSpent = ""
-					worklog := findWorklogByIssueKey(issue.Key)
+					worklog := findWorklogByIssueKey(app.workLogs.logs, issue.Key)
 					if worklog != nil {
 						timeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
 					}

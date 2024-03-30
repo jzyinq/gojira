@@ -83,13 +83,29 @@ func (wl *Worklogs) LogsOnDate(date *time.Time) ([]*Worklog, error) {
 	return logsOnDate, nil
 }
 
-func findWorklogByIssueKey(issueKey string) *Worklog {
-	for _, log := range app.workLogs.logs {
+func findWorklogByIssueKey(worklogs []*Worklog, issueKey string) *Worklog {
+	for _, log := range worklogs {
 		if log.Issue.Key == issueKey {
 			return log
 		}
 	}
 	return nil
+}
+
+func GetIssuesWithWorklogs(worklogs []*Worklog) ([]Issue, error) {
+	var err error
+	var worklogIssuesKeys []string
+	for _, worklog := range worklogs {
+		worklogIssuesKeys = append(worklogIssuesKeys, worklog.Issue.Key)
+	}
+	if len(worklogIssuesKeys) == 0 {
+		return []Issue{}, err
+	}
+	todaysIssues, err := NewJiraClient().GetIssuesByKeys(worklogIssuesKeys)
+	if err != nil {
+		return []Issue{}, err
+	}
+	return todaysIssues.Issues, nil
 }
 
 func (wl *Worklogs) TotalTimeSpentToPresentDay() int {

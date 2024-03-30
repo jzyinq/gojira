@@ -125,7 +125,7 @@ var IssuesCommand = &cli.Command{
 			return err
 		}
 		err = spinner.New().Title("Logging work...").Action(func() {
-			worklog := findWorklogByIssueKey(issue.Key)
+			worklog := findWorklogByIssueKey(app.workLogs.logs, issue.Key)
 			if worklog != nil {
 				err = worklog.Update(timeSpent)
 				return
@@ -139,22 +139,6 @@ var IssuesCommand = &cli.Command{
 		fmt.Printf("Time logged for today: %s\n", FormatTimeSpent(CalculateTimeSpent(app.workLogs.logs)))
 		return nil
 	},
-}
-
-func GetIssuesWithWorklogs(worklogs []*Worklog) ([]Issue, error) {
-	var err error
-	var worklogIssuesKeys []string
-	for _, worklog := range worklogs {
-		worklogIssuesKeys = append(worklogIssuesKeys, worklog.Issue.Key)
-	}
-	if len(worklogIssuesKeys) == 0 {
-		return []Issue{}, err
-	}
-	todaysIssues, err := NewJiraClient().GetIssuesByKeys(worklogIssuesKeys)
-	if err != nil {
-		return []Issue{}, err
-	}
-	return todaysIssues.Issues, nil
 }
 
 var ViewIssueCommand = &cli.Command{
