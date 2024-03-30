@@ -91,24 +91,35 @@ var IssuesCommand = &cli.Command{
 		var err error
 		_ = spinner.New().Title("Fetching issues...").Action(func() {
 			var funcErr error
-			app.workLogs, err = GetWorklogs(DayRange(app.time))
-			if err != nil {
-				err = funcErr
-				return
-			}
-			issuesWithWorkLogs, funcErr := GetIssuesWithWorklogs(app.workLogs.logs)
-			if funcErr != nil {
-				err = funcErr
-				return
-			}
-			lastTickets, funcErr := NewJiraClient().GetLatestIssues()
-			logrus.Infof("Last tickets: %v", lastTickets.Issues)
-			if funcErr != nil {
-				err = funcErr
-				return
-			}
-			combinedIssues := append(issuesWithWorkLogs, lastTickets.Issues...)
-
+			var issuesWithWorkLogs []Issue
+			var lastIssues []Issue
+			wg := sync.WaitGroup{}
+			wg.Add(2)
+			go func() {
+				defer wg.Done()
+				app.workLogs, err = GetWorklogs(DayRange(app.time))
+				if err != nil {
+					err = funcErr
+					return
+				}
+				issuesWithWorkLogs, funcErr = GetIssuesWithWorklogs(app.workLogs.logs)
+				if funcErr != nil {
+					err = funcErr
+					return
+				}
+			}()
+			go func() {
+				defer wg.Done()
+				lastTickets, funcErr := NewJiraClient().GetLatestIssues()
+				lastIssues = lastTickets.Issues
+				logrus.Infof("Last tickets: %v", lastIssues)
+				if funcErr != nil {
+					err = funcErr
+					return
+				}
+			}()
+			wg.Wait()
+			combinedIssues := append(issuesWithWorkLogs, lastIssues...)
 			uniqueIssueKeys := map[string]bool{}
 			for _, issue := range combinedIssues {
 				if _, value := uniqueIssueKeys[issue.Key]; !value {
