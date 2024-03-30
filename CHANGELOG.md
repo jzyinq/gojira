@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Replace [manifoldco/promptui](https://github.com/charmbracelet/huh) with [charmbracelet/huh](https://github.com/charmbracelet/huh) due to lack of maintainer
 - code cleanup pass, simplified structs, improved messaging, aligned variable naming
 - Include already logged issues in recent issues list - allow editing existing time
+- Add issues with worklogs for current day while launching `gojira issues`
 
 ## [0.5.4] - 2024-03-29
 ### Fixed
