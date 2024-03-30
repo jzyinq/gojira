@@ -117,3 +117,9 @@ func MonthRange(t *time.Time) (time.Time, time.Time) {
 	lastDayOfCurrentMonth := firstDayOfCurrentMonth.AddDate(0, 1, 0).Add(-time.Second)
 	return firstDayOfCurrentMonth, lastDayOfCurrentMonth
 }
+
+func DayRange(t *time.Time) (time.Time, time.Time) {
+	startOfDay := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	endOfDay := startOfDay.AddDate(0, 0, 1).Add(-time.Second)
+	return startOfDay, endOfDay
+}

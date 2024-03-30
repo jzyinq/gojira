@@ -2,7 +2,7 @@ package gojira
 
 import (
 	"fmt"
-	"github.com/manifoldco/promptui"
+	"github.com/charmbracelet/huh/spinner"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"log"
@@ -45,7 +45,7 @@ func NewWorklogIssues() error {
 	}
 	if app.workLogsIssues.startDate != startDate || app.workLogsIssues.endDate != endDate {
 		app.ui.loaderView.Show("Fetching worklogs...")
-		app.workLogs, err = GetWorklogs()
+		app.workLogs, err = GetWorklogs(MonthRange(app.time))
 		app.ui.loaderView.Hide()
 		if err != nil {
 			return err
@@ -85,24 +85,69 @@ func NewWorklogIssues() error {
 
 var IssuesCommand = &cli.Command{
 	Name:  "issues",
-	Usage: "Show currently assigned issues",
+	Usage: "Show recent issues",
 	Action: func(context *cli.Context) error {
-		lastTickets, err := NewJiraClient().GetLatestIssues()
+		var recentIssues []Issue
+		var err error
+		_ = spinner.New().Title("Fetching issues...").Action(func() {
+			var funcErr error
+			var issuesWithWorkLogs []Issue
+			var lastIssues []Issue
+			wg := sync.WaitGroup{}
+			wg.Add(2)
+			go func() {
+				defer wg.Done()
+				app.workLogs, err = GetWorklogs(DayRange(app.time))
+				if err != nil {
+					err = funcErr
+					return
+				}
+				issuesWithWorkLogs, funcErr = GetIssuesWithWorklogs(app.workLogs.logs)
+				if funcErr != nil {
+					err = funcErr
+					return
+				}
+			}()
+			go func() {
+				defer wg.Done()
+				lastTickets, funcErr := NewJiraClient().GetLatestIssues()
+				lastIssues = lastTickets.Issues
+				logrus.Infof("Last tickets: %v", lastIssues)
+				if funcErr != nil {
+					err = funcErr
+					return
+				}
+			}()
+			wg.Wait()
+			combinedIssues := append(issuesWithWorkLogs, lastIssues...)
+			uniqueIssueKeys := map[string]bool{}
+			for _, issue := range combinedIssues {
+				if _, value := uniqueIssueKeys[issue.Key]; !value {
+					uniqueIssueKeys[issue.Key] = true
+					recentIssues = append(recentIssues, issue)
+				}
+			}
+		}).Run()
 		if err != nil {
 			return err
 		}
-		issue, err := PromptForIssueSelection(lastTickets.Issues)
+		issue, timeSpent, err := IssueWorklogForm(recentIssues)
 		if err != nil {
 			return err
 		}
-		timeSpent, err := PromptForTimeSpent("Add work log")
+		err = spinner.New().Title("Logging work...").Action(func() {
+			worklog := findWorklogByIssueKey(app.workLogs.logs, issue.Key)
+			if worklog != nil {
+				err = worklog.Update(timeSpent)
+				return
+			}
+			err = issue.LogWork(app.time, timeSpent)
+		}).Run()
 		if err != nil {
 			return err
 		}
-		err = issue.LogWork(app.time, timeSpent)
-		if err != nil {
-			return err
-		}
+		fmt.Printf("Successfully logged %s to ticket %s\n", timeSpent, issue.Key)
+		fmt.Printf("Time logged for today: %s\n", FormatTimeSpent(CalculateTimeSpent(app.workLogs.logs)))
 		return nil
 	},
 }
@@ -127,19 +172,19 @@ var LogWorkCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("%s %s\n", issue.Key, issue.Fields.Summary)
-		fmt.Printf("Status: %s\n", issue.Fields.Status.Name)
 		if timeSpent == "" {
-			timeSpent, err = PromptForTimeSpent("Add work log")
+			timeSpent, err = InputTimeSpentForm(issue, "")
 			if err != nil {
 				return err
 			}
 		}
-
-		err = issue.LogWork(app.time, timeSpent)
+		err = spinner.New().Title("Logging work...").Action(func() {
+			err = issue.LogWork(app.time, timeSpent)
+		}).Run()
 		if err != nil {
 			return err
 		}
+		fmt.Printf("Successfully logged %s to ticket %s ", timeSpent, issue.Key)
 		return nil
 	},
 }
@@ -153,12 +198,7 @@ var DefaultAction = func(c *cli.Context) error {
 	if ticketFromBranch != "" {
 		c.App.Metadata["JiraIssue"] = ticketFromBranch
 		fmt.Printf("Detected possible ticket in git branch name - %s\n", ticketFromBranch)
-		prompt := promptui.Select{
-			Label: "Select Action",
-			Items: []string{"Log Work", "View Issue"},
-		}
-		_, action, err := prompt.Run()
-
+		action, err := SelectActionForm([]string{"Log Work", "View Issue"})
 		if err != nil {
 			fmt.Printf("Prompt failed %v\n", err)
 			return nil
@@ -182,16 +222,17 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Status: %s\nSummary: %s\n", issue.Fields.Status.Name, issue.Fields.Summary)
-		// log time or view issue
-		timeSpent, err := PromptForTimeSpent("Add work log")
+		timeSpent, err := InputTimeSpentForm(issue, "")
 		if err != nil {
 			return nil
 		}
-		err = issue.LogWork(app.time, timeSpent)
+		err = spinner.New().Title("Logging work...").Action(func() {
+			err = issue.LogWork(app.time, timeSpent)
+		}).Run()
 		if err != nil {
 			return err
 		}
+		fmt.Printf("Successfully logged %s to ticket %s ", timeSpent, issue.Key)
 		return nil
 	}
 
@@ -207,6 +248,34 @@ var ViewIssueInBrowserAction = func(c *cli.Context) error {
 	if issueKey != "" {
 		OpenURL(fmt.Sprintf("%s/browse/%s", Config.JiraUrl, issueKey))
 	}
+	return nil
+}
+
+func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
+	logrus.Infof("Logging %s of time to ticket %s at %s", timeSpent, issue.Key, logTime)
+	todayWorklog, err := app.workLogs.LogsOnDate(logTime)
+	if err != nil {
+		return err
+	}
+	if Config.UpdateExistingWorklog {
+		for index, workLog := range todayWorklog {
+			if workLog.Issue.Key == issue.Key {
+				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
+				err := todayWorklog[index].Update(timeSpentSum)
+				if err != nil {
+					return err
+				}
+				return nil
+			}
+		}
+	}
+	worklog, err := NewWorklog(issue.Key, logTime, timeSpent)
+	if err != nil {
+		return err
+	}
+	// add this workload to global object
+	app.workLogs.logs = append(app.workLogs.logs, &worklog)
+	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorklogIssue{Issue: issue, Worklog: &worklog})
 	return nil
 }
 
@@ -233,36 +302,4 @@ Save it and you should ready to go!
 `)
 		return nil
 	},
-}
-
-func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
-	logrus.Infof("Logging %s of time to ticket %s at %s", timeSpent, issue.Key, logTime)
-	todayWorklog, err := app.workLogs.LogsOnDate(logTime)
-	if err != nil {
-		return err
-	}
-	if Config.UpdateExistingWorklog {
-		for index, workLog := range todayWorklog {
-			if workLog.Issue.Key == issue.Key {
-				//fmt.Println("Updating existing worklog...")
-				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
-				err := todayWorklog[index].Update(timeSpentSum)
-				if err != nil {
-					return err
-				}
-				// FIXME - this should be only in cli mode
-				//fmt.Printf("Successfully logged %s of time to ticket %s\n", timeSpent, workLog.Issue.Key)
-				//fmt.Printf("Currently logged time: %s\n", FormatTimeSpent(CalculateTimeSpent(todayWorklog)))
-				return nil
-			}
-		}
-	}
-	worklog, err := NewWorklog(issue.Key, logTime, timeSpent)
-	if err != nil {
-		return err
-	}
-	// add this workload to global object
-	app.workLogs.logs = append(app.workLogs.logs, &worklog)
-	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorklogIssue{Issue: issue, Worklog: &worklog})
-	return nil
 }

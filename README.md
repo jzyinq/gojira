@@ -1,7 +1,7 @@
 # gojira
 
 Small cli helper for adding/updating work logs in Jira / Tempo.
-Based on [urfave/cli](https://github.com/urfave/cli/), [manifoldco/promptui](https://github.com/manifoldco/promptui)
+Based on [urfave/cli](https://github.com/urfave/cli/), [charmbracelet/huh](https://github.com/charmbracelet/huh)
 and [rivo/tview](https://github.com/rivo/tview)
 
 ## Features
@@ -70,6 +70,7 @@ Just remember to urldecode it. Save it and you should ready to go!
 
 ## Todo list
 
+- [ ] delete worklog through simple cli version for today
 - [ ] ticket status change prompt after logging time
 - [ ] tests
 - [ ] unify workLogs and worklogsIssues structs - use one for both
@@ -79,7 +80,9 @@ Just remember to urldecode it. Save it and you should ready to go!
   - `gojira log -i TICKET -t 1h30m`
   - `gojira` -> `gojira recent`
   - `gojira` -> `gojira --help`
-- [ ] trigger ui updates after worklog change more efficiently 
+- [ ] trigger ui updates after worklog change more efficiently
+- [x] cli version does not update worklogs if they exist already
+  - [x] fetch worklogs from current day and propose them for selection
 - [x] Add worklogs from ui
 - [x] gojira worklog delete option
 - [x] recent jira task list for easy time logging

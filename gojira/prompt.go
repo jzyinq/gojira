@@ -3,69 +3,117 @@ package gojira
 import (
 	"errors"
 	"fmt"
-	"github.com/manifoldco/promptui"
+	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/huh"
 	"regexp"
-	"strings"
 )
 
-func PromptForTimeSpent(promptLabel string) (string, error) {
-	validate := func(input string) error {
-		r, _ := regexp.Compile(`^(([0-9]+)h)?\s?(([0-9]+)m)?$`)
-		match := r.MatchString(input)
-		if !match {
-			return errors.New("Invalid timeSpent format - try 1h / 1h30m / 30m")
-		}
-		return nil
+func SelectActionForm(actions []string) (string, error) {
+	formOptions := make([]huh.Option[string], len(actions))
+	for i, action := range actions {
+		formOptions[i] = huh.NewOption(action, action)
 	}
-	promptInput := promptui.Prompt{
-		Label:    promptLabel,
-		Validate: validate,
-	}
+	chosenAction := ""
 
-	result, err := promptInput.Run()
-
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("Choose action").
+				Options(formOptions...).
+				Value(&chosenAction),
+		),
+	)
+	form.WithTheme(huh.ThemeDracula())
+	err := form.Run()
 	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
-		return "", err
+		return chosenAction, err
 	}
 
-	return FormatTimeSpent(TimeSpentToSeconds(result)), nil
+	return chosenAction, nil
 }
 
-func PromptForIssueSelection(issues []Issue) (Issue, error) {
-	templates := &promptui.SelectTemplates{
-		Label:    "{{ .Key }}?",
-		Active:   "> {{ .Key | cyan }} {{ .Fields.Summary | green }}",
-		Inactive: " {{ .Key | cyan }} {{ .Fields.Summary | blue }}",
-		Selected: "{{ .Key | cyan }} {{ .Fields.Summary | blue }}",
-		Details: `--------- Details ----------
-{{ "Status:" | faint }}	{{ .Fields.Status.Name }}
-`,
+func IssueWorklogForm(issues []Issue) (Issue, string, error) {
+	formOptions := make([]huh.Option[Issue], len(issues))
+	for i, issue := range issues {
+		timeSpent := ""
+		worklog := findWorklogByIssueKey(app.workLogs.logs, issue.Key)
+		if worklog != nil {
+			timeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
+		}
+		formOptions[i] = huh.NewOption(fmt.Sprintf("%-8s %-10s - %s", timeSpent, issue.Key, issue.Fields.Summary), issue)
 	}
+	chosenIssue := Issue{}
+	timeSpent := ""
+	timeSpentInput := huh.NewInput().
+		Title("Log time").
+		Placeholder("1h / 1h30m / 30m").
+		Value(&timeSpent).
+		Validate(func(input string) error {
+			r, _ := regexp.Compile(`^(([0-9]+)h)?\s?(([0-9]+)m)?$`)
+			match := r.MatchString(input)
+			if !match {
+				return errors.New("invalid timeSpent format - try 1h / 1h30m / 30m")
+			}
+			return nil
+		})
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[Issue]().
+				Title("Choose issue").
+				Description(fmt.Sprintf("Time logged for today: %s", FormatTimeSpent(CalculateTimeSpent(app.workLogs.logs)))).
+				Options(formOptions...).
+				Value(&chosenIssue).
+				Validate(func(issue Issue) error {
+					// it's more like a "prepare next input" function
+					timeSpent = ""
+					worklog := findWorklogByIssueKey(app.workLogs.logs, issue.Key)
+					if worklog != nil {
+						timeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
+					}
+					timeSpentInput.Value(&timeSpent)
+					timeSpentInput.Description(fmt.Sprintf("%s %s", chosenIssue.Key, chosenIssue.Fields.Summary))
+					return nil
+				}),
+		),
+		huh.NewGroup(timeSpentInput),
+	)
+	form.WithTheme(huh.ThemeDracula())
+	customizedKeyMap := huh.NewDefaultKeyMap()
+	customizedKeyMap.Input.Prev = key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back"))
 
-	searcher := func(input string, index int) bool {
-		issue := issues[index]
-		name := strings.Replace(strings.ToLower(issue.Key+issue.Fields.Summary), " ", "", -1)
-		input = strings.Replace(strings.ToLower(input), " ", "", -1)
-
-		return strings.Contains(name, input)
-	}
-
-	promptSelect := promptui.Select{
-		Label:     "Recently updated jira tickets assigned to you:",
-		Items:     issues,
-		Templates: templates,
-		Size:      10,
-		Searcher:  searcher,
-		HideHelp:  true,
-	}
-
-	i, _, err := promptSelect.Run()
-
+	// merge NewDefaultKeyMap with custom keymap
+	form.WithKeyMap(customizedKeyMap)
+	err := form.Run()
 	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
-		return Issue{}, err
+		return chosenIssue, timeSpent, err
 	}
 
-	return issues[i], nil
+	return chosenIssue, timeSpent, nil
+}
+
+func InputTimeSpentForm(issue Issue, timeSpent string) (string, error) {
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Log time").
+				Description(fmt.Sprintf("%s %s", issue.Key, issue.Fields.Summary)).
+				Placeholder("1h / 1h30m / 30m").
+				Value(&timeSpent).
+				Validate(func(input string) error {
+					r, _ := regexp.Compile(`^(([0-9]+)h)?\s?(([0-9]+)m)?$`)
+					match := r.MatchString(input)
+					if !match {
+						return errors.New("Invalid timeSpent format - try 1h / 1h30m / 30m")
+					}
+					return nil
+				}),
+		),
+	)
+	form.WithTheme(huh.ThemeDracula())
+	err := form.Run()
+	if err != nil {
+		return timeSpent, err
+	}
+
+	return timeSpent, nil
 }

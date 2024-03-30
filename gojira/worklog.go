@@ -83,6 +83,31 @@ func (wl *Worklogs) LogsOnDate(date *time.Time) ([]*Worklog, error) {
 	return logsOnDate, nil
 }
 
+func findWorklogByIssueKey(worklogs []*Worklog, issueKey string) *Worklog {
+	for _, log := range worklogs {
+		if log.Issue.Key == issueKey {
+			return log
+		}
+	}
+	return nil
+}
+
+func GetIssuesWithWorklogs(worklogs []*Worklog) ([]Issue, error) {
+	var err error
+	var worklogIssuesKeys []string
+	for _, worklog := range worklogs {
+		worklogIssuesKeys = append(worklogIssuesKeys, worklog.Issue.Key)
+	}
+	if len(worklogIssuesKeys) == 0 {
+		return []Issue{}, err
+	}
+	todaysIssues, err := NewJiraClient().GetIssuesByKeys(worklogIssuesKeys)
+	if err != nil {
+		return []Issue{}, err
+	}
+	return todaysIssues.Issues, nil
+}
+
 func (wl *Worklogs) TotalTimeSpentToPresentDay() int {
 	totalTime := 0
 	for _, log := range wl.logs {
@@ -117,8 +142,7 @@ func (wli *WorklogsIssues) IssuesOnDate(date *time.Time) ([]*WorklogIssue, error
 	return issuesOnDate, nil
 }
 
-func GetWorklogs() (Worklogs, error) {
-	fromDate, toDate := MonthRange(app.time)
+func GetWorklogs(fromDate time.Time, toDate time.Time) (Worklogs, error) {
 	logrus.Infof("getting worklogs from %s to %s...", fromDate, toDate)
 	workLogsResponse, err := NewTempoClient().GetWorklogs(fromDate, toDate)
 	if err != nil {
