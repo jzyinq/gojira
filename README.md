@@ -70,6 +70,7 @@ Just remember to urldecode it. Save it and you should ready to go!
 
 ## Todo list
 
+- [ ] delete worklog through simple cli version for today
 - [ ] ticket status change prompt after logging time
 - [ ] tests
 - [ ] unify workLogs and worklogsIssues structs - use one for both

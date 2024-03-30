@@ -258,7 +258,6 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 		return err
 	}
 	if Config.UpdateExistingWorklog {
-		// FIXME should I append worklog or replace it?
 		for index, workLog := range todayWorklog {
 			if workLog.Issue.Key == issue.Key {
 				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
