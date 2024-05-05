@@ -63,6 +63,7 @@ func (c *Calendar) update() {
 		if calendarDay.Before(time.Now().Local()) {
 			cell.SetBackgroundColor(tcell.ColorGray)
 		}
+
 		if len(app.workLogs.logs) > 0 {
 			worklogs, err := app.workLogs.LogsOnDate(&calendarDay)
 			if err != nil {
@@ -77,6 +78,9 @@ func (c *Calendar) update() {
 					cell.SetTextColor(tcell.ColorBlack)
 				}
 			}
+		}
+		if app.holidays.IsHoliday(&calendarDay) {
+			cell.SetTextColor(tcell.ColorRed)
 		}
 		if i == c.day {
 			cell.SetTextColor(tcell.ColorWhite)
