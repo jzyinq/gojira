@@ -26,7 +26,25 @@ var WorklogsCommand = &cli.Command{
 	Usage: "Edit your today's work log",
 	Action: func(c *cli.Context) error {
 		newUi()
-		loadWorklogs()
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			loadWorklogs()
+		}()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			countryCode, err := GetCountryFromLCTime(os.Getenv("LC_TIME"))
+			if err != nil {
+				logrus.Error("getting country code from LC_TIME failed:" + err.Error())
+			}
+			app.holidays, err = NewHolidays(countryCode)
+			if err != nil {
+				logrus.Error("fetching national holidays failed:" + err.Error())
+			}
+		}()
+		wg.Wait()
 		err := app.ui.app.Run()
 		if err != nil {
 			return err

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.7.0] - 2024-05-05
+### Added
+- Fetch national holidays from [date.nager.at](https://date.nager.at) if LC_TIME is present in environment. Holidays will be marked on calendar and excluded from month summary.
+
 ## [0.6.0] - 2024-03-30
 ### Changed
 - Replace [manifoldco/promptui](https://github.com/charmbracelet/huh) with [charmbracelet/huh](https://github.com/charmbracelet/huh) due to lack of maintainer
@@ -96,7 +100,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Initial release of gojira
 
-[Unreleased]: https://github.com/jzyinq/gojira/compare/0.6.0...master
+[Unreleased]: https://github.com/jzyinq/gojira/compare/0.7.0...master
+[0.7.0]: https://github.com/jzyinq/gojira/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/jzyinq/gojira/compare/0.5.4...0.6.0
 [0.5.4]: https://github.com/jzyinq/gojira/compare/0.5.3...0.5.4
 [0.5.3]: https://github.com/jzyinq/gojira/compare/0.5.2...0.5.3

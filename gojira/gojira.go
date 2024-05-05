@@ -12,6 +12,7 @@ type gojira struct {
 	cli            *cli.App
 	ui             *UserInteface
 	time           *time.Time
+	holidays       *Holidays
 	workLogs       Worklogs
 	workLogsIssues WorklogsIssues
 }
@@ -31,6 +32,7 @@ func Run() {
 	logrus.Infof("current time %s", appTimer)
 	app.ui = &UserInteface{}
 	app.time = &appTimer
+	app.holidays = &Holidays{}
 	app.cli = &cli.App{
 		Name: "gojira",
 		Usage: `quickly log time to jira/tempo through cli.
