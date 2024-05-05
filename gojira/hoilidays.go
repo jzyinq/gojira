@@ -57,16 +57,16 @@ func (h *Holiday) GetTime() (*time.Time, error) {
 
 func getHolidaysForCountry(countryCode string) (*Holidays, error) {
 	url := fmt.Sprintf("https://date.nager.at/api/v3/PublicHolidays/2024/%s", countryCode)
+	logrus.Infof("fetching holidays from url: %s", url)
 	resp, err := http.Get(url) //nolint:gosec
 	if err != nil {
-		logrus.Error(err)
+		logrus.Error("could not fetch holidays from url: ", url)
 		return nil, err
 	}
 	defer resp.Body.Close()
 	var holidays Holidays
 	err = json.NewDecoder(resp.Body).Decode(&holidays)
 	if err != nil {
-		logrus.Error(err)
 		return nil, err
 	}
 	return &holidays, nil
@@ -76,7 +76,7 @@ func NewHolidays(countryCode string) (*Holidays, error) {
 	holidays, err := getHolidaysForCountry(countryCode)
 	if err != nil {
 		logrus.Error(err)
-		return nil, err
+		return &Holidays{}, err
 	}
 
 	return holidays, nil

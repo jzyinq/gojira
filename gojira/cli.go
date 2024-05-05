@@ -37,14 +37,12 @@ var WorklogsCommand = &cli.Command{
 			defer wg.Done()
 			countryCode, err := GetCountryFromLCTime(os.Getenv("LC_TIME"))
 			if err != nil {
-				app.ui.errorView.ShowError("Error getting country code from LC_TIME:" + err.Error())
-				logrus.Error(err)
+				logrus.Error("getting country code from LC_TIME failed:" + err.Error())
 			}
 			app.holidays, err = NewHolidays(countryCode)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				logrus.Error("fetching national holidays failed:" + err.Error())
 			}
-			logrus.Error("Holidays loaded")
 		}()
 		wg.Wait()
 		err := app.ui.app.Run()
