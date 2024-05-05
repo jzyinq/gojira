@@ -37,12 +37,11 @@ func (s *Summary) update() {
 }
 
 func workingHoursInMonthToPresentDay(year int, month time.Month) int {
-	holidays := NewHolidays("PL")
 	t := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
 	totalWorkHours := 0
 
 	for t.Month() == month && t.Before(time.Now().Local()) {
-		if t.Weekday() != time.Saturday && t.Weekday() != time.Sunday && !holidays.IsHoliday(&t) {
+		if t.Weekday() != time.Saturday && t.Weekday() != time.Sunday && !app.holidays.IsHoliday(&t) {
 			totalWorkHours += 8
 		}
 		t = t.AddDate(0, 0, 1)

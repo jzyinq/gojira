@@ -5,12 +5,9 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"regexp"
 	"time"
 )
-
-/* create a function that access country code and fetch the holidays for that country from
-http endpoint https://date.nager.at/api/v3/PublicHolidays/2024/COUNTRY_CODE prepare a struct with parsed dates
-*/
 
 type Holiday struct {
 	Date        string `json:"date"`
@@ -58,7 +55,7 @@ func (h *Holiday) GetTime() (*time.Time, error) {
 	return &t, nil
 }
 
-func getHolidaysForCountry(countryCode string) (Holidays, error) {
+func getHolidaysForCountry(countryCode string) (*Holidays, error) {
 	url := fmt.Sprintf("https://date.nager.at/api/v3/PublicHolidays/2024/%s", countryCode)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -72,15 +69,24 @@ func getHolidaysForCountry(countryCode string) (Holidays, error) {
 		logrus.Error(err)
 		return nil, err
 	}
-	return holidays, nil
+	return &holidays, nil
 }
 
-func NewHolidays(countryCode string) *Holidays {
+func NewHolidays(countryCode string) (*Holidays, error) {
 	holidays, err := getHolidaysForCountry(countryCode)
 	if err != nil {
 		logrus.Error(err)
-		return nil
+		return nil, err
 	}
 
-	return &holidays
+	return holidays, nil
+}
+
+func GetCountryFromLCTime(timeString string) (string, error) {
+	r, _ := regexp.Compile("([A-Z]{2})")
+	match := r.FindString(timeString)
+	if match == "" {
+		return "", fmt.Errorf("could not parse country from LC_TIME")
+	}
+	return match, nil
 }
