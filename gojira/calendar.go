@@ -35,21 +35,29 @@ func NewCalendar() *Calendar {
 }
 
 func (c *Calendar) update() {
+	c.setDate()
+	c.setWeekdays()
+	c.setDays()
+}
+
+func (c *Calendar) setDate() {
 	c.day = app.time.Day()
 	c.month = app.time.Month()
 	c.year = app.time.Year()
-	c.Clear()
+}
 
-	t := time.Date(c.year, c.month, 1, 0, 0, 0, 0, time.Local)
-	daysInMonth := time.Date(c.year, c.month+1, 0, 0, 0, 0, 0, time.Local).Day()
-
-	// Weekdays
+func (c *Calendar) setWeekdays() {
 	weekdays := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
 	for i, day := range weekdays {
 		c.SetCell(0, i, tview.NewTableCell(day))
 	}
+}
 
-	// Days
+func (c *Calendar) setDays() {
+	c.Clear()
+	t := time.Date(c.year, c.month, 1, 0, 0, 0, 0, time.Local)
+	daysInMonth := time.Date(c.year, c.month+1, 0, 0, 0, 0, 0, time.Local).Day()
+
 	week := 1
 	for i := 1; i <= daysInMonth; i++ {
 		dayOfWeek := int(t.Weekday()) - 1 // Weekday() returns 1 (Monday) to 7 (Sunday)

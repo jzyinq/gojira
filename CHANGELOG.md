@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Fetch national holidays from [date.nager.at](https://date.nager.at) if LC_TIME is present in environment. Holidays will be marked on calendar and excluded from month summary.
 
 ## [0.6.0] - 2024-03-30
 ### Changed

@@ -57,7 +57,7 @@ func (h *Holiday) GetTime() (*time.Time, error) {
 
 func getHolidaysForCountry(countryCode string) (*Holidays, error) {
 	url := fmt.Sprintf("https://date.nager.at/api/v3/PublicHolidays/2024/%s", countryCode)
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) //nolint:gosec
 	if err != nil {
 		logrus.Error(err)
 		return nil, err
