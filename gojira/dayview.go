@@ -71,6 +71,11 @@ func NewDayView() *DayView { //nolint:funlen
 				tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
 			return nil
 		}
+		if event.Key() == tcell.KeyF3 {
+			// it's '/' key
+			NewSearchForm(dayView)
+			return nil
+		}
 		return event
 	})
 
@@ -79,8 +84,7 @@ func NewDayView() *DayView { //nolint:funlen
 	dayView.worklogList.SetInputCapture(controlCalendar)
 	dayView.latestIssuesList.SetInputCapture(controlCalendar)
 
-	//dayView.loadLatest()
-	dayView.SearchIssues("meetings")
+	dayView.loadLatest()
 
 	return dayView
 }
@@ -166,8 +170,6 @@ func (d *DayView) loadLatest() {
 func (d *DayView) SearchIssues(search string) {
 	d.latestIssuesStatus.SetText("Search issues").SetDynamicColors(true)
 	if search == "" {
-		// FIXME
-		d.loadLatest()
 		return
 	}
 
@@ -375,5 +377,48 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 	formHeight := 7
 	form.SetRect(pwidth/2-(formWidth/2), pheight/2-3, formWidth, formHeight)
 	app.ui.pages.AddPage("worklog-form", form, false, true)
+	return form
+}
+
+func NewSearchForm(d *DayView) *tview.Form {
+	var form *tview.Form
+
+	searchIssues := func() {
+		query := form.GetFormItem(0).(*tview.InputField).GetText()
+		go func() {
+			app.ui.loaderView.Show("Searching...")
+			defer app.ui.loaderView.Hide()
+			app.ui.pages.RemovePage("search-form")
+			d.SearchIssues(query)
+			app.ui.app.SetFocus(d.latestIssuesList)
+			d.latestIssuesList.SetSelectedStyle(
+				tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+			d.worklogList.SetSelectedStyle(
+				tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+			d.update()
+		}()
+	}
+
+	form = tview.NewForm().
+		AddInputField("Query", "", 40, nil, nil).
+		AddButton("Search", searchIssues).
+		AddButton("Cancel", func() {
+			app.ui.pages.RemovePage("search-form")
+			app.ui.app.SetFocus(app.ui.dayView.worklogList)
+		})
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEscape:
+			app.ui.pages.RemovePage("search-form")
+			app.ui.app.SetFocus(app.ui.dayView.worklogList)
+		}
+		return event
+	})
+	form.SetBorder(true).SetTitle("Search issues").SetTitleAlign(tview.AlignLeft)
+	_, _, pwidth, pheight := app.ui.grid.GetRect()
+	formWidth := 50
+	formHeight := 7
+	form.SetRect(pwidth/2-(formWidth/4), pheight/2-3, formWidth, formHeight)
+	app.ui.pages.AddPage("search-form", form, false, true)
 	return form
 }
