@@ -44,7 +44,7 @@ func NewDayView() *DayView { //nolint:funlen
 					tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
 			}()
 		}
-	})
+	}).SetFunc
 
 	// FIXME instead border we could color code it or add some prompt to given section
 	dayView.worklogList.SetBorder(true)
