@@ -63,8 +63,8 @@ func NewDayView() *DayView { //nolint:funlen
 		AddItem(dayView.worklogStatus, 1, 1, false).
 		AddItem(dayView.worklogList, 0, 1, true).
 		AddItem(dayView.latestIssuesStatus, 1, 1, false).
-		AddItem(dayView.searchInput, 1, 1, false).
-		AddItem(dayView.latestIssuesList, 0, 1, false)
+		AddItem(dayView.latestIssuesList, 0, 1, false).
+		AddItem(dayView.searchInput, 1, 1, false)
 
 	dayView.worklogList.SetCell(0, IssueKeyColumn,
 		tview.NewTableCell("Loading...").SetAlign(tview.AlignLeft),
@@ -188,7 +188,6 @@ func (d *DayView) SearchIssues(search string) {
 	if search == "" {
 		return
 	}
-
 	jql := fmt.Sprintf("text ~ \"%s\"", search)
 	if FindIssueKeyInString(search) != "" {
 		jql = fmt.Sprintf("(text ~ \"%s\" OR issuekey = \"%s\")", search)
@@ -219,7 +218,7 @@ func (d *DayView) SearchIssues(search string) {
 	}).SetSelectedFunc(func(row, column int) {
 		NewAddWorklogForm(d, issues.Issues, row)
 	})
-	app.ui.app.SetFocus(d.latestIssuesList)
+	d.latestIssuesStatus.SetText("Search results:")
 }
 
 // DateRange is a struct for holding the start and end dates
