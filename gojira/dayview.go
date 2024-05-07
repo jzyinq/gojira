@@ -32,7 +32,7 @@ func NewDayView() *DayView { //nolint:funlen
 			app.ui.app.Draw()
 		}),
 	}
-	dayView.searchInput = tview.NewInputField().SetLabel("Search:").SetFieldWidth(80).SetDoneFunc(func(key tcell.Key) {
+	dayView.searchInput = tview.NewInputField().SetLabel("Search(/):").SetFieldWidth(60).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter {
 			go func() {
 				app.ui.loaderView.Show("Searching...")
@@ -190,7 +190,7 @@ func (d *DayView) SearchIssues(search string) {
 	}
 	jql := fmt.Sprintf("text ~ \"%s\"", search)
 	if FindIssueKeyInString(search) != "" {
-		jql = fmt.Sprintf("(text ~ \"%s\" OR issuekey = \"%s\")", search)
+		jql = fmt.Sprintf("(text ~ \"%s\" OR issuekey = \"%s\")", search, search)
 	}
 	issues, err := NewJiraClient().GetIssuesByJQL(
 		fmt.Sprintf("%s ORDER BY updated DESC, created DESC", jql), 10,

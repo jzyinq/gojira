@@ -31,5 +31,6 @@ func (e *ErrorView) ShowError(error string) {
 	app.ui.pages.SendToFront("error")
 	e.SetText(fmt.Sprintf("Error: %s", error))
 	app.ui.pages.ShowPage("error")
+	app.ui.app.SetFocus(e)
 	app.ui.app.Draw()
 }
