@@ -18,6 +18,7 @@ type DayView struct {
 	worklogStatus      *tview.TextView
 	latestIssuesList   *tview.Table
 	latestIssuesStatus *tview.TextView
+	searchInput        *tview.InputField
 }
 
 func NewDayView() *DayView { //nolint:funlen
@@ -31,6 +32,19 @@ func NewDayView() *DayView { //nolint:funlen
 			app.ui.app.Draw()
 		}),
 	}
+	dayView.searchInput = tview.NewInputField().SetLabel("Search:").SetFieldWidth(80).SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEnter {
+			go func() {
+				app.ui.loaderView.Show("Searching...")
+				defer app.ui.loaderView.Hide()
+				dayView.SearchIssues(dayView.searchInput.GetText())
+				dayView.latestIssuesList.SetSelectedStyle(
+					tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+				dayView.worklogList.SetSelectedStyle(
+					tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+			}()
+		}
+	})
 
 	// FIXME instead border we could color code it or add some prompt to given section
 	dayView.worklogList.SetBorder(true)
@@ -45,6 +59,7 @@ func NewDayView() *DayView { //nolint:funlen
 		AddItem(dayView.worklogStatus, 1, 1, false).
 		AddItem(dayView.worklogList, 0, 1, true).
 		AddItem(dayView.latestIssuesStatus, 1, 1, false).
+		AddItem(dayView.searchInput, 1, 1, false).
 		AddItem(dayView.latestIssuesList, 0, 1, false)
 
 	dayView.worklogList.SetCell(0, IssueKeyColumn,
@@ -72,8 +87,7 @@ func NewDayView() *DayView { //nolint:funlen
 			return nil
 		}
 		if event.Key() == tcell.KeyF3 {
-			// it's '/' key
-			NewSearchForm(dayView)
+			app.ui.app.SetFocus(dayView.searchInput)
 			return nil
 		}
 		return event
@@ -168,7 +182,6 @@ func (d *DayView) loadLatest() {
 }
 
 func (d *DayView) SearchIssues(search string) {
-	d.latestIssuesStatus.SetText("Search issues").SetDynamicColors(true)
 	if search == "" {
 		return
 	}
@@ -203,6 +216,7 @@ func (d *DayView) SearchIssues(search string) {
 	}).SetSelectedFunc(func(row, column int) {
 		NewAddWorklogForm(d, issues.Issues, row)
 	})
+	app.ui.app.SetFocus(d.latestIssuesList)
 }
 
 // DateRange is a struct for holding the start and end dates
