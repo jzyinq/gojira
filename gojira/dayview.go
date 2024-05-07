@@ -79,7 +79,8 @@ func NewDayView() *DayView { //nolint:funlen
 	dayView.worklogList.SetInputCapture(controlCalendar)
 	dayView.latestIssuesList.SetInputCapture(controlCalendar)
 
-	dayView.loadLatest()
+	//dayView.loadLatest()
+	dayView.SearchIssues("meetings")
 
 	return dayView
 }
@@ -138,6 +139,46 @@ func (d *DayView) update() {
 func (d *DayView) loadLatest() {
 	d.latestIssuesStatus.SetText("Latest issues").SetDynamicColors(true)
 	issues, err := NewJiraClient().GetLatestIssues()
+	if err != nil {
+		app.ui.errorView.ShowError(err.Error())
+		return
+	}
+	d.latestIssuesList.Clear()
+	d.latestIssuesList.SetSelectable(true, false)
+	color := tcell.ColorWhite
+	for r := 0; r < len(issues.Issues); r++ {
+		d.latestIssuesList.SetCell(r, IssueKeyColumn,
+			tview.NewTableCell((issues.Issues)[r].Key).SetTextColor(color).SetAlign(tview.AlignLeft),
+		)
+		d.latestIssuesList.SetCell(r, IssueSummaryColumn,
+			tview.NewTableCell((issues.Issues)[r].Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
+		)
+	}
+	d.latestIssuesList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEscape {
+			app.ui.app.Stop()
+		}
+	}).SetSelectedFunc(func(row, column int) {
+		NewAddWorklogForm(d, issues.Issues, row)
+	})
+}
+
+func (d *DayView) SearchIssues(search string) {
+	d.latestIssuesStatus.SetText("Search issues").SetDynamicColors(true)
+	if search == "" {
+		// FIXME
+		d.loadLatest()
+		return
+	}
+
+	jql := fmt.Sprintf("text ~ \"%s\"", search)
+	if FindIssueKeyInString(search) != "" {
+		jql = fmt.Sprintf("(text ~ \"%s\" OR issuekey = \"%s\")", search)
+	}
+	issues, err := NewJiraClient().GetIssuesByJQL(
+		fmt.Sprintf("%s ORDER BY updated DESC, created DESC", jql), 10,
+	)
+
 	if err != nil {
 		app.ui.errorView.ShowError(err.Error())
 		return
