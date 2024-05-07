@@ -58,9 +58,13 @@ func (e *LoaderView) UpdateText(msg string) {
 }
 
 func (e *LoaderView) Hide() {
+	focusedPrimitive := app.ui.app.GetFocus()
 	if e.cancel != nil {
 		e.cancel()
 	}
 	app.ui.pages.HidePage("loader")
+	if focusedPrimitive != e {
+		app.ui.app.SetFocus(focusedPrimitive)
+	}
 	app.ui.app.Draw()
 }

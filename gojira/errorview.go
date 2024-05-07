@@ -8,10 +8,11 @@ import (
 
 type ErrorView struct {
 	*tview.Modal
+	previousFocus tview.Primitive
 }
 
 func NewErrorView() *ErrorView {
-	errorView := &ErrorView{tview.NewModal()}
+	errorView := &ErrorView{tview.NewModal(), nil}
 	errorView.SetText("Something went wrong")
 	errorView.SetTitle("Error!")
 	errorView.SetBackgroundColor(tcell.ColorRed.TrueColor())
@@ -20,6 +21,9 @@ func NewErrorView() *ErrorView {
 		switch event.Key() {
 		case tcell.KeyEnter:
 			app.ui.pages.HidePage("error")
+			if errorView.previousFocus != nil {
+				app.ui.app.SetFocus(errorView.previousFocus)
+			}
 		}
 		return event
 	})
@@ -27,7 +31,8 @@ func NewErrorView() *ErrorView {
 	return errorView
 }
 
-func (e *ErrorView) ShowError(error string) {
+func (e *ErrorView) ShowError(error string, previousFocus tview.Primitive) {
+	e.previousFocus = previousFocus
 	app.ui.pages.SendToFront("error")
 	e.SetText(fmt.Sprintf("Error: %s", error))
 	app.ui.pages.ShowPage("error")

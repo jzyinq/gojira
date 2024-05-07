@@ -35,11 +35,6 @@ func NewDayView() *DayView { //nolint:funlen
 	dayView.searchInput = tview.NewInputField().SetLabel("Search(/):").SetFieldWidth(60).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter {
 			go func() {
-				app.ui.loaderView.Show("Searching...")
-				defer func() {
-					app.ui.loaderView.Hide()
-					app.ui.app.SetFocus(dayView.latestIssuesList)
-				}()
 				// FIXME - that decoration is copy pasta
 				dayView.SearchIssues(dayView.searchInput.GetText())
 				dayView.latestIssuesList.SetSelectedStyle(
@@ -115,7 +110,7 @@ func loadWorklogs() {
 			defer func() { <-loadingWorklogs }()
 			err := NewWorklogIssues()
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				app.ui.errorView.ShowError(err.Error(), nil)
 			}
 			app.ui.dayView.update()
 		}()
@@ -161,7 +156,7 @@ func (d *DayView) loadLatest() {
 	d.latestIssuesStatus.SetText("Latest issues").SetDynamicColors(true)
 	issues, err := NewJiraClient().GetLatestIssues()
 	if err != nil {
-		app.ui.errorView.ShowError(err.Error())
+		app.ui.errorView.ShowError(err.Error(), nil)
 		return
 	}
 	d.latestIssuesList.Clear()
@@ -185,40 +180,46 @@ func (d *DayView) loadLatest() {
 }
 
 func (d *DayView) SearchIssues(search string) {
-	if search == "" {
-		return
-	}
-	jql := fmt.Sprintf("text ~ \"%s\"", search)
-	if FindIssueKeyInString(search) != "" {
-		jql = fmt.Sprintf("(text ~ \"%s\" OR issuekey = \"%s\")", search, search)
-	}
-	issues, err := NewJiraClient().GetIssuesByJQL(
-		fmt.Sprintf("%s ORDER BY updated DESC, created DESC", jql), 10,
-	)
-
-	if err != nil {
-		app.ui.errorView.ShowError(err.Error())
-		return
-	}
-	d.latestIssuesList.Clear()
-	d.latestIssuesList.SetSelectable(true, false)
-	color := tcell.ColorWhite
-	for r := 0; r < len(issues.Issues); r++ {
-		d.latestIssuesList.SetCell(r, IssueKeyColumn,
-			tview.NewTableCell((issues.Issues)[r].Key).SetTextColor(color).SetAlign(tview.AlignLeft),
-		)
-		d.latestIssuesList.SetCell(r, IssueSummaryColumn,
-			tview.NewTableCell((issues.Issues)[r].Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
-		)
-	}
-	d.latestIssuesList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
-		if key == tcell.KeyEscape {
-			app.ui.app.Stop()
+	go func() {
+		app.ui.loaderView.Show("Searching...")
+		defer func() {
+			app.ui.loaderView.Hide()
+		}()
+		if search == "" {
+			return
 		}
-	}).SetSelectedFunc(func(row, column int) {
-		NewAddWorklogForm(d, issues.Issues, row)
-	})
-	d.latestIssuesStatus.SetText("Search results:")
+		jql := fmt.Sprintf("text ~ \"%s\"", search)
+		if FindIssueKeyInString(search) != "" {
+			jql = fmt.Sprintf("(text ~ \"%s\" OR issuekey = \"%s\")", search, search)
+		}
+		issues, err := NewJiraClient().GetIssuesByJQL(
+			fmt.Sprintf("%s ORDER BY updated DESC, created DESC", jql), 10,
+		)
+		if err != nil {
+			app.ui.errorView.ShowError(err.Error(), d.searchInput)
+			return
+		}
+		d.latestIssuesList.Clear()
+		d.latestIssuesList.SetSelectable(true, false)
+		color := tcell.ColorWhite
+		for r := 0; r < len(issues.Issues); r++ {
+			d.latestIssuesList.SetCell(r, IssueKeyColumn,
+				tview.NewTableCell((issues.Issues)[r].Key).SetTextColor(color).SetAlign(tview.AlignLeft),
+			)
+			d.latestIssuesList.SetCell(r, IssueSummaryColumn,
+				tview.NewTableCell((issues.Issues)[r].Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
+			)
+		}
+		d.latestIssuesList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
+			if key == tcell.KeyEscape {
+				app.ui.app.Stop()
+			}
+		}).SetSelectedFunc(func(row, column int) {
+			NewAddWorklogForm(d, issues.Issues, row)
+		})
+		d.latestIssuesStatus.SetText("Search results:")
+		app.ui.app.SetFocus(d.latestIssuesList)
+	}()
 }
 
 // DateRange is a struct for holding the start and end dates
@@ -281,25 +282,25 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 			defer app.ui.loaderView.Hide()
 			issue, err := NewJiraClient().GetIssue(issues[row].Key)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				app.ui.errorView.ShowError(err.Error(), nil)
 				return
 			}
 			// TODO use ParseDateRange and LogWork for each day in range
 			dateRange, err := ParseDateRange(logTime)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				app.ui.errorView.ShowError(err.Error(), nil)
 				return
 			}
 			for day := dateRange.StartDate; day.Before(dateRange.EndDate.AddDate(0, 0, 1)); day = day.AddDate(0, 0, 1) {
 				err := issue.LogWork(&day, timeSpent)
 				app.ui.loaderView.UpdateText(fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout)))
 				if err != nil {
-					app.ui.errorView.ShowError(err.Error())
+					app.ui.errorView.ShowError(err.Error(), nil)
 					return
 				}
 			}
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				app.ui.errorView.ShowError(err.Error(), nil)
 				return
 			}
 			d.update()
@@ -345,7 +346,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 			defer app.ui.loaderView.Hide()
 			err := workLogIssues[row].Worklog.Update(timeSpent)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				app.ui.errorView.ShowError(err.Error(), nil)
 				return
 			}
 			d.update()
@@ -361,7 +362,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 			defer app.ui.loaderView.Hide()
 			err := app.workLogs.Delete(workLogIssues[row].Worklog)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				app.ui.errorView.ShowError(err.Error(), nil)
 				return
 			}
 			d.update()
