@@ -36,7 +36,11 @@ func NewDayView() *DayView { //nolint:funlen
 		if key == tcell.KeyEnter {
 			go func() {
 				app.ui.loaderView.Show("Searching...")
-				defer app.ui.loaderView.Hide()
+				defer func() {
+					app.ui.loaderView.Hide()
+					app.ui.app.SetFocus(dayView.latestIssuesList)
+				}()
+				// FIXME - that decoration is copy pasta
 				dayView.SearchIssues(dayView.searchInput.GetText())
 				dayView.latestIssuesList.SetSelectedStyle(
 					tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
@@ -44,7 +48,7 @@ func NewDayView() *DayView { //nolint:funlen
 					tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
 			}()
 		}
-	}).SetFunc
+	})
 
 	// FIXME instead border we could color code it or add some prompt to given section
 	dayView.worklogList.SetBorder(true)
@@ -69,7 +73,6 @@ func NewDayView() *DayView { //nolint:funlen
 	// Make tab key able to switch between the two tables
 	// Change focues table active row color to yellow and inactive to white
 	flexView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// FIXME - it's not ideal - we should to check if given table is focused instead
 		if event.Key() == tcell.KeyTab {
 			if app.ui.app.GetFocus() == dayView.worklogList {
 				app.ui.app.SetFocus(dayView.latestIssuesList)
@@ -86,7 +89,7 @@ func NewDayView() *DayView { //nolint:funlen
 				tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
 			return nil
 		}
-		if event.Key() == tcell.KeyF3 {
+		if event.Rune() == '/' {
 			app.ui.app.SetFocus(dayView.searchInput)
 			return nil
 		}
@@ -391,48 +394,5 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 	formHeight := 7
 	form.SetRect(pwidth/2-(formWidth/2), pheight/2-3, formWidth, formHeight)
 	app.ui.pages.AddPage("worklog-form", form, false, true)
-	return form
-}
-
-func NewSearchForm(d *DayView) *tview.Form {
-	var form *tview.Form
-
-	searchIssues := func() {
-		query := form.GetFormItem(0).(*tview.InputField).GetText()
-		go func() {
-			app.ui.loaderView.Show("Searching...")
-			defer app.ui.loaderView.Hide()
-			app.ui.pages.RemovePage("search-form")
-			d.SearchIssues(query)
-			app.ui.app.SetFocus(d.latestIssuesList)
-			d.latestIssuesList.SetSelectedStyle(
-				tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
-			d.worklogList.SetSelectedStyle(
-				tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
-			d.update()
-		}()
-	}
-
-	form = tview.NewForm().
-		AddInputField("Query", "", 40, nil, nil).
-		AddButton("Search", searchIssues).
-		AddButton("Cancel", func() {
-			app.ui.pages.RemovePage("search-form")
-			app.ui.app.SetFocus(app.ui.dayView.worklogList)
-		})
-	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyEscape:
-			app.ui.pages.RemovePage("search-form")
-			app.ui.app.SetFocus(app.ui.dayView.worklogList)
-		}
-		return event
-	})
-	form.SetBorder(true).SetTitle("Search issues").SetTitleAlign(tview.AlignLeft)
-	_, _, pwidth, pheight := app.ui.grid.GetRect()
-	formWidth := 50
-	formHeight := 7
-	form.SetRect(pwidth/2-(formWidth/4), pheight/2-3, formWidth, formHeight)
-	app.ui.pages.AddPage("search-form", form, false, true)
 	return form
 }
