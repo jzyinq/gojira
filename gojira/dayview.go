@@ -166,8 +166,9 @@ func (d *DayView) update() {
 				app.ui.summary.update()
 			}()
 		default:
+
 		}
-		return event
+		return controlCalendar(event)
 	})
 	timeSpent := CalculateTimeSpent(getWorklogsFromWorklogIssues(logs))
 	d.worklogStatus.SetText(
