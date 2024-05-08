@@ -166,7 +166,6 @@ func (d *DayView) update() {
 				app.ui.summary.update()
 			}()
 		default:
-
 		}
 		return event
 	})
