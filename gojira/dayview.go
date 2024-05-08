@@ -18,6 +18,7 @@ type DayView struct {
 	worklogStatus      *tview.TextView
 	latestIssuesList   *tview.Table
 	latestIssuesStatus *tview.TextView
+	searchInput        *tview.InputField
 }
 
 func NewDayView() *DayView { //nolint:funlen
@@ -31,11 +32,36 @@ func NewDayView() *DayView { //nolint:funlen
 			app.ui.app.Draw()
 		}),
 	}
+	dayView.searchInput = tview.NewInputField().SetLabel("(/)Search: ").SetFieldWidth(60).SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEnter {
+			go func() {
+				dayView.SearchIssues(dayView.searchInput.GetText())
+			}()
+		}
+		if key == tcell.KeyEscape {
+			app.ui.app.SetFocus(dayView.latestIssuesList)
+		}
+	}).SetFieldStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack))
 
-	// FIXME instead border we could color code it or add some prompt to given section
 	dayView.worklogList.SetBorder(true)
 	dayView.latestIssuesList.SetBorder(true)
 	dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGray))
+	dayView.latestIssuesList.SetFocusFunc(func() {
+		dayView.latestIssuesList.SetSelectedStyle(
+			tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+	})
+	dayView.latestIssuesList.SetBlurFunc(func() {
+		dayView.latestIssuesList.SetSelectedStyle(
+			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+	})
+	dayView.worklogList.SetFocusFunc(func() {
+		dayView.worklogList.SetSelectedStyle(
+			tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+	})
+	dayView.worklogList.SetBlurFunc(func() {
+		dayView.worklogList.SetSelectedStyle(
+			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+	})
 	dayView.worklogStatus.SetText(
 		fmt.Sprintf("Worklogs - %s - [?h[white]]",
 			app.time.Format("2006-01-02"),
@@ -45,7 +71,8 @@ func NewDayView() *DayView { //nolint:funlen
 		AddItem(dayView.worklogStatus, 1, 1, false).
 		AddItem(dayView.worklogList, 0, 1, true).
 		AddItem(dayView.latestIssuesStatus, 1, 1, false).
-		AddItem(dayView.latestIssuesList, 0, 1, false)
+		AddItem(dayView.latestIssuesList, 0, 1, false).
+		AddItem(dayView.searchInput, 1, 1, false)
 
 	dayView.worklogList.SetCell(0, IssueKeyColumn,
 		tview.NewTableCell("Loading...").SetAlign(tview.AlignLeft),
@@ -54,21 +81,16 @@ func NewDayView() *DayView { //nolint:funlen
 	// Make tab key able to switch between the two tables
 	// Change focues table active row color to yellow and inactive to white
 	flexView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// FIXME - it's not ideal - we should to check if given table is focused instead
 		if event.Key() == tcell.KeyTab {
 			if app.ui.app.GetFocus() == dayView.worklogList {
 				app.ui.app.SetFocus(dayView.latestIssuesList)
-				dayView.latestIssuesList.SetSelectedStyle(
-					tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
-				dayView.worklogList.SetSelectedStyle(
-					tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
 				return nil
 			}
 			app.ui.app.SetFocus(dayView.worklogList)
-			dayView.worklogList.SetSelectedStyle(
-				tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
-			dayView.latestIssuesList.SetSelectedStyle(
-				tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+			return nil
+		}
+		if event.Rune() == '/' {
+			app.ui.app.SetFocus(dayView.searchInput)
 			return nil
 		}
 		return event
@@ -93,7 +115,7 @@ func loadWorklogs() {
 			defer func() { <-loadingWorklogs }()
 			err := NewWorklogIssues()
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				app.ui.errorView.ShowError(err.Error(), nil)
 			}
 			app.ui.dayView.update()
 		}()
@@ -126,6 +148,27 @@ func (d *DayView) update() {
 	}).SetSelectedFunc(func(row, column int) {
 		NewUpdateWorklogForm(d, logs, row)
 	})
+	d.worklogList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyDelete:
+			go func() {
+				app.ui.loaderView.Show("Deleting worklog...")
+				defer app.ui.loaderView.Hide()
+				row, _ := d.worklogList.GetSelection()
+				err := app.workLogs.Delete(logs[row].Worklog)
+				if err != nil {
+					app.ui.errorView.ShowError(err.Error(), nil)
+					return
+				}
+				d.update()
+				app.ui.pages.RemovePage("worklog-form")
+				app.ui.calendar.update()
+				app.ui.summary.update()
+			}()
+		default:
+		}
+		return event
+	})
 	timeSpent := CalculateTimeSpent(getWorklogsFromWorklogIssues(logs))
 	d.worklogStatus.SetText(
 		fmt.Sprintf("Worklogs - %s - [%s%s[white]]",
@@ -139,7 +182,7 @@ func (d *DayView) loadLatest() {
 	d.latestIssuesStatus.SetText("Latest issues").SetDynamicColors(true)
 	issues, err := NewJiraClient().GetLatestIssues()
 	if err != nil {
-		app.ui.errorView.ShowError(err.Error())
+		app.ui.errorView.ShowError(err.Error(), nil)
 		return
 	}
 	d.latestIssuesList.Clear()
@@ -160,6 +203,49 @@ func (d *DayView) loadLatest() {
 	}).SetSelectedFunc(func(row, column int) {
 		NewAddWorklogForm(d, issues.Issues, row)
 	})
+}
+
+func (d *DayView) SearchIssues(search string) {
+	go func() {
+		app.ui.loaderView.Show("Searching...")
+		defer func() {
+			app.ui.loaderView.Hide()
+		}()
+		if search == "" {
+			return
+		}
+		jql := fmt.Sprintf("text ~ \"%s\"", search)
+		if FindIssueKeyInString(search) != "" {
+			jql = fmt.Sprintf("(text ~ \"%s\" OR issuekey = \"%s\")", search, search)
+		}
+		issues, err := NewJiraClient().GetIssuesByJQL(
+			fmt.Sprintf("%s ORDER BY updated DESC, created DESC", jql), 10,
+		)
+		if err != nil {
+			app.ui.errorView.ShowError(err.Error(), d.searchInput)
+			return
+		}
+		d.latestIssuesList.Clear()
+		d.latestIssuesList.SetSelectable(true, false)
+		color := tcell.ColorWhite
+		for r := 0; r < len(issues.Issues); r++ {
+			d.latestIssuesList.SetCell(r, IssueKeyColumn,
+				tview.NewTableCell((issues.Issues)[r].Key).SetTextColor(color).SetAlign(tview.AlignLeft),
+			)
+			d.latestIssuesList.SetCell(r, IssueSummaryColumn,
+				tview.NewTableCell((issues.Issues)[r].Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
+			)
+		}
+		d.latestIssuesList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
+			if key == tcell.KeyEscape {
+				app.ui.app.Stop()
+			}
+		}).SetSelectedFunc(func(row, column int) {
+			NewAddWorklogForm(d, issues.Issues, row)
+		})
+		d.latestIssuesStatus.SetText("Search results:")
+		app.ui.app.SetFocus(d.latestIssuesList)
+	}()
 }
 
 // DateRange is a struct for holding the start and end dates
@@ -222,25 +308,25 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 			defer app.ui.loaderView.Hide()
 			issue, err := NewJiraClient().GetIssue(issues[row].Key)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				app.ui.errorView.ShowError(err.Error(), nil)
 				return
 			}
 			// TODO use ParseDateRange and LogWork for each day in range
 			dateRange, err := ParseDateRange(logTime)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				app.ui.errorView.ShowError(err.Error(), nil)
 				return
 			}
 			for day := dateRange.StartDate; day.Before(dateRange.EndDate.AddDate(0, 0, 1)); day = day.AddDate(0, 0, 1) {
 				err := issue.LogWork(&day, timeSpent)
 				app.ui.loaderView.UpdateText(fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout)))
 				if err != nil {
-					app.ui.errorView.ShowError(err.Error())
+					app.ui.errorView.ShowError(err.Error(), nil)
 					return
 				}
 			}
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				app.ui.errorView.ShowError(err.Error(), nil)
 				return
 			}
 			d.update()
@@ -260,6 +346,8 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 		})
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
+		case tcell.KeyEnter:
+			newWorklog()
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.app.SetFocus(app.ui.dayView.latestIssuesList)
@@ -286,7 +374,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 			defer app.ui.loaderView.Hide()
 			err := workLogIssues[row].Worklog.Update(timeSpent)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				app.ui.errorView.ShowError(err.Error(), nil)
 				return
 			}
 			d.update()
@@ -302,7 +390,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 			defer app.ui.loaderView.Hide()
 			err := app.workLogs.Delete(workLogIssues[row].Worklog)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error())
+				app.ui.errorView.ShowError(err.Error(), nil)
 				return
 			}
 			d.update()
@@ -322,6 +410,10 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 		})
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
+		case tcell.KeyEnter:
+			updateWorklog()
+		case tcell.KeyDelete:
+			deleteWorklog()
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.app.SetFocus(app.ui.dayView.worklogList)

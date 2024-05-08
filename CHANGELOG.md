@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.8.0] - 2024-05-08
+### Added
+- `gojira worklogs` search bar - looks for a text or issue key if passed uppercased like `ISSUE-123`
+- `Enter` now submits worklog straight from time spent input, `Delete` removes it
+- `Delete` also works on selected worklog on the list - no confirmation required though so watch out
+
+### Changed
+- `SetFocusFunc`/`SetBlurFunc` now handles decorated windows instead of original mess
+
 ## [0.7.0] - 2024-05-05
 ### Added
 - Fetch national holidays from [date.nager.at](https://date.nager.at) if LC_TIME is present in environment. Holidays will be marked on calendar and excluded from month summary.
@@ -100,7 +109,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Initial release of gojira
 
-[Unreleased]: https://github.com/jzyinq/gojira/compare/0.7.0...master
+[Unreleased]: https://github.com/jzyinq/gojira/compare/0.8.0...master
+[0.8.0]: https://github.com/jzyinq/gojira/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/jzyinq/gojira/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/jzyinq/gojira/compare/0.5.4...0.6.0
 [0.5.4]: https://github.com/jzyinq/gojira/compare/0.5.3...0.5.4
