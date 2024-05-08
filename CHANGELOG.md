@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - `gojira worklogs` search bar - looks for a text or issue key if passed uppercased like `ISSUE-123`
 - `Enter` now submits worklog straight from time spent input, `Delete` removes it
+- `Delete` also works on selected worklog on the list - no confirmation required though so watch out
 
 ### Changed 
 - `SetFocusFunc`/`SetBlurFunc` now handlers decorated windows instead of original mess 
