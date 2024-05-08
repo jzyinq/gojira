@@ -148,6 +148,28 @@ func (d *DayView) update() {
 	}).SetSelectedFunc(func(row, column int) {
 		NewUpdateWorklogForm(d, logs, row)
 	})
+	d.worklogList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyDelete:
+			go func() {
+				app.ui.loaderView.Show("Deleting worklog...")
+				defer app.ui.loaderView.Hide()
+				row, _ := d.worklogList.GetSelection()
+				err := app.workLogs.Delete(logs[row].Worklog)
+				if err != nil {
+					app.ui.errorView.ShowError(err.Error(), nil)
+					return
+				}
+				d.update()
+				app.ui.pages.RemovePage("worklog-form")
+				app.ui.calendar.update()
+				app.ui.summary.update()
+			}()
+		default:
+
+		}
+		return event
+	})
 	timeSpent := CalculateTimeSpent(getWorklogsFromWorklogIssues(logs))
 	d.worklogStatus.SetText(
 		fmt.Sprintf("Worklogs - %s - [%s%s[white]]",
