@@ -32,23 +32,36 @@ func NewDayView() *DayView { //nolint:funlen
 			app.ui.app.Draw()
 		}),
 	}
-	dayView.searchInput = tview.NewInputField().SetLabel("Search(/):").SetFieldWidth(60).SetDoneFunc(func(key tcell.Key) {
+	dayView.searchInput = tview.NewInputField().SetLabel("(/)Search: ").SetFieldWidth(60).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter {
 			go func() {
 				dayView.SearchIssues(dayView.searchInput.GetText())
-				dayView.trackFocus()
 			}()
 		}
 		if key == tcell.KeyEscape {
 			app.ui.app.SetFocus(dayView.latestIssuesList)
-			dayView.trackFocus()
 		}
 	}).SetFieldStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack))
 
-	// FIXME instead border we could color code it or add some prompt to given section
 	dayView.worklogList.SetBorder(true)
 	dayView.latestIssuesList.SetBorder(true)
 	dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGray))
+	dayView.latestIssuesList.SetFocusFunc(func() {
+		dayView.latestIssuesList.SetSelectedStyle(
+			tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+	})
+	dayView.latestIssuesList.SetBlurFunc(func() {
+		dayView.latestIssuesList.SetSelectedStyle(
+			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+	})
+	dayView.worklogList.SetFocusFunc(func() {
+		dayView.worklogList.SetSelectedStyle(
+			tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+	})
+	dayView.worklogList.SetBlurFunc(func() {
+		dayView.worklogList.SetSelectedStyle(
+			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+	})
 	dayView.worklogStatus.SetText(
 		fmt.Sprintf("Worklogs - %s - [?h[white]]",
 			app.time.Format("2006-01-02"),
@@ -71,17 +84,14 @@ func NewDayView() *DayView { //nolint:funlen
 		if event.Key() == tcell.KeyTab {
 			if app.ui.app.GetFocus() == dayView.worklogList {
 				app.ui.app.SetFocus(dayView.latestIssuesList)
-				dayView.trackFocus()
-				return event
+				return nil
 			}
 			app.ui.app.SetFocus(dayView.worklogList)
-			dayView.trackFocus()
-			return event
+			return nil
 		}
 		if event.Rune() == '/' {
 			app.ui.app.SetFocus(dayView.searchInput)
-			dayView.trackFocus()
-			return event
+			return nil
 		}
 		return event
 	})
@@ -145,28 +155,6 @@ func (d *DayView) update() {
 			GetTimeSpentColorTag(timeSpent, 8),
 			FormatTimeSpent(timeSpent),
 		)).SetDynamicColors(true)
-}
-
-func (d *DayView) trackFocus() {
-	switch app.ui.app.GetFocus() {
-	case d.latestIssuesList:
-		d.latestIssuesList.SetSelectedStyle(
-			tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
-		d.worklogList.SetSelectedStyle(
-			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
-		break
-	case d.worklogList:
-		d.worklogList.SetSelectedStyle(
-			tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
-		d.latestIssuesList.SetSelectedStyle(
-			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
-		break
-	default:
-		d.latestIssuesList.SetSelectedStyle(
-			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
-		d.worklogList.SetSelectedStyle(
-			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
-	}
 }
 
 func (d *DayView) loadLatest() {
@@ -337,6 +325,8 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 		})
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
+		case tcell.KeyEnter:
+			newWorklog()
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.app.SetFocus(app.ui.dayView.latestIssuesList)
@@ -399,6 +389,10 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 		})
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
+		case tcell.KeyEnter:
+			updateWorklog()
+		case tcell.KeyDelete:
+			deleteWorklog()
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.app.SetFocus(app.ui.dayView.worklogList)

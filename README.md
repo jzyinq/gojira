@@ -70,17 +70,22 @@ Just remember to urldecode it. Save it and you should ready to go!
 
 ## Todo list
 
+- [ ] Refactor ShowError focus return
+- [ ] Open issue in modal if it's the only result?
+- [ ] Prompt `are you sure want to exit` on escape key
+- [ ] Enter key should save worklog if it's focused
+- [ ] Add shortcut hints to the bottom of the screen or along sections
 - [ ] delete worklog through simple cli version for today
 - [ ] ticket status change prompt after logging time
 - [ ] tests
-- [ ] unify workLogs and worklogsIssues structs - use one for both
-  - Reduce jira/tempo spaghetti and unnecessary structs and functions
 - [ ] godtools cli semantics update
   - `gojira log -i TICKET` -> `gojira log -i TICKET`
   - `gojira log -i TICKET -t 1h30m`
   - `gojira` -> `gojira recent`
   - `gojira` -> `gojira --help`
-- [ ] trigger ui updates after worklog change more efficiently
+- [x] trigger ui updates after worklog change more efficiently
+- [x] unify workLogs and worklogsIssues structs - use one for both
+- [x] Reduce jira/tempo spaghetti and unnecessary structs and functions
 - [x] cli version does not update worklogs if they exist already
   - [x] fetch worklogs from current day and propose them for selection
 - [x] Add worklogs from ui
