@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 ### Added
 - `gojira worklogs` search bar - look for a text for key like `ISSUE-123`
+  - TODO
+  - [x] Escape for getting back with focus
+  - [ ] Refactor ShowError focus return 
+  - [ ] Open issue in modal if it's the only result?
+  - [x] Decorating focused window needs some refactor
+  - [ ] Prompt `are you sure want to exit` on escape key
+  - [ ] Enter key should save worklog if it's focused
 
 ## [0.7.0] - 2024-05-05
 ### Added

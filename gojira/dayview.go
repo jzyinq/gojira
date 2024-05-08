@@ -35,15 +35,15 @@ func NewDayView() *DayView { //nolint:funlen
 	dayView.searchInput = tview.NewInputField().SetLabel("Search(/):").SetFieldWidth(60).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter {
 			go func() {
-				// FIXME - that decoration is copy pasta
 				dayView.SearchIssues(dayView.searchInput.GetText())
-				dayView.latestIssuesList.SetSelectedStyle(
-					tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
-				dayView.worklogList.SetSelectedStyle(
-					tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+				dayView.trackFocus()
 			}()
 		}
-	})
+		if key == tcell.KeyEscape {
+			app.ui.app.SetFocus(dayView.latestIssuesList)
+			dayView.trackFocus()
+		}
+	}).SetFieldStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack))
 
 	// FIXME instead border we could color code it or add some prompt to given section
 	dayView.worklogList.SetBorder(true)
@@ -71,22 +71,17 @@ func NewDayView() *DayView { //nolint:funlen
 		if event.Key() == tcell.KeyTab {
 			if app.ui.app.GetFocus() == dayView.worklogList {
 				app.ui.app.SetFocus(dayView.latestIssuesList)
-				dayView.latestIssuesList.SetSelectedStyle(
-					tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
-				dayView.worklogList.SetSelectedStyle(
-					tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
-				return nil
+				dayView.trackFocus()
+				return event
 			}
 			app.ui.app.SetFocus(dayView.worklogList)
-			dayView.worklogList.SetSelectedStyle(
-				tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
-			dayView.latestIssuesList.SetSelectedStyle(
-				tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
-			return nil
+			dayView.trackFocus()
+			return event
 		}
 		if event.Rune() == '/' {
 			app.ui.app.SetFocus(dayView.searchInput)
-			return nil
+			dayView.trackFocus()
+			return event
 		}
 		return event
 	})
@@ -150,6 +145,28 @@ func (d *DayView) update() {
 			GetTimeSpentColorTag(timeSpent, 8),
 			FormatTimeSpent(timeSpent),
 		)).SetDynamicColors(true)
+}
+
+func (d *DayView) trackFocus() {
+	switch app.ui.app.GetFocus() {
+	case d.latestIssuesList:
+		d.latestIssuesList.SetSelectedStyle(
+			tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+		d.worklogList.SetSelectedStyle(
+			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+		break
+	case d.worklogList:
+		d.worklogList.SetSelectedStyle(
+			tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+		d.latestIssuesList.SetSelectedStyle(
+			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+		break
+	default:
+		d.latestIssuesList.SetSelectedStyle(
+			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+		d.worklogList.SetSelectedStyle(
+			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+	}
 }
 
 func (d *DayView) loadLatest() {
