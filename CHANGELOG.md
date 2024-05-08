@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.8.1] - 2024-05-08
+### Fixed
+- Calendar control stopped working after introducing delete on worklog list
+
 ## [0.8.0] - 2024-05-08
 ### Added
 - `gojira worklogs` search bar - looks for a text or issue key if passed uppercased like `ISSUE-123`
@@ -109,7 +113,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Initial release of gojira
 
-[Unreleased]: https://github.com/jzyinq/gojira/compare/0.8.0...master
+[Unreleased]: https://github.com/jzyinq/gojira/compare/0.8.1...master
+[0.8.1]: https://github.com/jzyinq/gojira/compare/0.8.0...0.8.1
 [0.8.0]: https://github.com/jzyinq/gojira/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/jzyinq/gojira/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/jzyinq/gojira/compare/0.5.4...0.6.0
