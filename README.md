@@ -69,7 +69,6 @@ Just remember to urldecode it. Save it and you should ready to go!
 ## [Changelog](./CHANGELOG.md)
 
 ## Todo list
-- [ ] `shift+arrow` for jumping between months instead of days
 - [ ] Refactor ShowError focus return
 - [ ] Open issue in modal if it's the only result?
 - [ ] Prompt `are you sure want to exit` on escape key
@@ -83,6 +82,7 @@ Just remember to urldecode it. Save it and you should ready to go!
   - `gojira log -i TICKET -t 1h30m`
   - `gojira` -> `gojira recent`
   - `gojira` -> `gojira --help`
+- [x] `shift+arrow` for jumping between months instead of days
 - [x] trigger ui updates after worklog change more efficiently
 - [x] unify workLogs and worklogsIssues structs - use one for both
 - [x] Reduce jira/tempo spaghetti and unnecessary structs and functions
