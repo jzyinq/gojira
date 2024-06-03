@@ -105,13 +105,32 @@ func (c *Calendar) setDays() {
 }
 
 func controlCalendar(event *tcell.EventKey) *tcell.EventKey {
+	select {
+	case loading := <-loadingWorklogs:
+		if loading {
+			return event // If loadingWorklogs has a true value, return early
+		}
+	default:
+	}
+
 	switch event.Key() {
 	case tcell.KeyLeft, tcell.KeyRight:
-		timePeriod := -time.Hour * 24
-		if event.Key() == tcell.KeyRight {
-			timePeriod = time.Hour * 24
+		var newTime time.Time
+		if event.Modifiers() == tcell.ModShift {
+			var datePeriod int
+			if event.Key() == tcell.KeyRight {
+				datePeriod = 1
+			} else {
+				datePeriod = -1
+			}
+			newTime = app.time.AddDate(0, datePeriod, 1)
+		} else {
+			timePeriod := -time.Hour * 24
+			if event.Key() == tcell.KeyRight {
+				timePeriod = time.Hour * 24
+			}
+			newTime = app.time.Add(timePeriod)
 		}
-		newTime := app.time.Add(timePeriod)
 		logrus.Debug("Changing date to ", newTime)
 		app.time = &newTime
 		loadWorklogs()

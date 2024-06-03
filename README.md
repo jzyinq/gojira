@@ -69,7 +69,7 @@ Just remember to urldecode it. Save it and you should ready to go!
 ## [Changelog](./CHANGELOG.md)
 
 ## Todo list
-
+- [ ] `shift+arrow` for jumping between months instead of days
 - [ ] Refactor ShowError focus return
 - [ ] Open issue in modal if it's the only result?
 - [ ] Prompt `are you sure want to exit` on escape key
