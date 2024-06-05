@@ -13,6 +13,7 @@ type UserInteface struct {
 	dayView    *DayView
 	errorView  *ErrorView
 	loaderView *LoaderView
+	helpView   *Help
 }
 
 func newUi() {
@@ -24,7 +25,7 @@ func newUi() {
 	app.ui.dayView = NewDayView()
 	app.ui.errorView = NewErrorView()
 	app.ui.loaderView = NewLoaderView()
-
+	app.ui.helpView = NewHelpView()
 	app.ui.grid = tview.NewGrid().
 		SetRows(1, 0, 0).
 		SetColumns(0, 0, 27).
@@ -36,6 +37,7 @@ func newUi() {
 	// Layout for screens wider than 100 cells.
 	app.ui.grid.AddItem(app.ui.pages, 0, 0, 3, 2, 0, 100, true).
 		AddItem(app.ui.summary, 0, 2, 1, 1, 0, 100, false).
-		AddItem(app.ui.calendar, 1, 2, 2, 1, 0, 100, false)
+		AddItem(app.ui.calendar, 1, 2, 1, 1, 0, 100, false).
+		AddItem(app.ui.helpView, 2, 2, 1, 1, 0, 100, false)
 	app.ui.app.SetRoot(app.ui.grid, true).SetFocus(app.ui.pages)
 }
