@@ -2,10 +2,11 @@ package gojira
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 type Calendar struct {

@@ -32,7 +32,7 @@ func NewDayView() *DayView { //nolint:funlen
 			app.ui.app.Draw()
 		}),
 	}
-	dayView.searchInput = tview.NewInputField().SetLabel("(/)Search: ").SetFieldWidth(60).SetDoneFunc(func(key tcell.Key) {
+	dayView.searchInput = tview.NewInputField().SetLabel("(l)Latest | (/)Search: ").SetFieldWidth(60).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEnter {
 			go func() {
 				dayView.SearchIssues(dayView.searchInput.GetText())
@@ -91,6 +91,16 @@ func NewDayView() *DayView { //nolint:funlen
 		}
 		if event.Rune() == '/' {
 			app.ui.app.SetFocus(dayView.searchInput)
+			return nil
+		}
+		if event.Rune() == 'L' {
+			go func() {
+				app.ui.loaderView.Show("Searching...")
+				defer func() {
+					app.ui.loaderView.Hide()
+				}()
+				dayView.loadLatest()
+			}()
 			return nil
 		}
 		return event

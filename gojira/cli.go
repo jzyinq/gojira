@@ -2,13 +2,14 @@ package gojira
 
 import (
 	"fmt"
-	"github.com/charmbracelet/huh/spinner"
-	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/charmbracelet/huh/spinner"
+	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli/v2"
 )
 
 var AppAsciiArt = fmt.Sprintf(""+
