@@ -32,16 +32,17 @@ func NewDayView() *DayView { //nolint:funlen
 			app.ui.app.Draw()
 		}),
 	}
-	dayView.searchInput = tview.NewInputField().SetLabel("(l)Latest | (/)Search: ").SetFieldWidth(60).SetDoneFunc(func(key tcell.Key) {
-		if key == tcell.KeyEnter {
-			go func() {
-				dayView.SearchIssues(dayView.searchInput.GetText())
-			}()
-		}
-		if key == tcell.KeyEscape {
-			app.ui.app.SetFocus(dayView.latestIssuesList)
-		}
-	}).SetFieldStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack))
+	dayView.searchInput = tview.NewInputField().SetLabel("(l)Latest | (/)Search: ").SetFieldWidth(60).
+		SetDoneFunc(func(key tcell.Key) {
+			if key == tcell.KeyEnter {
+				go func() {
+					dayView.SearchIssues(dayView.searchInput.GetText())
+				}()
+			}
+			if key == tcell.KeyEscape {
+				app.ui.app.SetFocus(dayView.latestIssuesList)
+			}
+		}).SetFieldStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack))
 
 	dayView.worklogList.SetBorder(true)
 	dayView.latestIssuesList.SetBorder(true)
