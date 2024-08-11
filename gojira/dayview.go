@@ -94,7 +94,7 @@ func NewDayView() *DayView { //nolint:funlen
 			app.ui.app.SetFocus(dayView.searchInput)
 			return nil
 		}
-		if event.Rune() == 'L' {
+		if event.Rune() == 'l' && app.ui.app.GetFocus() != dayView.searchInput {
 			go func() {
 				app.ui.loaderView.Show("Searching...")
 				defer func() {
