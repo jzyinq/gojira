@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.10.2] - 2025-01-08
+### Fixed
+- hardcoded `2024` while fetching holidays for given year
+
 ## [0.10.1] - 2024-08-11
 ### Fixed
 - uppercase `L` was used instead of lowercase version for latest issues
@@ -125,7 +129,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Initial release of gojira
 
-[Unreleased]: https://github.com/jzyinq/gojira/compare/0.10.1...master
+[Unreleased]: https://github.com/jzyinq/gojira/compare/0.10.2...master
+[0.10.2]: https://github.com/jzyinq/gojira/compare/0.10.1...0.10.2
 [0.10.1]: https://github.com/jzyinq/gojira/compare/0.10.0...0.10.1
 [0.10.0]: https://github.com/jzyinq/gojira/compare/0.9.0...0.10.0
 [0.9.0]: https://github.com/jzyinq/gojira/compare/0.8.1...0.9.0
