@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -26,7 +27,7 @@ type WorklogsResponse struct {
 }
 
 type WorklogUpdateRequest struct {
-	IssueKey         string `json:"issueKey"`
+	Id               string `json:"id"`
 	StartDate        string `json:"startDate"`
 	StartTime        string `json:"startTime"`
 	Description      string `json:"description"`
@@ -58,7 +59,7 @@ func (tc *TempoClient) UpdateWorklog(worklog *Worklog, timeSpent string) error {
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 
 	payload := WorklogUpdateRequest{
-		IssueKey:         worklog.Issue.Key,
+		Id:               strconv.Itoa(worklog.Issue.Id),
 		StartDate:        worklog.StartDate,
 		StartTime:        worklog.StartTime,
 		Description:      worklog.Description,

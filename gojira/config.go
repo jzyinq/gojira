@@ -27,7 +27,7 @@ func PrepareConfig() {
 		JiraLogin:             GetEnv("GOJIRA_JIRA_LOGIN"),
 		JiraToken:             GetEnv("GOJIRA_JIRA_TOKEN"),
 		JiraAccountId:         GetEnv("GOJIRA_JIRA_ACCOUNT_ID"),
-		TempoUrl:              "https://api.tempo.io/core/3",
+		TempoUrl:              "https://api.tempo.io/4",
 		TempoToken:            GetEnv("GOJIRA_TEMPO_TOKEN"),
 		UpdateExistingWorklog: true,
 	}

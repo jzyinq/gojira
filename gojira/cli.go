@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -81,7 +82,7 @@ func NewWorklogIssues() error {
 	for i := range app.workLogs.logs {
 		waitGroup.Add(1)
 		go func(workLog *Worklog) {
-			issue, err := NewJiraClient().GetIssue(workLog.Issue.Key)
+			issue, err := NewJiraClient().GetIssue(strconv.Itoa(workLog.Issue.Id))
 			if err != nil {
 				errCh <- err // Send the error to the channel.
 				return
@@ -278,7 +279,7 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 	}
 	if Config.UpdateExistingWorklog {
 		for index, workLog := range todayWorklog {
-			if workLog.Issue.Key == issue.Key {
+			if strconv.Itoa(workLog.Issue.Id) == issue.Id {
 				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
 				err := todayWorklog[index].Update(timeSpentSum)
 				if err != nil {
@@ -288,7 +289,7 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 			}
 		}
 	}
-	worklog, err := NewWorklog(issue.Key, logTime, timeSpent)
+	worklog, err := NewWorklog(issue.GetIdAsInt(), logTime, timeSpent)
 	if err != nil {
 		return err
 	}

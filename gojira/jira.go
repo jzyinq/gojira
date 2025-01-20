@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -57,12 +58,21 @@ type JQLResponse struct {
 
 type Issue struct {
 	Key    string `json:"key"`
+	Id     string `json:"id"`
 	Fields struct {
 		Summary string `json:"summary"`
 		Status  struct {
 			Name string `json:"name"`
 		} `json:"status"`
 	} `json:"fields"`
+}
+
+func (issue Issue) GetIdAsInt() int {
+	value, err := strconv.ParseInt(issue.Id, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return int(value)
 }
 
 type WorklogResponse struct {
@@ -111,13 +121,19 @@ func (jc *JiraClient) GetLatestIssues() (JQLResponse, error) {
 	return jc.GetIssuesByJQL("assignee in (currentUser()) ORDER BY updated DESC, created DESC", 10)
 }
 
-func (jc *JiraClient) GetIssuesByKeys(issueKeys []string) (JQLResponse, error) {
-	issueKeysJQL := fmt.Sprintf("key in (%s) ORDER BY updated DESC, created DESC", strings.Join(issueKeys, ","))
+func (jc *JiraClient) GetIssuesByKeys(issueKeys []int) (JQLResponse, error) {
+	// Convert []int to []string
+	issueKeysStr := make([]string, len(issueKeys))
+	for i, key := range issueKeys {
+		issueKeysStr[i] = fmt.Sprintf("%d", key)
+	}
+	issueKeysJQL := fmt.Sprintf("key in (%s) ORDER BY updated DESC, created DESC", strings.Join(issueKeysStr, ","))
 	return jc.GetIssuesByJQL(issueKeysJQL, len(issueKeys))
 }
 
 func (jc *JiraClient) GetIssue(issueKey string) (Issue, error) {
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s?fields=summary,status", Config.JiraUrl, issueKey)
+	// issueKey could be JIRA-123 (key) or just 234235 (id)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s?fields=summary,status,id", Config.JiraUrl, issueKey)
 	response, err := SendHttpRequest("GET", requestUrl, nil, jc.getHttpHeaders(), 200)
 	if err != nil {
 		return Issue{}, err
@@ -130,7 +146,7 @@ func (jc *JiraClient) GetIssue(issueKey string) (Issue, error) {
 	return jiraIssue, nil
 }
 
-func (jc *JiraClient) CreateWorklog(issueKey string, logTime *time.Time, timeSpent string) (WorklogResponse, error) {
+func (jc *JiraClient) CreateWorklog(issueId int, logTime *time.Time, timeSpent string) (WorklogResponse, error) {
 	payload := map[string]string{
 		"timeSpent":      FormatTimeSpent(TimeSpentToSeconds(timeSpent)),
 		"adjustEstimate": "leave",
@@ -138,7 +154,7 @@ func (jc *JiraClient) CreateWorklog(issueKey string, logTime *time.Time, timeSpe
 	}
 	payloadJson, _ := json.Marshal(payload)
 	requestBody := bytes.NewBuffer(payloadJson)
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog?notifyUsers=false", Config.JiraUrl, issueKey)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%d/worklog?notifyUsers=false", Config.JiraUrl, issueId)
 	response, err := SendHttpRequest("POST", requestUrl, requestBody, jc.getHttpHeaders(), 201)
 	if err != nil {
 		return WorklogResponse{}, err
@@ -152,21 +168,21 @@ func (jc *JiraClient) CreateWorklog(issueKey string, logTime *time.Time, timeSpe
 	return workLogRequest, nil
 }
 
-func (jc *JiraClient) UpdateWorklog(issueKey string, jiraWorklogId int, timeSpentInSeconds int) error {
+func (jc *JiraClient) UpdateWorklog(issueId int, jiraWorklogId int, timeSpentInSeconds int) error {
 	payload := JiraWorklogUpdate{
 		TimeSpentSeconds: timeSpentInSeconds,
 	}
 	payloadJson, _ := json.Marshal(payload)
 	requestBody := bytes.NewBuffer(payloadJson)
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false",
-		Config.JiraUrl, issueKey, jiraWorklogId)
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%d/worklog/%d?notifyUsers=false",
+		Config.JiraUrl, issueId, jiraWorklogId)
 	_, err := SendHttpRequest("PUT", requestUrl, requestBody, jc.getHttpHeaders(), 200)
 	return err
 }
 
-func (jc *JiraClient) DeleteWorklog(issueKey string, jiraWorklogId int) error {
-	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s/worklog/%d?notifyUsers=false",
-		Config.JiraUrl, issueKey, jiraWorklogId)
+func (jc *JiraClient) DeleteWorklog(issueId int, jiraWorklogId int) error {
+	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%d/worklog/%d?notifyUsers=false",
+		Config.JiraUrl, issueId, jiraWorklogId)
 	_, err := SendHttpRequest("DELETE", requestUrl, nil, jc.getHttpHeaders(), 204)
 	return err
 }
