@@ -69,6 +69,8 @@ Just remember to urldecode it. Save it and you should ready to go!
 ## [Changelog](./CHANGELOG.md)
 
 ## Todo list
+- [ ] Color legend for calendar
+- [ ] Fetch holidays for other years than current
 - [ ] Refactor ShowError focus return
 - [ ] Open issue in modal if it's the only result?
 - [ ] Prompt `are you sure want to exit` on escape key

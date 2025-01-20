@@ -36,7 +36,7 @@ type WorklogUpdateRequest struct {
 
 func (tc *TempoClient) GetWorklogs(fromDate, toDate time.Time) (WorklogsResponse, error) {
 	// tempo is required only because of fetching worklogs by date range
-	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s&limit=1000",
+	requestUrl := fmt.Sprintf("%s/worklogs/account/%s?from=%s&to=%s&limit=1000",
 		tc.Url, tc.JiraAccountId, fromDate.Format(dateLayout), toDate.Format(dateLayout))
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", tc.Token),
