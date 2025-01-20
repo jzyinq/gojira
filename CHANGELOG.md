@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.11.0] - 2025-01-20
+### Changed
+- Tempo API version from 3 to 4 due to incoming shutdown of the old version
+
 ## [0.10.2] - 2025-01-08
 ### Fixed
 - hardcoded `2024` while fetching holidays for given year
@@ -129,7 +133,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Initial release of gojira
 
-[Unreleased]: https://github.com/jzyinq/gojira/compare/0.10.2...master
+[Unreleased]: https://github.com/jzyinq/gojira/compare/0.11.0...master
+[0.11.0]: https://github.com/jzyinq/gojira/compare/0.10.2...0.11.0
 [0.10.2]: https://github.com/jzyinq/gojira/compare/0.10.1...0.10.2
 [0.10.1]: https://github.com/jzyinq/gojira/compare/0.10.0...0.10.1
 [0.10.0]: https://github.com/jzyinq/gojira/compare/0.9.0...0.10.0
