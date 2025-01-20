@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-func NewWorklog(issueKey string, logTime *time.Time, timeSpent string) (Worklog, error) {
-	workLogResponse, err := NewJiraClient().CreateWorklog(issueKey, logTime, timeSpent)
+func NewWorklog(issueId int, logTime *time.Time, timeSpent string) (Worklog, error) {
+	workLogResponse, err := NewJiraClient().CreateWorklog(issueId, logTime, timeSpent)
 	if err != nil {
 		return Worklog{}, err
 	}
@@ -26,8 +26,8 @@ func NewWorklog(issueKey string, logTime *time.Time, timeSpent string) (Worklog,
 		StartTime:        logTime.Format("15:04:05"),
 		TimeSpentSeconds: workLogResponse.Timespentseconds,
 		Issue: struct {
-			Key string `json:"key"`
-		}{Key: issueKey},
+			Id int `json:"id"`
+		}{Id: issueId},
 	}
 	return workLog, nil
 }
@@ -36,7 +36,7 @@ type Worklog struct {
 	TempoWorklogid int `json:"tempoWorklogId"`
 	JiraWorklogID  int `json:"jiraWorklogId"`
 	Issue          struct {
-		Key string `json:"key"`
+		Id int `json:"id"`
 	} `json:"issue"`
 	TimeSpentSeconds int    `json:"timeSpentSeconds"`
 	StartDate        string `json:"startDate"`
@@ -85,7 +85,7 @@ func (wl *Worklogs) LogsOnDate(date *time.Time) ([]*Worklog, error) {
 
 func findWorklogByIssueKey(worklogs []*Worklog, issueKey string) *Worklog {
 	for _, log := range worklogs {
-		if log.Issue.Key == issueKey {
+		if strconv.Itoa(log.Issue.Id) == issueKey {
 			return log
 		}
 	}
@@ -94,14 +94,14 @@ func findWorklogByIssueKey(worklogs []*Worklog, issueKey string) *Worklog {
 
 func GetIssuesWithWorklogs(worklogs []*Worklog) ([]Issue, error) {
 	var err error
-	var worklogIssuesKeys []string
+	var worklogIssueIds []int
 	for _, worklog := range worklogs {
-		worklogIssuesKeys = append(worklogIssuesKeys, worklog.Issue.Key)
+		worklogIssueIds = append(worklogIssueIds, worklog.Issue.Id)
 	}
-	if len(worklogIssuesKeys) == 0 {
+	if len(worklogIssueIds) == 0 {
 		return []Issue{}, err
 	}
-	todaysIssues, err := NewJiraClient().GetIssuesByKeys(worklogIssuesKeys)
+	todaysIssues, err := NewJiraClient().GetIssuesByKeys(worklogIssueIds)
 	if err != nil {
 		return []Issue{}, err
 	}
@@ -187,7 +187,7 @@ func (wl *Worklog) Update(timeSpent string) error {
 		err = NewTempoClient().UpdateWorklog(wl, timeSpent)
 	} else {
 		// make update request to jira if tempoWorklogId is not set
-		err = NewJiraClient().UpdateWorklog(wl.Issue.Key, wl.JiraWorklogID, timeSpentInSeconds)
+		err = NewJiraClient().UpdateWorklog(wl.Issue.Id, wl.JiraWorklogID, timeSpentInSeconds)
 	}
 	if err != nil {
 		return err
@@ -203,7 +203,7 @@ func (wl *Worklogs) Delete(w *Worklog) error {
 	if w.TempoWorklogid != 0 {
 		err = NewTempoClient().DeleteWorklog(w.TempoWorklogid)
 	} else {
-		err = NewJiraClient().DeleteWorklog(w.Issue.Key, w.JiraWorklogID)
+		err = NewJiraClient().DeleteWorklog(w.Issue.Id, w.JiraWorklogID)
 	}
 	if err != nil {
 		logrus.Debug(w)
