@@ -3,10 +3,11 @@ package gojira
 import (
 	"errors"
 	"fmt"
-	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
 	"strings"
 	"time"
+
+	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 )
 
 const IssueKeyColumn = 0
@@ -112,7 +113,9 @@ func NewDayView() *DayView { //nolint:funlen
 	dayView.worklogList.SetInputCapture(controlCalendar)
 	dayView.latestIssuesList.SetInputCapture(controlCalendar)
 
-	dayView.loadLatest()
+	go func() {
+		dayView.loadLatest()
+	}()
 
 	return dayView
 }

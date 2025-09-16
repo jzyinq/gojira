@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -91,6 +92,7 @@ type JiraWorklogUpdate struct {
 }
 
 func (jc *JiraClient) GetIssuesByJQL(jql string, maxResults int) (JQLResponse, error) {
+	requestUrl := fmt.Sprintf("%s/rest/api/3/search/jql", Config.JiraUrl)
 	payload := &JQLSearch{
 		Expand:       []string{"names"},
 		Jql:          jql,
@@ -99,13 +101,17 @@ func (jc *JiraClient) GetIssuesByJQL(jql string, maxResults int) (JQLResponse, e
 		Fields:       []string{"summary", "status"},
 		StartAt:      0,
 	}
-	payloadJson, err := json.Marshal(payload)
-	if err != nil {
-		return JQLResponse{}, err
-	}
-	requestBody := bytes.NewBuffer(payloadJson)
-	requestUrl := fmt.Sprintf("%s/rest/api/2/search", Config.JiraUrl)
-	response, err := SendHttpRequest("POST", requestUrl, requestBody, jc.getHttpHeaders(), 200)
+
+	q := url.Values{}
+	q.Set("jql", payload.Jql)
+	q.Set("maxResults", fmt.Sprintf("%d", payload.MaxResults))
+	q.Set("startAt", fmt.Sprintf("%d", payload.StartAt))
+	q.Set("fields", strings.Join(payload.Fields, ","))
+	q.Set("expand", strings.Join(payload.Expand, ","))
+	q.Set("fieldsByKeys", strconv.FormatBool(payload.FieldsByKeys))
+
+	fullUrl := requestUrl + "?" + q.Encode()
+	response, err := SendHttpRequest("GET", fullUrl, nil, jc.getHttpHeaders(), 200)
 	if err != nil {
 		return JQLResponse{}, err
 	}
