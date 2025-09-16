@@ -19,11 +19,12 @@ func newUi() {
 	app.ui.app = tview.NewApplication()
 	app.ui.pages = tview.NewPages()
 
+	app.ui.errorView = NewErrorView()
+	app.ui.loaderView = NewLoaderView()
+
 	app.ui.calendar = NewCalendar()
 	app.ui.summary = NewSummary()
 	app.ui.dayView = NewDayView()
-	app.ui.errorView = NewErrorView()
-	app.ui.loaderView = NewLoaderView()
 
 	app.ui.grid = tview.NewGrid().
 		SetRows(1, 0, 0).

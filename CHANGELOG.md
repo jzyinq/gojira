@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.12.0] - 2025-09-16
+### Fixed
+- deprecated jira search endpoint replacement - https://developer.atlassian.com/changelog/#CHANGE-2046
+
 ## [0.11.0] - 2025-01-20
 ### Changed
 - Tempo API version from 3 to 4 due to incoming shutdown of the old version
@@ -133,7 +137,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Initial release of gojira
 
-[Unreleased]: https://github.com/jzyinq/gojira/compare/0.11.0...master
+[Unreleased]: https://github.com/jzyinq/gojira/compare/0.12.0...master
+[0.12.0]: https://github.com/jzyinq/gojira/compare/0.11.0...0.12.0
 [0.11.0]: https://github.com/jzyinq/gojira/compare/0.10.2...0.11.0
 [0.10.2]: https://github.com/jzyinq/gojira/compare/0.10.1...0.10.2
 [0.10.1]: https://github.com/jzyinq/gojira/compare/0.10.0...0.10.1
