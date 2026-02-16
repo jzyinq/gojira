@@ -3,13 +3,15 @@ package gojira
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
-var countryCodeRegex = regexp.MustCompile("([A-Z]{2})")
+var countryCodeRegex = regexp.MustCompile("(?i)_([a-z]{2})")
 
 type Holiday struct {
 	Date        string `json:"date"`
@@ -86,9 +88,9 @@ func NewHolidays(countryCode string) (*Holidays, error) {
 }
 
 func GetCountryFromLCTime(timeString string) (string, error) {
-	match := countryCodeRegex.FindString(timeString)
-	if match == "" {
+	match := countryCodeRegex.FindStringSubmatch(timeString)
+	if match == nil {
 		return "", fmt.Errorf("could not parse country from LC_TIME")
 	}
-	return match, nil
+	return strings.ToUpper(match[1]), nil
 }

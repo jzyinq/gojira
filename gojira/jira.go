@@ -1,8 +1,6 @@
 package gojira
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -28,12 +26,7 @@ func NewJiraClient() *JiraClient {
 }
 
 func (jc *JiraClient) getHttpHeaders() map[string]string {
-	authorizationToken := fmt.Sprintf("%s:%s", Config.JiraLogin, Config.JiraToken)
-	authorizationHeader := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(authorizationToken)))
-	return map[string]string{
-		"Authorization": authorizationHeader,
-		"Content-Type":  "application/json",
-	}
+	return CreateBasicAuthHeaders(Config.JiraLogin, Config.JiraToken)
 }
 
 type JQLSearch struct {
@@ -158,13 +151,8 @@ func (jc *JiraClient) CreateWorklog(issueId int, logTime *time.Time, timeSpent s
 		"adjustEstimate": "leave",
 		"started":        logTime.Format("2006-01-02T15:04:05.000-0700"),
 	}
-	payloadJson, err := json.Marshal(payload)
-	if err != nil {
-		return WorklogResponse{}, fmt.Errorf("failed to marshal worklog creation payload: %w", err)
-	}
-	requestBody := bytes.NewBuffer(payloadJson)
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%d/worklog?notifyUsers=false", Config.JiraUrl, issueId)
-	response, err := SendHttpRequest("POST", requestUrl, requestBody, jc.getHttpHeaders(), 201)
+	response, err := SendJSONRequest("POST", requestUrl, payload, jc.getHttpHeaders(), 201)
 	if err != nil {
 		return WorklogResponse{}, err
 	}
@@ -181,14 +169,9 @@ func (jc *JiraClient) UpdateWorklog(issueId int, jiraWorklogId int, timeSpentInS
 	payload := JiraWorklogUpdate{
 		TimeSpentSeconds: timeSpentInSeconds,
 	}
-	payloadJson, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("failed to marshal worklog update payload: %w", err)
-	}
-	requestBody := bytes.NewBuffer(payloadJson)
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%d/worklog/%d?notifyUsers=false",
 		Config.JiraUrl, issueId, jiraWorklogId)
-	_, err = SendHttpRequest("PUT", requestUrl, requestBody, jc.getHttpHeaders(), 200)
+	_, err := SendJSONRequest("PUT", requestUrl, payload, jc.getHttpHeaders(), 200)
 	return err
 }
 

@@ -1,6 +1,9 @@
 package gojira
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -41,4 +44,40 @@ func SendHttpRequest(
 			"Response body:\n%s", requestMethod, requestUrl, resp.StatusCode, string(body))
 	}
 	return body, nil
+}
+
+// CreateBasicAuthHeaders creates HTTP headers with Basic authentication
+func CreateBasicAuthHeaders(username, password string) map[string]string {
+	authToken := fmt.Sprintf("%s:%s", username, password)
+	authHeader := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(authToken)))
+	return map[string]string{
+		"Authorization": authHeader,
+		"Content-Type":  "application/json",
+	}
+}
+
+// CreateBearerAuthHeaders creates HTTP headers with Bearer token authentication
+func CreateBearerAuthHeaders(token string) map[string]string {
+	return map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", token),
+		"Content-Type":  "application/json",
+	}
+}
+
+// SendJSONRequest marshals the payload to JSON and sends an HTTP request
+// Returns the response body or an error
+func SendJSONRequest(
+	method string,
+	url string,
+	payload interface{},
+	headers map[string]string,
+	expectedStatus int) ([]byte, error) {
+
+	payloadJSON, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal JSON payload: %w", err)
+	}
+
+	requestBody := bytes.NewBuffer(payloadJSON)
+	return SendHttpRequest(method, url, requestBody, headers, expectedStatus)
 }

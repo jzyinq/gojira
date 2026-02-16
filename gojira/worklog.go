@@ -11,7 +11,7 @@ import (
 var timeSpentRegex = regexp.MustCompile(`(([0-9]+)h)?\s?(([0-9]+)m)?`)
 
 func NewWorklog(issueId int, logTime *time.Time, timeSpent string) (Worklog, error) {
-	workLogResponse, err := NewJiraClient().CreateWorklog(issueId, logTime, timeSpent)
+	workLogResponse, err := app.jiraClient.CreateWorklog(issueId, logTime, timeSpent)
 	if err != nil {
 		return Worklog{}, err
 	}
@@ -102,7 +102,7 @@ func GetIssuesWithWorklogs(worklogs []*Worklog) ([]Issue, error) {
 	if len(worklogIssueIds) == 0 {
 		return []Issue{}, err
 	}
-	todaysIssues, err := NewJiraClient().GetIssuesByKeys(worklogIssueIds)
+	todaysIssues, err := app.jiraClient.GetIssuesByKeys(worklogIssueIds)
 	if err != nil {
 		return []Issue{}, err
 	}
@@ -145,7 +145,7 @@ func (wli *WorklogsIssues) IssuesOnDate(date *time.Time) ([]*WorklogIssue, error
 
 func GetWorklogs(fromDate time.Time, toDate time.Time) (Worklogs, error) {
 	logrus.Infof("getting worklogs from %s to %s...", fromDate, toDate)
-	workLogsResponse, err := NewTempoClient().GetWorklogs(fromDate, toDate)
+	workLogsResponse, err := app.tempoClient.GetWorklogs(fromDate, toDate)
 	if err != nil {
 		return Worklogs{}, err
 	}
@@ -186,10 +186,10 @@ func (wl *Worklog) Update(timeSpent string) error {
 
 	if wl.TempoWorklogid != 0 {
 		// make update request to tempo if tempoWorklogId is set
-		err = NewTempoClient().UpdateWorklog(wl, timeSpent)
+		err = app.tempoClient.UpdateWorklog(wl, timeSpent)
 	} else {
 		// make update request to jira if tempoWorklogId is not set
-		err = NewJiraClient().UpdateWorklog(wl.Issue.Id, wl.JiraWorklogID, timeSpentInSeconds)
+		err = app.jiraClient.UpdateWorklog(wl.Issue.Id, wl.JiraWorklogID, timeSpentInSeconds)
 	}
 	if err != nil {
 		return err
@@ -202,9 +202,9 @@ func (wl *Worklog) Update(timeSpent string) error {
 func deleteWorklogFromAPI(w *Worklog) error {
 	logrus.Debugf("deleting worklog ... %+v", w)
 	if w.TempoWorklogid != 0 {
-		return NewTempoClient().DeleteWorklog(w.TempoWorklogid)
+		return app.tempoClient.DeleteWorklog(w.TempoWorklogid)
 	}
-	return NewJiraClient().DeleteWorklog(w.Issue.Id, w.JiraWorklogID)
+	return app.jiraClient.DeleteWorklog(w.Issue.Id, w.JiraWorklogID)
 }
 
 // removeWorklog filters a worklog out of both slices by JiraWorklogID. Pure function.

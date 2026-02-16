@@ -31,6 +31,29 @@ func (e *LoaderView) Wrap(msg string, callable func()) {
 	}()
 }
 
+// WithLoader wraps a function with loader show/hide, handling errors automatically
+// If the function returns an error, it displays it via the error view
+func (e *LoaderView) WithLoader(msg string, fn func() error) {
+	go func() {
+		e.Show(msg)
+		defer e.Hide()
+		if err := fn(); err != nil {
+			app.ui.errorView.ShowError(err.Error(), nil)
+		}
+	}()
+}
+
+// WithLoaderAndFocus wraps a function with loader show/hide, handling errors with custom focus
+func (e *LoaderView) WithLoaderAndFocus(msg string, focus tview.Primitive, fn func() error) {
+	go func() {
+		e.Show(msg)
+		defer e.Hide()
+		if err := fn(); err != nil {
+			app.ui.errorView.ShowError(err.Error(), focus)
+		}
+	}()
+}
+
 func (e *LoaderView) Show(msg string) {
 	e.ctx, e.cancel = context.WithCancel(context.Background())
 	e.UpdateText(msg)

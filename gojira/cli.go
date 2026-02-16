@@ -83,7 +83,7 @@ func NewWorklogIssues() error {
 		waitGroup.Add(1)
 		go func(workLog *Worklog) {
 			defer waitGroup.Done()
-			issue, err := NewJiraClient().GetIssue(strconv.Itoa(workLog.Issue.Id))
+			issue, err := app.jiraClient.GetIssue(strconv.Itoa(workLog.Issue.Id))
 			if err != nil {
 				errCh <- err // Send the error to the channel.
 				return
@@ -132,7 +132,7 @@ var IssuesCommand = &cli.Command{
 			}()
 			go func() {
 				defer wg.Done()
-				lastTickets, funcErr := NewJiraClient().GetLatestIssues()
+				lastTickets, funcErr := app.jiraClient.GetLatestIssues()
 				lastIssues = lastTickets.Issues
 				logrus.Infof("Last tickets: %v", lastIssues)
 				if funcErr != nil {
@@ -190,7 +190,7 @@ var LogWorkCommand = &cli.Command{
 		if issueKey == "" {
 			return fmt.Errorf("no issue key given / detected in git branch")
 		}
-		issue, err := NewJiraClient().GetIssue(issueKey)
+		issue, err := app.jiraClient.GetIssue(issueKey)
 		if err != nil {
 			return err
 		}
@@ -240,7 +240,7 @@ var DefaultAction = func(c *cli.Context) error {
 var GitOrIssueListAction = func(c *cli.Context) error {
 	issueKey := ResolveIssueKey(c)
 	if issueKey != "" {
-		issue, err := NewJiraClient().GetIssue(issueKey)
+		issue, err := app.jiraClient.GetIssue(issueKey)
 		if err != nil {
 			return err
 		}

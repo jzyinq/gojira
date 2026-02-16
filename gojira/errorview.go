@@ -39,3 +39,12 @@ func (e *ErrorView) ShowError(error string, previousFocus tview.Primitive) {
 	app.ui.app.SetFocus(e)
 	app.ui.app.Draw()
 }
+
+// ShowErrorIfPresent displays an error if err is not nil, returns true if error was shown
+func (e *ErrorView) ShowErrorIfPresent(err error, previousFocus tview.Primitive) bool {
+	if err != nil {
+		e.ShowError(err.Error(), previousFocus)
+		return true
+	}
+	return false
+}

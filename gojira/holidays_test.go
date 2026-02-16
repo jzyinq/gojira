@@ -134,11 +134,9 @@ func TestGetCountryFromLCTime(t *testing.T) {
 		assert.Equal(t, "US", result)
 	})
 
-	t.Run("ignores lowercase and extracts UTF from UTF-8", func(t *testing.T) {
-		// Note: The regex [A-Z]{2} will match "UT" from "UTF-8" in "en_us.UTF-8"
-		// This is the actual behavior - it finds the first 2 uppercase letters
+	t.Run("handles lowercase country code", func(t *testing.T) {
 		result, err := GetCountryFromLCTime("en_us.UTF-8")
 		assert.NoError(t, err)
-		assert.Equal(t, "UT", result)
+		assert.Equal(t, "US", result)
 	})
 }

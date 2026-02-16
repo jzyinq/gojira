@@ -96,13 +96,10 @@ func NewDayView() *DayView { //nolint:funlen
 			return nil
 		}
 		if event.Rune() == 'l' && app.ui.app.GetFocus() != dayView.searchInput {
-			go func() {
-				app.ui.loaderView.Show("Searching...")
-				defer func() {
-					app.ui.loaderView.Hide()
-				}()
+			app.ui.loaderView.WithLoader("Searching...", func() error {
 				dayView.loadLatest()
-			}()
+				return nil
+			})
 			return nil
 		}
 		return event
@@ -138,6 +135,36 @@ func loadWorklogs() {
 	}
 }
 
+// updateAll updates the day view, calendar, and summary in one call
+func (d *DayView) updateAll() {
+	d.update()
+	app.ui.pages.RemovePage("worklog-form")
+	app.ui.calendar.update()
+	app.ui.summary.update()
+}
+
+// populateIssuesList populates the latest issues list table with issues
+func (d *DayView) populateIssuesList(issues []Issue) {
+	d.latestIssuesList.Clear()
+	d.latestIssuesList.SetSelectable(true, false)
+	color := tcell.ColorWhite
+	for r := 0; r < len(issues); r++ {
+		d.latestIssuesList.SetCell(r, IssueKeyColumn,
+			tview.NewTableCell(issues[r].Key).SetTextColor(color).SetAlign(tview.AlignLeft),
+		)
+		d.latestIssuesList.SetCell(r, IssueSummaryColumn,
+			tview.NewTableCell(issues[r].Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
+		)
+	}
+	d.latestIssuesList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEscape {
+			app.ui.app.Stop()
+		}
+	}).SetSelectedFunc(func(row, column int) {
+		NewAddWorklogForm(d, issues, row)
+	})
+}
+
 func (d *DayView) update() {
 	logs, _ := app.workLogsIssues.IssuesOnDate(app.time)
 	d.worklogList.Clear()
@@ -165,20 +192,14 @@ func (d *DayView) update() {
 	d.worklogList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyDelete:
-			go func() {
-				app.ui.loaderView.Show("Deleting worklog...")
-				defer app.ui.loaderView.Hide()
+			app.ui.loaderView.WithLoader("Deleting worklog...", func() error {
 				row, _ := d.worklogList.GetSelection()
-				err := app.workLogs.Delete(logs[row].Worklog)
-				if err != nil {
-					app.ui.errorView.ShowError(err.Error(), nil)
-					return
+				if err := app.workLogs.Delete(logs[row].Worklog); err != nil {
+					return err
 				}
-				d.update()
-				app.ui.pages.RemovePage("worklog-form")
-				app.ui.calendar.update()
-				app.ui.summary.update()
-			}()
+				d.updateAll()
+				return nil
+			})
 		default:
 		}
 		return controlCalendar(event)
@@ -194,72 +215,33 @@ func (d *DayView) update() {
 
 func (d *DayView) loadLatest() {
 	d.latestIssuesStatus.SetText("Latest issues").SetDynamicColors(true)
-	issues, err := NewJiraClient().GetLatestIssues()
-	if err != nil {
-		app.ui.errorView.ShowError(err.Error(), nil)
+	issues, err := app.jiraClient.GetLatestIssues()
+	if app.ui.errorView.ShowErrorIfPresent(err, nil) {
 		return
 	}
-	d.latestIssuesList.Clear()
-	d.latestIssuesList.SetSelectable(true, false)
-	color := tcell.ColorWhite
-	for r := 0; r < len(issues.Issues); r++ {
-		d.latestIssuesList.SetCell(r, IssueKeyColumn,
-			tview.NewTableCell((issues.Issues)[r].Key).SetTextColor(color).SetAlign(tview.AlignLeft),
-		)
-		d.latestIssuesList.SetCell(r, IssueSummaryColumn,
-			tview.NewTableCell((issues.Issues)[r].Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
-		)
-	}
-	d.latestIssuesList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
-		if key == tcell.KeyEscape {
-			app.ui.app.Stop()
-		}
-	}).SetSelectedFunc(func(row, column int) {
-		NewAddWorklogForm(d, issues.Issues, row)
-	})
+	d.populateIssuesList(issues.Issues)
 }
 
 func (d *DayView) SearchIssues(search string) {
-	go func() {
-		app.ui.loaderView.Show("Searching...")
-		defer func() {
-			app.ui.loaderView.Hide()
-		}()
+	app.ui.loaderView.WithLoaderAndFocus("Searching...", d.searchInput, func() error {
 		if search == "" {
-			return
+			return nil
 		}
 		jql := fmt.Sprintf("text ~ \"%s\"", search)
 		if FindIssueKeyInString(search) != "" {
 			jql = fmt.Sprintf("(text ~ \"%s\" OR issuekey = \"%s\")", search, search)
 		}
-		issues, err := NewJiraClient().GetIssuesByJQL(
+		issues, err := app.jiraClient.GetIssuesByJQL(
 			fmt.Sprintf("%s ORDER BY updated DESC, created DESC", jql), 10,
 		)
 		if err != nil {
-			app.ui.errorView.ShowError(err.Error(), d.searchInput)
-			return
+			return err
 		}
-		d.latestIssuesList.Clear()
-		d.latestIssuesList.SetSelectable(true, false)
-		color := tcell.ColorWhite
-		for r := 0; r < len(issues.Issues); r++ {
-			d.latestIssuesList.SetCell(r, IssueKeyColumn,
-				tview.NewTableCell((issues.Issues)[r].Key).SetTextColor(color).SetAlign(tview.AlignLeft),
-			)
-			d.latestIssuesList.SetCell(r, IssueSummaryColumn,
-				tview.NewTableCell((issues.Issues)[r].Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
-			)
-		}
-		d.latestIssuesList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
-			if key == tcell.KeyEscape {
-				app.ui.app.Stop()
-			}
-		}).SetSelectedFunc(func(row, column int) {
-			NewAddWorklogForm(d, issues.Issues, row)
-		})
+		d.populateIssuesList(issues.Issues)
 		d.latestIssuesStatus.SetText("Search results:")
 		app.ui.app.SetFocus(d.latestIssuesList)
-	}()
+		return nil
+	})
 }
 
 // DateRange is a struct for holding the start and end dates
@@ -317,37 +299,26 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	newWorklog := func() {
 		logTime := form.GetFormItem(0).(*tview.InputField).GetText()
 		timeSpent := form.GetFormItem(1).(*tview.InputField).GetText()
-		go func() {
-			app.ui.loaderView.Show("Adding worklog...")
-			defer app.ui.loaderView.Hide()
-			issue, err := NewJiraClient().GetIssue(issues[row].Key)
+		app.ui.loaderView.WithLoader("Adding worklog...", func() error {
+			issue, err := app.jiraClient.GetIssue(issues[row].Key)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error(), nil)
-				return
+				return err
 			}
 			// TODO use ParseDateRange and LogWork for each day in range
 			dateRange, err := ParseDateRange(logTime)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error(), nil)
-				return
+				return err
 			}
 			for day := dateRange.StartDate; day.Before(dateRange.EndDate.AddDate(0, 0, 1)); day = day.AddDate(0, 0, 1) {
 				err := issue.LogWork(&day, timeSpent)
 				app.ui.loaderView.UpdateText(fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout)))
 				if err != nil {
-					app.ui.errorView.ShowError(err.Error(), nil)
-					return
+					return err
 				}
 			}
-			if err != nil {
-				app.ui.errorView.ShowError(err.Error(), nil)
-				return
-			}
-			d.update()
-			app.ui.pages.RemovePage("worklog-form")
-			app.ui.calendar.update()
-			app.ui.summary.update()
-		}()
+			d.updateAll()
+			return nil
+		})
 	}
 
 	form = tview.NewForm().
@@ -383,35 +354,23 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 
 	updateWorklog := func() {
 		timeSpent := form.GetFormItem(0).(*tview.InputField).GetText()
-		go func() {
-			app.ui.loaderView.Show("Updating worklog...")
-			defer app.ui.loaderView.Hide()
-			err := workLogIssues[row].Worklog.Update(timeSpent)
-			if err != nil {
-				app.ui.errorView.ShowError(err.Error(), nil)
-				return
+		app.ui.loaderView.WithLoader("Updating worklog...", func() error {
+			if err := workLogIssues[row].Worklog.Update(timeSpent); err != nil {
+				return err
 			}
-			d.update()
-			app.ui.pages.RemovePage("worklog-form")
-			app.ui.calendar.update()
-			app.ui.summary.update()
-		}()
+			d.updateAll()
+			return nil
+		})
 	}
 
 	deleteWorklog := func() {
-		go func() {
-			app.ui.loaderView.Show("Deleting worklog...")
-			defer app.ui.loaderView.Hide()
-			err := app.workLogs.Delete(workLogIssues[row].Worklog)
-			if err != nil {
-				app.ui.errorView.ShowError(err.Error(), nil)
-				return
+		app.ui.loaderView.WithLoader("Deleting worklog...", func() error {
+			if err := app.workLogs.Delete(workLogIssues[row].Worklog); err != nil {
+				return err
 			}
-			d.update()
-			app.ui.pages.RemovePage("worklog-form")
-			app.ui.calendar.update()
-			app.ui.summary.update()
-		}()
+			d.updateAll()
+			return nil
+		})
 	}
 
 	form = tview.NewForm().

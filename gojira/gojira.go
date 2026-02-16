@@ -16,6 +16,8 @@ type gojira struct {
 	holidays       *Holidays
 	workLogs       Worklogs
 	workLogsIssues WorklogsIssues
+	jiraClient     *JiraClient
+	tempoClient    *TempoClient
 }
 
 func Run() {
@@ -49,6 +51,9 @@ func Run() {
 				if err := PrepareConfig(); err != nil {
 					return err
 				}
+				// Initialize API clients once after config is loaded
+				app.jiraClient = NewJiraClient()
+				app.tempoClient = NewTempoClient()
 			}
 			if context.IsSet("debug") {
 				logrus.SetLevel(logrus.DebugLevel)
