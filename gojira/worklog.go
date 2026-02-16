@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var timeSpentRegex = regexp.MustCompile(`(([0-9]+)h)?\s?(([0-9]+)m)?`)
+
 func NewWorklog(issueId int, logTime *time.Time, timeSpent string) (Worklog, error) {
 	workLogResponse, err := NewJiraClient().CreateWorklog(issueId, logTime, timeSpent)
 	if err != nil {
@@ -156,8 +158,7 @@ func GetWorklogs(fromDate time.Time, toDate time.Time) (Worklogs, error) {
 }
 
 func TimeSpentToSeconds(timeSpent string) int {
-	r, _ := regexp.Compile(`(([0-9]+)h)?\s?(([0-9]+)m)?`)
-	match := r.FindStringSubmatch(timeSpent)
+	match := timeSpentRegex.FindStringSubmatch(timeSpent)
 	var timeSpentSeconds int = 0
 
 	if match[1] != "" {
@@ -210,19 +211,23 @@ func (wl *Worklogs) Delete(w *Worklog) error {
 		return err
 	}
 
-	// FIXME delete is kinda buggy - it messes up pointers and we're getting weird results
-	for i, issue := range app.workLogsIssues.issues {
-		if issue.Worklog.JiraWorklogID == w.JiraWorklogID {
-			app.workLogsIssues.issues = append(app.workLogsIssues.issues[:i], app.workLogsIssues.issues[i+1:]...)
-			break
+	// Remove from workLogsIssues by filtering
+	filtered := make([]WorklogIssue, 0, len(app.workLogsIssues.issues))
+	for _, issue := range app.workLogsIssues.issues {
+		if issue.Worklog.JiraWorklogID != w.JiraWorklogID {
+			filtered = append(filtered, issue)
 		}
 	}
-	for i, workLog := range wl.logs {
-		if workLog.JiraWorklogID == w.JiraWorklogID {
-			wl.logs = append(wl.logs[:i], wl.logs[i+1:]...)
-			break
+	app.workLogsIssues.issues = filtered
+
+	// Remove from worklogs by filtering
+	filteredLogs := make([]*Worklog, 0, len(wl.logs))
+	for _, workLog := range wl.logs {
+		if workLog.JiraWorklogID != w.JiraWorklogID {
+			filteredLogs = append(filteredLogs, workLog)
 		}
 	}
+	wl.logs = filteredLogs
 
 	return nil
 }

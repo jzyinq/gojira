@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var countryCodeRegex = regexp.MustCompile("([A-Z]{2})")
+
 type Holiday struct {
 	Date        string `json:"date"`
 	LocalName   string `json:"localName"`
@@ -84,8 +86,7 @@ func NewHolidays(countryCode string) (*Holidays, error) {
 }
 
 func GetCountryFromLCTime(timeString string) (string, error) {
-	r, _ := regexp.Compile("([A-Z]{2})")
-	match := r.FindString(timeString)
+	match := countryCodeRegex.FindString(timeString)
 	if match == "" {
 		return "", fmt.Errorf("could not parse country from LC_TIME")
 	}

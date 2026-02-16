@@ -66,14 +66,17 @@ func (tc *TempoClient) UpdateWorklog(worklog *Worklog, timeSpent string) error {
 		AuthorAccountId:  worklog.Author.AccountId,
 		TimeSpentSeconds: timeSpentInSeconds,
 	}
-	payloadJson, _ := json.Marshal(payload)
+	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal worklog update payload: %w", err)
+	}
 	requestBody := bytes.NewBuffer(payloadJson)
 	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, worklog.TempoWorklogid)
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
 		"Content-Type":  "application/json",
 	}
-	_, err := SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
+	_, err = SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
 	return err
 }
 

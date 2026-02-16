@@ -13,6 +13,8 @@ import (
 
 const dateLayout = "2006-01-02"
 
+var issueKeyRegex = regexp.MustCompile("([A-Z]+-[0-9]+)")
+
 func getWorklogsFromWorklogIssues(workLogIssues []*WorklogIssue) []*Worklog {
 	var workLogs []*Worklog
 	for _, workLog := range workLogIssues {
@@ -96,8 +98,7 @@ func GetTicketFromGitBranch() string {
 }
 
 func FindIssueKeyInString(possibleURL string) string {
-	r, _ := regexp.Compile("([A-Z]+-[0-9]+)")
-	match := r.FindString(possibleURL)
+	match := issueKeyRegex.FindString(possibleURL)
 	return match
 }
 

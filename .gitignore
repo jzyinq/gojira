@@ -1,1 +1,3 @@
 dist/*
+.agents/*
+coverage.out

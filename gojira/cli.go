@@ -78,17 +78,20 @@ func NewWorklogIssues() error {
 	app.workLogsIssues.issues = []WorklogIssue{}
 	waitGroup := sync.WaitGroup{}
 	var errors []error
+	var mu sync.Mutex
 	errCh := make(chan error, len(app.workLogs.logs))
 	for i := range app.workLogs.logs {
 		waitGroup.Add(1)
 		go func(workLog *Worklog) {
+			defer waitGroup.Done()
 			issue, err := NewJiraClient().GetIssue(strconv.Itoa(workLog.Issue.Id))
 			if err != nil {
 				errCh <- err // Send the error to the channel.
 				return
 			}
+			mu.Lock()
 			app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorklogIssue{Worklog: workLog, Issue: issue})
-			waitGroup.Done()
+			mu.Unlock()
 		}(app.workLogs.logs[i])
 	}
 	waitGroup.Wait()

@@ -158,7 +158,10 @@ func (jc *JiraClient) CreateWorklog(issueId int, logTime *time.Time, timeSpent s
 		"adjustEstimate": "leave",
 		"started":        logTime.Format("2006-01-02T15:04:05.000-0700"),
 	}
-	payloadJson, _ := json.Marshal(payload)
+	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		return WorklogResponse{}, fmt.Errorf("failed to marshal worklog creation payload: %w", err)
+	}
 	requestBody := bytes.NewBuffer(payloadJson)
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%d/worklog?notifyUsers=false", Config.JiraUrl, issueId)
 	response, err := SendHttpRequest("POST", requestUrl, requestBody, jc.getHttpHeaders(), 201)
@@ -178,11 +181,14 @@ func (jc *JiraClient) UpdateWorklog(issueId int, jiraWorklogId int, timeSpentInS
 	payload := JiraWorklogUpdate{
 		TimeSpentSeconds: timeSpentInSeconds,
 	}
-	payloadJson, _ := json.Marshal(payload)
+	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal worklog update payload: %w", err)
+	}
 	requestBody := bytes.NewBuffer(payloadJson)
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%d/worklog/%d?notifyUsers=false",
 		Config.JiraUrl, issueId, jiraWorklogId)
-	_, err := SendHttpRequest("PUT", requestUrl, requestBody, jc.getHttpHeaders(), 200)
+	_, err = SendHttpRequest("PUT", requestUrl, requestBody, jc.getHttpHeaders(), 200)
 	return err
 }
 
