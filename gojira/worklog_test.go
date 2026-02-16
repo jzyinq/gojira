@@ -192,7 +192,59 @@ func TestIssue_GetIdAsInt(t *testing.T) {
 	})
 }
 
-// Note: The following functions (NewWorklog, GetIssuesWithWorklogs, GetWorklogs,
-// Worklog.Update, Worklogs.Delete) require dependency injection to be testable
-// without making actual HTTP requests. These will be refactored in the dependency
-// injection phase.
+func TestRemoveWorklog(t *testing.T) {
+	logs := []*Worklog{
+		{JiraWorklogID: 1, TimeSpentSeconds: 3600},
+		{JiraWorklogID: 2, TimeSpentSeconds: 1800},
+		{JiraWorklogID: 3, TimeSpentSeconds: 900},
+	}
+	issues := []WorklogIssue{
+		{Worklog: logs[0], Issue: Issue{Key: "TEST-1"}},
+		{Worklog: logs[1], Issue: Issue{Key: "TEST-2"}},
+		{Worklog: logs[2], Issue: Issue{Key: "TEST-3"}},
+	}
+
+	t.Run("removes matching worklog from both slices", func(t *testing.T) {
+		filteredLogs, filteredIssues := removeWorklog(logs, issues, 2)
+		assert.Len(t, filteredLogs, 2)
+		assert.Len(t, filteredIssues, 2)
+		assert.Equal(t, 1, filteredLogs[0].JiraWorklogID)
+		assert.Equal(t, 3, filteredLogs[1].JiraWorklogID)
+		assert.Equal(t, "TEST-1", filteredIssues[0].Issue.Key)
+		assert.Equal(t, "TEST-3", filteredIssues[1].Issue.Key)
+	})
+
+	t.Run("returns same contents when id not found", func(t *testing.T) {
+		filteredLogs, filteredIssues := removeWorklog(logs, issues, 999)
+		assert.Len(t, filteredLogs, 3)
+		assert.Len(t, filteredIssues, 3)
+	})
+
+	t.Run("handles empty slices", func(t *testing.T) {
+		filteredLogs, filteredIssues := removeWorklog([]*Worklog{}, []WorklogIssue{}, 1)
+		assert.Empty(t, filteredLogs)
+		assert.Empty(t, filteredIssues)
+	})
+
+	t.Run("removes first element", func(t *testing.T) {
+		filteredLogs, filteredIssues := removeWorklog(logs, issues, 1)
+		assert.Len(t, filteredLogs, 2)
+		assert.Len(t, filteredIssues, 2)
+		assert.Equal(t, 2, filteredLogs[0].JiraWorklogID)
+		assert.Equal(t, 3, filteredLogs[1].JiraWorklogID)
+	})
+
+	t.Run("removes last element", func(t *testing.T) {
+		filteredLogs, filteredIssues := removeWorklog(logs, issues, 3)
+		assert.Len(t, filteredLogs, 2)
+		assert.Len(t, filteredIssues, 2)
+		assert.Equal(t, 1, filteredLogs[0].JiraWorklogID)
+		assert.Equal(t, 2, filteredLogs[1].JiraWorklogID)
+	})
+
+	t.Run("does not mutate original slices", func(t *testing.T) {
+		originalLen := len(logs)
+		removeWorklog(logs, issues, 2)
+		assert.Len(t, logs, originalLen, "original logs slice should not be modified")
+	})
+}

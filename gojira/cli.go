@@ -153,7 +153,7 @@ var IssuesCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		issue, timeSpent, err := IssueWorklogForm(recentIssues)
+		issue, timeSpent, err := IssueWorklogForm(recentIssues, app.workLogs.logs)
 		if err != nil {
 			return err
 		}
@@ -273,11 +273,14 @@ var ViewIssueInBrowserAction = func(c *cli.Context) error {
 	return nil
 }
 
-func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
+// logOrUpdateWork handles the API interaction for logging work. It either updates
+// an existing worklog for the same issue on the same day, or creates a new one.
+// Returns the newly created worklog, or nil if an existing one was updated in place.
+func logOrUpdateWork(issue Issue, logTime *time.Time, timeSpent string, worklogs *Worklogs) (*Worklog, error) {
 	logrus.Infof("Logging %s of time to ticket %s at %s", timeSpent, issue.Key, logTime)
-	todayWorklog, err := app.workLogs.LogsOnDate(logTime)
+	todayWorklog, err := worklogs.LogsOnDate(logTime)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if Config.UpdateExistingWorklog {
 		for index, workLog := range todayWorklog {
@@ -285,21 +288,31 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
 				err := todayWorklog[index].Update(timeSpentSum)
 				if err != nil {
-					return err
+					return nil, err
 				}
-				return nil
+				return nil, nil // existing worklog updated in place
 			}
 		}
 	}
 	worklog, err := NewWorklog(issue.GetIdAsInt(), logTime, timeSpent)
 	if err != nil {
+		return nil, err
+	}
+	return &worklog, nil
+}
+
+// LogWork logs time to an issue and updates global app state.
+func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
+	worklog, err := logOrUpdateWork(issue, logTime, timeSpent, &app.workLogs)
+	if err != nil {
 		return err
 	}
-	// add this workload to global object
-	app.mu.Lock()
-	app.workLogs.logs = append(app.workLogs.logs, &worklog)
-	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorklogIssue{Issue: issue, Worklog: &worklog})
-	app.mu.Unlock()
+	if worklog != nil {
+		app.mu.Lock()
+		app.workLogs.logs = append(app.workLogs.logs, worklog)
+		app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorklogIssue{Issue: issue, Worklog: worklog})
+		app.mu.Unlock()
+	}
 	return nil
 }
 

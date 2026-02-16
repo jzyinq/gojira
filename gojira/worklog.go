@@ -198,39 +198,40 @@ func (wl *Worklog) Update(timeSpent string) error {
 	return nil
 }
 
-func (wl *Worklogs) Delete(w *Worklog) error {
-	logrus.Debugf("deleting w ... %+v", w)
-	// make update request to tempo if tempoWorklogId is set
-	var err error
+// deleteWorklogFromAPI calls the appropriate API (Tempo or Jira) to delete a worklog.
+func deleteWorklogFromAPI(w *Worklog) error {
+	logrus.Debugf("deleting worklog ... %+v", w)
 	if w.TempoWorklogid != 0 {
-		err = NewTempoClient().DeleteWorklog(w.TempoWorklogid)
-	} else {
-		err = NewJiraClient().DeleteWorklog(w.Issue.Id, w.JiraWorklogID)
+		return NewTempoClient().DeleteWorklog(w.TempoWorklogid)
 	}
-	if err != nil {
+	return NewJiraClient().DeleteWorklog(w.Issue.Id, w.JiraWorklogID)
+}
+
+// removeWorklog filters a worklog out of both slices by JiraWorklogID. Pure function.
+func removeWorklog(logs []*Worklog, issues []WorklogIssue, jiraWorklogID int) ([]*Worklog, []WorklogIssue) {
+	filteredLogs := make([]*Worklog, 0, len(logs))
+	for _, wl := range logs {
+		if wl.JiraWorklogID != jiraWorklogID {
+			filteredLogs = append(filteredLogs, wl)
+		}
+	}
+	filteredIssues := make([]WorklogIssue, 0, len(issues))
+	for _, issue := range issues {
+		if issue.Worklog.JiraWorklogID != jiraWorklogID {
+			filteredIssues = append(filteredIssues, issue)
+		}
+	}
+	return filteredLogs, filteredIssues
+}
+
+// Delete removes a worklog via API call, then updates local state.
+func (wl *Worklogs) Delete(w *Worklog) error {
+	if err := deleteWorklogFromAPI(w); err != nil {
 		logrus.Debug(w)
 		return err
 	}
-
-	// Remove from workLogsIssues by filtering
 	app.mu.Lock()
-	filtered := make([]WorklogIssue, 0, len(app.workLogsIssues.issues))
-	for _, issue := range app.workLogsIssues.issues {
-		if issue.Worklog.JiraWorklogID != w.JiraWorklogID {
-			filtered = append(filtered, issue)
-		}
-	}
-	app.workLogsIssues.issues = filtered
-
-	// Remove from worklogs by filtering
-	filteredLogs := make([]*Worklog, 0, len(wl.logs))
-	for _, workLog := range wl.logs {
-		if workLog.JiraWorklogID != w.JiraWorklogID {
-			filteredLogs = append(filteredLogs, workLog)
-		}
-	}
-	wl.logs = filteredLogs
+	wl.logs, app.workLogsIssues.issues = removeWorklog(wl.logs, app.workLogsIssues.issues, w.JiraWorklogID)
 	app.mu.Unlock()
-
 	return nil
 }

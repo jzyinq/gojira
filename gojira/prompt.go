@@ -34,11 +34,11 @@ func SelectActionForm(actions []string) (string, error) {
 	return chosenAction, nil
 }
 
-func IssueWorklogForm(issues []Issue) (Issue, string, error) {
+func IssueWorklogForm(issues []Issue, worklogs []*Worklog) (Issue, string, error) {
 	formOptions := make([]huh.Option[Issue], len(issues))
 	for i, issue := range issues {
 		timeSpent := ""
-		worklog := findWorklogByIssueKey(app.workLogs.logs, issue.Key)
+		worklog := findWorklogByIssueKey(worklogs, issue.Key)
 		if worklog != nil {
 			timeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
 		}
@@ -61,13 +61,13 @@ func IssueWorklogForm(issues []Issue) (Issue, string, error) {
 		huh.NewGroup(
 			huh.NewSelect[Issue]().
 				Title("Choose issue").
-				Description(fmt.Sprintf("Time logged for today: %s", FormatTimeSpent(CalculateTimeSpent(app.workLogs.logs)))).
+				Description(fmt.Sprintf("Time logged for today: %s", FormatTimeSpent(CalculateTimeSpent(worklogs)))).
 				Options(formOptions...).
 				Value(&chosenIssue).
 				Validate(func(issue Issue) error {
 					// it's more like a "prepare next input" function
 					timeSpent = ""
-					worklog := findWorklogByIssueKey(app.workLogs.logs, issue.Key)
+					worklog := findWorklogByIssueKey(worklogs, issue.Key)
 					if worklog != nil {
 						timeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
 					}
