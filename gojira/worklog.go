@@ -3,7 +3,6 @@ package gojira
 import (
 	"errors"
 	"github.com/sirupsen/logrus"
-	"log"
 	"regexp"
 	"strconv"
 	"time"
@@ -163,17 +162,19 @@ func TimeSpentToSeconds(timeSpent string) int {
 
 	if match[1] != "" {
 		hours, err := strconv.ParseInt(match[2], 10, 64)
-		timeSpentSeconds += int(hours) * 60 * 60
 		if err != nil {
-			log.Fatal(err)
+			logrus.Errorf("failed to parse hours from time spent '%s': %v", timeSpent, err)
+			return 0
 		}
+		timeSpentSeconds += int(hours) * 60 * 60
 	}
 	if match[3] != "" {
 		minutes, err := strconv.ParseInt(match[4], 10, 32)
-		timeSpentSeconds += int(minutes) * 60
 		if err != nil {
-			log.Fatal(err)
+			logrus.Errorf("failed to parse minutes from time spent '%s': %v", timeSpent, err)
+			return 0
 		}
+		timeSpentSeconds += int(minutes) * 60
 	}
 	return timeSpentSeconds
 }
@@ -212,6 +213,7 @@ func (wl *Worklogs) Delete(w *Worklog) error {
 	}
 
 	// Remove from workLogsIssues by filtering
+	app.mu.Lock()
 	filtered := make([]WorklogIssue, 0, len(app.workLogsIssues.issues))
 	for _, issue := range app.workLogsIssues.issues {
 		if issue.Worklog.JiraWorklogID != w.JiraWorklogID {
@@ -228,6 +230,7 @@ func (wl *Worklogs) Delete(w *Worklog) error {
 		}
 	}
 	wl.logs = filteredLogs
+	app.mu.Unlock()
 
 	return nil
 }

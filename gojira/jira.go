@@ -113,12 +113,12 @@ func (jc *JiraClient) GetIssuesByJQL(jql string, maxResults int) (JQLResponse, e
 	fullUrl := requestUrl + "?" + q.Encode()
 	response, err := SendHttpRequest("GET", fullUrl, nil, jc.getHttpHeaders(), 200)
 	if err != nil {
-		return JQLResponse{}, err
+		return JQLResponse{}, fmt.Errorf("failed to execute JQL query: %w", err)
 	}
 	var jqlResponse JQLResponse
 	err = json.Unmarshal(response, &jqlResponse)
 	if err != nil {
-		return JQLResponse{}, err
+		return JQLResponse{}, fmt.Errorf("failed to unmarshal JQL response: %w", err)
 	}
 	return jqlResponse, nil
 }
@@ -142,12 +142,12 @@ func (jc *JiraClient) GetIssue(issueKey string) (Issue, error) {
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s?fields=summary,status,id", Config.JiraUrl, issueKey)
 	response, err := SendHttpRequest("GET", requestUrl, nil, jc.getHttpHeaders(), 200)
 	if err != nil {
-		return Issue{}, err
+		return Issue{}, fmt.Errorf("failed to get issue %s: %w", issueKey, err)
 	}
 	var jiraIssue Issue
 	err = json.Unmarshal(response, &jiraIssue)
 	if err != nil {
-		return Issue{}, err
+		return Issue{}, fmt.Errorf("failed to unmarshal issue %s: %w", issueKey, err)
 	}
 	return jiraIssue, nil
 }

@@ -2,7 +2,6 @@ package gojira
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"sync"
@@ -189,7 +188,7 @@ var LogWorkCommand = &cli.Command{
 		issueKey := ResolveIssueKey(context)
 		timeSpent := context.Args().Get(1)
 		if issueKey == "" {
-			log.Fatalln("No issue key given / detected in git branch.")
+			return fmt.Errorf("no issue key given / detected in git branch")
 		}
 		issue, err := NewJiraClient().GetIssue(issueKey)
 		if err != nil {
@@ -297,8 +296,10 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 		return err
 	}
 	// add this workload to global object
+	app.mu.Lock()
 	app.workLogs.logs = append(app.workLogs.logs, &worklog)
 	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorklogIssue{Issue: issue, Worklog: &worklog})
+	app.mu.Unlock()
 	return nil
 }
 

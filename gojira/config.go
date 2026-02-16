@@ -5,13 +5,12 @@ import (
 	"os"
 )
 
-func GetEnv(key string) (env string) {
+func GetEnv(key string) (string, error) {
 	env, found := os.LookupEnv(key)
 	if !found || env == "" {
-		fmt.Printf("env %s is not set - run `gojira config` for help\n", key)
-		os.Exit(1)
+		return "", fmt.Errorf("env %s is not set - run `gojira config` for help", key)
 	}
-	return env
+	return env, nil
 }
 
 type Configuration struct {
@@ -21,14 +20,36 @@ type Configuration struct {
 
 var Config *Configuration
 
-func PrepareConfig() {
+func PrepareConfig() error {
+	jiraUrl, err := GetEnv("GOJIRA_JIRA_INSTANCE_URL")
+	if err != nil {
+		return err
+	}
+	jiraLogin, err := GetEnv("GOJIRA_JIRA_LOGIN")
+	if err != nil {
+		return err
+	}
+	jiraToken, err := GetEnv("GOJIRA_JIRA_TOKEN")
+	if err != nil {
+		return err
+	}
+	jiraAccountId, err := GetEnv("GOJIRA_JIRA_ACCOUNT_ID")
+	if err != nil {
+		return err
+	}
+	tempoToken, err := GetEnv("GOJIRA_TEMPO_TOKEN")
+	if err != nil {
+		return err
+	}
+
 	Config = &Configuration{
-		JiraUrl:               GetEnv("GOJIRA_JIRA_INSTANCE_URL"),
-		JiraLogin:             GetEnv("GOJIRA_JIRA_LOGIN"),
-		JiraToken:             GetEnv("GOJIRA_JIRA_TOKEN"),
-		JiraAccountId:         GetEnv("GOJIRA_JIRA_ACCOUNT_ID"),
+		JiraUrl:               jiraUrl,
+		JiraLogin:             jiraLogin,
+		JiraToken:             jiraToken,
+		JiraAccountId:         jiraAccountId,
 		TempoUrl:              "https://api.tempo.io/4",
-		TempoToken:            GetEnv("GOJIRA_TEMPO_TOKEN"),
+		TempoToken:            tempoToken,
 		UpdateExistingWorklog: true,
 	}
+	return nil
 }

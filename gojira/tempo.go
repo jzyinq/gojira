@@ -45,12 +45,12 @@ func (tc *TempoClient) GetWorklogs(fromDate, toDate time.Time) (WorklogsResponse
 	}
 	response, err := SendHttpRequest("GET", requestUrl, nil, headers, 200)
 	if err != nil {
-		return WorklogsResponse{}, err
+		return WorklogsResponse{}, fmt.Errorf("failed to fetch worklogs from %s to %s: %w", fromDate.Format(dateLayout), toDate.Format(dateLayout), err)
 	}
 	var workLogsResponse WorklogsResponse
 	err = json.Unmarshal(response, &workLogsResponse)
 	if err != nil {
-		return WorklogsResponse{}, err
+		return WorklogsResponse{}, fmt.Errorf("failed to unmarshal worklogs response: %w", err)
 	}
 	return workLogsResponse, err
 }
@@ -77,7 +77,10 @@ func (tc *TempoClient) UpdateWorklog(worklog *Worklog, timeSpent string) error {
 		"Content-Type":  "application/json",
 	}
 	_, err = SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to update worklog %d: %w", worklog.TempoWorklogid, err)
+	}
+	return nil
 }
 
 func (tc *TempoClient) DeleteWorklog(tempoWorklogID int) error {
@@ -87,5 +90,8 @@ func (tc *TempoClient) DeleteWorklog(tempoWorklogID int) error {
 		"Content-Type":  "application/json",
 	}
 	_, err := SendHttpRequest("DELETE", requestUrl, nil, headers, 204)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to delete worklog %d: %w", tempoWorklogID, err)
+	}
+	return nil
 }

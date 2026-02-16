@@ -76,15 +76,17 @@ func (c *Calendar) setDays() {
 		if len(app.workLogs.logs) > 0 {
 			worklogs, err := app.workLogs.LogsOnDate(&calendarDay)
 			if err != nil {
-				panic(err)
-			}
-			timeSpent := CalculateTimeSpent(worklogs)
-			color := GetTimeSpentColor(timeSpent, 8)
-			cell.SetTextColor(color)
-			if (dayOfWeek == 5 || dayOfWeek == 6) && timeSpent == 0 {
-				cell.SetTextColor(tcell.ColorGrey)
-				if calendarDay.Before(time.Now().Local()) {
-					cell.SetTextColor(tcell.ColorBlack)
+				logrus.Errorf("failed to get worklogs for date %s: %v", calendarDay.Format("2006-01-02"), err)
+				cell.SetTextColor(tcell.ColorRed)
+			} else {
+				timeSpent := CalculateTimeSpent(worklogs)
+				color := GetTimeSpentColor(timeSpent, 8)
+				cell.SetTextColor(color)
+				if (dayOfWeek == 5 || dayOfWeek == 6) && timeSpent == 0 {
+					cell.SetTextColor(tcell.ColorGrey)
+					if calendarDay.Before(time.Now().Local()) {
+						cell.SetTextColor(tcell.ColorBlack)
+					}
 				}
 			}
 		}
@@ -133,7 +135,9 @@ func controlCalendar(event *tcell.EventKey) *tcell.EventKey {
 			newTime = app.time.Add(timePeriod)
 		}
 		logrus.Debug("Changing date to ", newTime)
+		app.mu.Lock()
 		app.time = &newTime
+		app.mu.Unlock()
 		loadWorklogs()
 		app.ui.calendar.update()
 	}
