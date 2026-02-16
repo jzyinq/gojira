@@ -14,6 +14,20 @@ const IssueKeyColumn = 0
 const IssueSummaryColumn = 1
 const TimeSpentColumn = 2
 
+// validateTimeSpentInput is a tview-compatible validation function for time input fields
+// It accepts input that matches the time format or is empty (for partial input during typing)
+func validateTimeSpentInput(textToCheck string, lastChar rune) bool {
+	// Allow empty input (user is still typing)
+	if textToCheck == "" {
+		return true
+	}
+	// Allow digits, 'h', 'm', and space characters for valid time format
+	if lastChar == 'h' || lastChar == 'm' || lastChar == ' ' || (lastChar >= '0' && lastChar <= '9') {
+		return true
+	}
+	return false
+}
+
 type DayView struct {
 	worklogList        *tview.Table
 	worklogStatus      *tview.TextView
@@ -299,6 +313,23 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	newWorklog := func() {
 		logTime := form.GetFormItem(0).(*tview.InputField).GetText()
 		timeSpent := form.GetFormItem(1).(*tview.InputField).GetText()
+
+		// Validate time format before submission
+		if timeSpent == "" {
+			app.ui.loaderView.WithLoader("Time spent cannot be empty", func() error {
+				time.Sleep(2 * time.Second)
+				return nil
+			})
+			return
+		}
+		if !timeSpentValidationRegex.MatchString(timeSpent) {
+			app.ui.loaderView.WithLoader("Invalid timeSpent format - try 1h / 1h30m / 30m", func() error {
+				time.Sleep(2 * time.Second)
+				return nil
+			})
+			return
+		}
+
 		app.ui.loaderView.WithLoader("Adding worklog...", func() error {
 			issue, err := app.jiraClient.GetIssue(issues[row].Key)
 			if err != nil {
@@ -323,7 +354,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 
 	form = tview.NewForm().
 		AddInputField("Date", app.time.Format(dateLayout), 20, nil, nil).
-		AddInputField("Time spent", "", 20, nil, nil).
+		AddInputField("Time spent", "", 20, validateTimeSpentInput, nil).
 		AddButton("Add", newWorklog).
 		AddButton("Cancel", func() {
 			app.ui.app.SetFocus(app.ui.dayView.latestIssuesList)
@@ -331,11 +362,10 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 		})
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyEnter:
-			newWorklog()
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.app.SetFocus(app.ui.dayView.latestIssuesList)
+			return nil
 		}
 		return event
 	})
@@ -354,6 +384,23 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 
 	updateWorklog := func() {
 		timeSpent := form.GetFormItem(0).(*tview.InputField).GetText()
+
+		// Validate time format before submission (require non-empty for updates)
+		if timeSpent == "" {
+			app.ui.loaderView.WithLoader("Time spent cannot be empty", func() error {
+				time.Sleep(2 * time.Second)
+				return nil
+			})
+			return
+		}
+		if !timeSpentValidationRegex.MatchString(timeSpent) {
+			app.ui.loaderView.WithLoader("Invalid timeSpent format - try 1h / 1h30m / 30m", func() error {
+				time.Sleep(2 * time.Second)
+				return nil
+			})
+			return
+		}
+
 		app.ui.loaderView.WithLoader("Updating worklog...", func() error {
 			if err := workLogIssues[row].Worklog.Update(timeSpent); err != nil {
 				return err
@@ -374,7 +421,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 	}
 
 	form = tview.NewForm().
-		AddInputField("Time spent", FormatTimeSpent(workLogIssues[row].Worklog.TimeSpentSeconds), 20, nil, nil).
+		AddInputField("Time spent", FormatTimeSpent(workLogIssues[row].Worklog.TimeSpentSeconds), 20, validateTimeSpentInput, nil).
 		AddButton("Update", updateWorklog).
 		AddButton("Delete", deleteWorklog).
 		AddButton("Cancel", func() {
@@ -383,13 +430,13 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 		})
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyEnter:
-			updateWorklog()
 		case tcell.KeyDelete:
 			deleteWorklog()
+			return nil
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.app.SetFocus(app.ui.dayView.worklogList)
+			return nil
 		}
 		return event
 	})

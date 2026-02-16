@@ -1,3 +1,4 @@
 dist/*
 .agents/*
 coverage.out
+gojira/gojira

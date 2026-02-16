@@ -7,6 +7,35 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestValidateTimeSpentInput(t *testing.T) {
+	t.Run("accepts empty input", func(t *testing.T) {
+		assert.True(t, validateTimeSpentInput("", '1'))
+	})
+
+	t.Run("accepts valid digit", func(t *testing.T) {
+		assert.True(t, validateTimeSpentInput("1", '1'))
+		assert.True(t, validateTimeSpentInput("12", '2'))
+	})
+
+	t.Run("accepts 'h' character", func(t *testing.T) {
+		assert.True(t, validateTimeSpentInput("1h", 'h'))
+	})
+
+	t.Run("accepts 'm' character", func(t *testing.T) {
+		assert.True(t, validateTimeSpentInput("30m", 'm'))
+	})
+
+	t.Run("accepts space character", func(t *testing.T) {
+		assert.True(t, validateTimeSpentInput("1h ", ' '))
+	})
+
+	t.Run("rejects invalid characters", func(t *testing.T) {
+		assert.False(t, validateTimeSpentInput("1", 'a'))
+		assert.False(t, validateTimeSpentInput("1h", 'x'))
+		assert.False(t, validateTimeSpentInput("30", '!'))
+	})
+}
+
 func TestParseDateRange(t *testing.T) {
 	t.Run("parses single date", func(t *testing.T) {
 		result, err := ParseDateRange("2024-03-15")
