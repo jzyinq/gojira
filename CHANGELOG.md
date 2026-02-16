@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+- Test suite with 118 tests achieving 20.4% code coverage
+- HTTP helper methods for centralized authentication and JSON handling
+
+### Changed
+- Refactored business logic to be testable without global state dependencies
+- API clients now use singleton pattern instead of creating new instances per call
+- Unified UI state management with `WithLoader` and consistent error handling patterns
+- Code deduplication pass removing 45+ duplicate patterns across HTTP, UI, and client code
+
 ## [0.12.0] - 2025-09-16
 ### Fixed
 - deprecated jira search endpoint replacement - https://developer.atlassian.com/changelog/#CHANGE-2046
