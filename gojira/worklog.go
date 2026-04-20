@@ -207,17 +207,17 @@ func deleteWorklogFromAPI(w *Worklog) error {
 	return app.jiraClient.DeleteWorklog(w.Issue.Id, w.JiraWorklogID)
 }
 
-// removeWorklog filters a worklog out of both slices by JiraWorklogID. Pure function.
-func removeWorklog(logs []*Worklog, issues []WorklogIssue, jiraWorklogID int) ([]*Worklog, []WorklogIssue) {
+// removeWorklog filters a worklog out of both slices by pointer identity. Pure function.
+func removeWorklog(logs []*Worklog, issues []WorklogIssue, w *Worklog) ([]*Worklog, []WorklogIssue) {
 	filteredLogs := make([]*Worklog, 0, len(logs))
 	for _, wl := range logs {
-		if wl.JiraWorklogID != jiraWorklogID {
+		if wl != w {
 			filteredLogs = append(filteredLogs, wl)
 		}
 	}
 	filteredIssues := make([]WorklogIssue, 0, len(issues))
 	for _, issue := range issues {
-		if issue.Worklog.JiraWorklogID != jiraWorklogID {
+		if issue.Worklog != w {
 			filteredIssues = append(filteredIssues, issue)
 		}
 	}
@@ -231,7 +231,7 @@ func (wl *Worklogs) Delete(w *Worklog) error {
 		return err
 	}
 	app.mu.Lock()
-	wl.logs, app.workLogsIssues.issues = removeWorklog(wl.logs, app.workLogsIssues.issues, w.JiraWorklogID)
+	wl.logs, app.workLogsIssues.issues = removeWorklog(wl.logs, app.workLogsIssues.issues, w)
 	app.mu.Unlock()
 	return nil
 }

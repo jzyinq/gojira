@@ -205,7 +205,7 @@ func TestRemoveWorklog(t *testing.T) {
 	}
 
 	t.Run("removes matching worklog from both slices", func(t *testing.T) {
-		filteredLogs, filteredIssues := removeWorklog(logs, issues, 2)
+		filteredLogs, filteredIssues := removeWorklog(logs, issues, logs[1])
 		assert.Len(t, filteredLogs, 2)
 		assert.Len(t, filteredIssues, 2)
 		assert.Equal(t, 1, filteredLogs[0].JiraWorklogID)
@@ -214,20 +214,21 @@ func TestRemoveWorklog(t *testing.T) {
 		assert.Equal(t, "TEST-3", filteredIssues[1].Issue.Key)
 	})
 
-	t.Run("returns same contents when id not found", func(t *testing.T) {
-		filteredLogs, filteredIssues := removeWorklog(logs, issues, 999)
+	t.Run("returns same contents when pointer not found", func(t *testing.T) {
+		other := &Worklog{JiraWorklogID: 999}
+		filteredLogs, filteredIssues := removeWorklog(logs, issues, other)
 		assert.Len(t, filteredLogs, 3)
 		assert.Len(t, filteredIssues, 3)
 	})
 
 	t.Run("handles empty slices", func(t *testing.T) {
-		filteredLogs, filteredIssues := removeWorklog([]*Worklog{}, []WorklogIssue{}, 1)
+		filteredLogs, filteredIssues := removeWorklog([]*Worklog{}, []WorklogIssue{}, logs[0])
 		assert.Empty(t, filteredLogs)
 		assert.Empty(t, filteredIssues)
 	})
 
 	t.Run("removes first element", func(t *testing.T) {
-		filteredLogs, filteredIssues := removeWorklog(logs, issues, 1)
+		filteredLogs, filteredIssues := removeWorklog(logs, issues, logs[0])
 		assert.Len(t, filteredLogs, 2)
 		assert.Len(t, filteredIssues, 2)
 		assert.Equal(t, 2, filteredLogs[0].JiraWorklogID)
@@ -235,7 +236,7 @@ func TestRemoveWorklog(t *testing.T) {
 	})
 
 	t.Run("removes last element", func(t *testing.T) {
-		filteredLogs, filteredIssues := removeWorklog(logs, issues, 3)
+		filteredLogs, filteredIssues := removeWorklog(logs, issues, logs[2])
 		assert.Len(t, filteredLogs, 2)
 		assert.Len(t, filteredIssues, 2)
 		assert.Equal(t, 1, filteredLogs[0].JiraWorklogID)
@@ -244,7 +245,21 @@ func TestRemoveWorklog(t *testing.T) {
 
 	t.Run("does not mutate original slices", func(t *testing.T) {
 		originalLen := len(logs)
-		removeWorklog(logs, issues, 2)
+		removeWorklog(logs, issues, logs[1])
 		assert.Len(t, logs, originalLen, "original logs slice should not be modified")
+	})
+
+	t.Run("removes only the exact pointer when IDs are zero", func(t *testing.T) {
+		zeroLogs := []*Worklog{{JiraWorklogID: 0}, {JiraWorklogID: 0}, {JiraWorklogID: 0}}
+		zeroIssues := []WorklogIssue{
+			{Worklog: zeroLogs[0]},
+			{Worklog: zeroLogs[1]},
+			{Worklog: zeroLogs[2]},
+		}
+		filteredLogs, filteredIssues := removeWorklog(zeroLogs, zeroIssues, zeroLogs[1])
+		assert.Len(t, filteredLogs, 2)
+		assert.Len(t, filteredIssues, 2)
+		assert.Same(t, zeroLogs[0], filteredLogs[0])
+		assert.Same(t, zeroLogs[2], filteredLogs[1])
 	})
 }
