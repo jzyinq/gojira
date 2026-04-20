@@ -133,14 +133,14 @@ func TestWorklogsIssues_IssuesOnDate(t *testing.T) {
 		beforeDate := date1.AddDate(0, 0, -1)
 		_, err := worklogsIssues.IssuesOnDate(&beforeDate)
 		assert.Error(t, err)
-		assert.Equal(t, "Date is out of worklogs range", err.Error())
+		assert.Equal(t, "date is out of worklogs range", err.Error())
 	})
 
 	t.Run("returns error for date after range", func(t *testing.T) {
 		afterDate := date3.AddDate(0, 0, 1)
 		_, err := worklogsIssues.IssuesOnDate(&afterDate)
 		assert.Error(t, err)
-		assert.Equal(t, "Date is out of worklogs range", err.Error())
+		assert.Equal(t, "date is out of worklogs range", err.Error())
 	})
 }
 
@@ -192,7 +192,7 @@ func TestIssue_GetIdAsInt(t *testing.T) {
 	})
 }
 
-func TestRemoveWorklog(t *testing.T) {
+func TestRemoveWorklog(t *testing.T) { //nolint:funlen
 	logs := []*Worklog{
 		{JiraWorklogID: 1, TimeSpentSeconds: 3600},
 		{JiraWorklogID: 2, TimeSpentSeconds: 1800},

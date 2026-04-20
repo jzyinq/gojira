@@ -40,7 +40,7 @@ func SendHttpRequest(
 	if resp.StatusCode != successfulStatusCode {
 		logrus.Errorf("There was an error when performing request:\n%s %s\nResponse code was: %d\n"+
 			"Response body:\n%s", requestMethod, requestUrl, resp.StatusCode, string(body))
-		return nil, fmt.Errorf("There was an error when performing request:\n%s %s\nResponse code was: %d\n"+
+		return nil, fmt.Errorf("there was an error when performing request:\n%s %s\nResponse code was: %d\n"+
 			"Response body:\n%s", requestMethod, requestUrl, resp.StatusCode, string(body))
 	}
 	return body, nil
@@ -72,7 +72,6 @@ func SendJSONRequest(
 	payload interface{},
 	headers map[string]string,
 	expectedStatus int) ([]byte, error) {
-
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal JSON payload: %w", err)

@@ -145,7 +145,7 @@ func TestGetWorklogsFromWorklogIssues(t *testing.T) {
 	assert.Equal(t, 1800, result[1].TimeSpentSeconds)
 }
 
-func TestMonthRange(t *testing.T) {
+func TestMonthRange(t *testing.T) { //nolint:dupl
 	testTime := time.Date(2024, 3, 15, 10, 30, 45, 0, time.UTC)
 
 	start, end := MonthRange(&testTime)
@@ -165,7 +165,7 @@ func TestMonthRange(t *testing.T) {
 	assert.Equal(t, 59, end.Second())
 }
 
-func TestDayRange(t *testing.T) {
+func TestDayRange(t *testing.T) { //nolint:dupl
 	testTime := time.Date(2024, 3, 15, 10, 30, 45, 0, time.UTC)
 
 	start, end := DayRange(&testTime)

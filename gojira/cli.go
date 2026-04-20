@@ -59,10 +59,10 @@ func NewWorklogIssues() error {
 	// goroutine awesomeness
 	var err error
 	startDate, endDate := MonthRange(app.time)
-	if app.workLogsIssues.startDate == startDate && app.workLogsIssues.endDate == endDate {
+	if app.workLogsIssues.startDate.Equal(startDate) && app.workLogsIssues.endDate.Equal(endDate) {
 		return nil
 	}
-	if app.workLogsIssues.startDate != startDate || app.workLogsIssues.endDate != endDate {
+	if !app.workLogsIssues.startDate.Equal(startDate) || !app.workLogsIssues.endDate.Equal(endDate) {
 		app.ui.loaderView.Show("Fetching worklogs...")
 		app.workLogs, err = GetWorklogs(MonthRange(app.time))
 		app.ui.loaderView.Hide()

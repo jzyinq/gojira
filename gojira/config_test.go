@@ -7,23 +7,42 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// gojiraEnvVars lists all env vars used by PrepareConfig.
+var gojiraEnvVars = []string{
+	"GOJIRA_JIRA_INSTANCE_URL",
+	"GOJIRA_JIRA_LOGIN",
+	"GOJIRA_JIRA_TOKEN",
+	"GOJIRA_JIRA_ACCOUNT_ID",
+	"GOJIRA_TEMPO_TOKEN",
+}
+
+// isolateGojiraEnv clears all GOJIRA env vars for the duration of the test,
+// then sets only those provided in set.
+func isolateGojiraEnv(t *testing.T, set map[string]string) {
+	t.Helper()
+	for _, key := range gojiraEnvVars {
+		orig, exists := os.LookupEnv(key)
+		if err := os.Unsetenv(key); err == nil && exists {
+			t.Cleanup(func() { os.Setenv(key, orig) }) //nolint:errcheck,gosec
+		}
+	}
+	for k, v := range set {
+		t.Setenv(k, v)
+	}
+}
+
 func TestGetEnv(t *testing.T) {
 	t.Run("returns value for existing env var", func(t *testing.T) {
 		key := "TEST_GOJIRA_ENV_VAR"
-		expectedValue := "test-value"
-		os.Setenv(key, expectedValue)
-		defer os.Unsetenv(key)
+		t.Setenv(key, "test-value")
 
 		value, err := GetEnv(key)
 		assert.NoError(t, err)
-		assert.Equal(t, expectedValue, value)
+		assert.Equal(t, "test-value", value)
 	})
 
 	t.Run("returns error for missing env var", func(t *testing.T) {
-		key := "NON_EXISTENT_ENV_VAR"
-		os.Unsetenv(key) // ensure it doesn't exist
-
-		value, err := GetEnv(key)
+		value, err := GetEnv("NON_EXISTENT_ENV_VAR")
 		assert.Error(t, err)
 		assert.Empty(t, value)
 		assert.Contains(t, err.Error(), "env NON_EXISTENT_ENV_VAR is not set")
@@ -31,8 +50,7 @@ func TestGetEnv(t *testing.T) {
 
 	t.Run("returns error for empty env var", func(t *testing.T) {
 		key := "EMPTY_ENV_VAR"
-		os.Setenv(key, "")
-		defer os.Unsetenv(key)
+		t.Setenv(key, "")
 
 		value, err := GetEnv(key)
 		assert.Error(t, err)
@@ -41,23 +59,16 @@ func TestGetEnv(t *testing.T) {
 	})
 }
 
-func TestPrepareConfig(t *testing.T) {
+func TestPrepareConfig(t *testing.T) { //nolint:funlen
 	t.Run("successfully prepares config with all env vars", func(t *testing.T) {
-		// Setup environment variables
-		os.Setenv("GOJIRA_JIRA_INSTANCE_URL", "https://test.atlassian.net")
-		os.Setenv("GOJIRA_JIRA_LOGIN", "test@example.com")
-		os.Setenv("GOJIRA_JIRA_TOKEN", "test-jira-token")
-		os.Setenv("GOJIRA_JIRA_ACCOUNT_ID", "test-account-id")
-		os.Setenv("GOJIRA_TEMPO_TOKEN", "test-tempo-token")
-
-		defer func() {
-			os.Unsetenv("GOJIRA_JIRA_INSTANCE_URL")
-			os.Unsetenv("GOJIRA_JIRA_LOGIN")
-			os.Unsetenv("GOJIRA_JIRA_TOKEN")
-			os.Unsetenv("GOJIRA_JIRA_ACCOUNT_ID")
-			os.Unsetenv("GOJIRA_TEMPO_TOKEN")
-			Config = nil
-		}()
+		isolateGojiraEnv(t, map[string]string{
+			"GOJIRA_JIRA_INSTANCE_URL": "https://test.atlassian.net",
+			"GOJIRA_JIRA_LOGIN":        "test@example.com",
+			"GOJIRA_JIRA_TOKEN":        "test-jira-token",
+			"GOJIRA_JIRA_ACCOUNT_ID":   "test-account-id",
+			"GOJIRA_TEMPO_TOKEN":       "test-tempo-token",
+		})
+		defer func() { Config = nil }()
 
 		err := PrepareConfig()
 		assert.NoError(t, err)
@@ -72,7 +83,7 @@ func TestPrepareConfig(t *testing.T) {
 	})
 
 	t.Run("returns error when GOJIRA_JIRA_INSTANCE_URL is missing", func(t *testing.T) {
-		os.Unsetenv("GOJIRA_JIRA_INSTANCE_URL")
+		isolateGojiraEnv(t, map[string]string{})
 		defer func() { Config = nil }()
 
 		err := PrepareConfig()
@@ -81,13 +92,10 @@ func TestPrepareConfig(t *testing.T) {
 	})
 
 	t.Run("returns error when GOJIRA_JIRA_LOGIN is missing", func(t *testing.T) {
-		os.Setenv("GOJIRA_JIRA_INSTANCE_URL", "https://test.atlassian.net")
-		os.Unsetenv("GOJIRA_JIRA_LOGIN")
-
-		defer func() {
-			os.Unsetenv("GOJIRA_JIRA_INSTANCE_URL")
-			Config = nil
-		}()
+		isolateGojiraEnv(t, map[string]string{
+			"GOJIRA_JIRA_INSTANCE_URL": "https://test.atlassian.net",
+		})
+		defer func() { Config = nil }()
 
 		err := PrepareConfig()
 		assert.Error(t, err)
@@ -95,15 +103,11 @@ func TestPrepareConfig(t *testing.T) {
 	})
 
 	t.Run("returns error when GOJIRA_JIRA_TOKEN is missing", func(t *testing.T) {
-		os.Setenv("GOJIRA_JIRA_INSTANCE_URL", "https://test.atlassian.net")
-		os.Setenv("GOJIRA_JIRA_LOGIN", "test@example.com")
-		os.Unsetenv("GOJIRA_JIRA_TOKEN")
-
-		defer func() {
-			os.Unsetenv("GOJIRA_JIRA_INSTANCE_URL")
-			os.Unsetenv("GOJIRA_JIRA_LOGIN")
-			Config = nil
-		}()
+		isolateGojiraEnv(t, map[string]string{
+			"GOJIRA_JIRA_INSTANCE_URL": "https://test.atlassian.net",
+			"GOJIRA_JIRA_LOGIN":        "test@example.com",
+		})
+		defer func() { Config = nil }()
 
 		err := PrepareConfig()
 		assert.Error(t, err)
@@ -111,17 +115,12 @@ func TestPrepareConfig(t *testing.T) {
 	})
 
 	t.Run("returns error when GOJIRA_JIRA_ACCOUNT_ID is missing", func(t *testing.T) {
-		os.Setenv("GOJIRA_JIRA_INSTANCE_URL", "https://test.atlassian.net")
-		os.Setenv("GOJIRA_JIRA_LOGIN", "test@example.com")
-		os.Setenv("GOJIRA_JIRA_TOKEN", "test-token")
-		os.Unsetenv("GOJIRA_JIRA_ACCOUNT_ID")
-
-		defer func() {
-			os.Unsetenv("GOJIRA_JIRA_INSTANCE_URL")
-			os.Unsetenv("GOJIRA_JIRA_LOGIN")
-			os.Unsetenv("GOJIRA_JIRA_TOKEN")
-			Config = nil
-		}()
+		isolateGojiraEnv(t, map[string]string{
+			"GOJIRA_JIRA_INSTANCE_URL": "https://test.atlassian.net",
+			"GOJIRA_JIRA_LOGIN":        "test@example.com",
+			"GOJIRA_JIRA_TOKEN":        "test-token",
+		})
+		defer func() { Config = nil }()
 
 		err := PrepareConfig()
 		assert.Error(t, err)
@@ -129,19 +128,13 @@ func TestPrepareConfig(t *testing.T) {
 	})
 
 	t.Run("returns error when GOJIRA_TEMPO_TOKEN is missing", func(t *testing.T) {
-		os.Setenv("GOJIRA_JIRA_INSTANCE_URL", "https://test.atlassian.net")
-		os.Setenv("GOJIRA_JIRA_LOGIN", "test@example.com")
-		os.Setenv("GOJIRA_JIRA_TOKEN", "test-token")
-		os.Setenv("GOJIRA_JIRA_ACCOUNT_ID", "test-account-id")
-		os.Unsetenv("GOJIRA_TEMPO_TOKEN")
-
-		defer func() {
-			os.Unsetenv("GOJIRA_JIRA_INSTANCE_URL")
-			os.Unsetenv("GOJIRA_JIRA_LOGIN")
-			os.Unsetenv("GOJIRA_JIRA_TOKEN")
-			os.Unsetenv("GOJIRA_JIRA_ACCOUNT_ID")
-			Config = nil
-		}()
+		isolateGojiraEnv(t, map[string]string{
+			"GOJIRA_JIRA_INSTANCE_URL": "https://test.atlassian.net",
+			"GOJIRA_JIRA_LOGIN":        "test@example.com",
+			"GOJIRA_JIRA_TOKEN":        "test-token",
+			"GOJIRA_JIRA_ACCOUNT_ID":   "test-account-id",
+		})
+		defer func() { Config = nil }()
 
 		err := PrepareConfig()
 		assert.Error(t, err)

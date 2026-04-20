@@ -103,7 +103,7 @@ func InputTimeSpentForm(issue Issue, timeSpent string) (string, error) {
 				Validate(func(input string) error {
 					match := timeSpentValidationRegex.MatchString(input)
 					if !match {
-						return errors.New("Invalid timeSpent format - try 1h / 1h30m / 30m")
+						return errors.New("invalid timeSpent format - try 1h / 1h30m / 30m")
 					}
 					return nil
 				}),

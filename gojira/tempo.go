@@ -41,7 +41,8 @@ func (tc *TempoClient) GetWorklogs(fromDate, toDate time.Time) (WorklogsResponse
 	headers := CreateBearerAuthHeaders(tc.Token)
 	response, err := SendHttpRequest("GET", requestUrl, nil, headers, 200)
 	if err != nil {
-		return WorklogsResponse{}, fmt.Errorf("failed to fetch worklogs from %s to %s: %w", fromDate.Format(dateLayout), toDate.Format(dateLayout), err)
+		return WorklogsResponse{}, fmt.Errorf("failed to fetch worklogs from %s to %s: %w",
+			fromDate.Format(dateLayout), toDate.Format(dateLayout), err)
 	}
 	var workLogsResponse WorklogsResponse
 	err = json.Unmarshal(response, &workLogsResponse)

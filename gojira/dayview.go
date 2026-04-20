@@ -307,7 +307,7 @@ func ParseDateRange(dateStr string) (DateRange, error) {
 	}, nil
 }
 
-func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
+func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form { //nolint:funlen
 	var form *tview.Form
 
 	newWorklog := func() {
@@ -379,7 +379,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	return form
 }
 
-func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *tview.Form {
+func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *tview.Form { //nolint:funlen
 	var form *tview.Form
 
 	updateWorklog := func() {
@@ -421,7 +421,8 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 	}
 
 	form = tview.NewForm().
-		AddInputField("Time spent", FormatTimeSpent(workLogIssues[row].Worklog.TimeSpentSeconds), 20, validateTimeSpentInput, nil).
+		AddInputField("Time spent",
+			FormatTimeSpent(workLogIssues[row].Worklog.TimeSpentSeconds), 20, validateTimeSpentInput, nil).
 		AddButton("Update", updateWorklog).
 		AddButton("Delete", deleteWorklog).
 		AddButton("Cancel", func() {

@@ -54,7 +54,7 @@ func (c *Calendar) setWeekdays() {
 	}
 }
 
-func (c *Calendar) setDays() {
+func (c *Calendar) setDays() { //nolint:gocognit
 	c.Clear()
 	t := time.Date(c.year, c.month, 1, 0, 0, 0, 0, time.Local)
 	daysInMonth := time.Date(c.year, c.month+1, 0, 0, 0, 0, 0, time.Local).Day()

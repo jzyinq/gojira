@@ -126,7 +126,7 @@ func (wl *Worklogs) TotalTimeSpentToPresentDay() int {
 func (wli *WorklogsIssues) IssuesOnDate(date *time.Time) ([]*WorklogIssue, error) {
 	var issuesOnDate []*WorklogIssue
 	if date.Before(wli.startDate) || date.After(wli.endDate) {
-		return nil, errors.New("Date is out of worklogs range")
+		return nil, errors.New("date is out of worklogs range")
 	}
 	truncatedDate := (*date).Truncate(24 * time.Hour)
 	for i, issue := range wli.issues {
@@ -158,7 +158,7 @@ func GetWorklogs(fromDate time.Time, toDate time.Time) (Worklogs, error) {
 
 func TimeSpentToSeconds(timeSpent string) int {
 	match := timeSpentRegex.FindStringSubmatch(timeSpent)
-	var timeSpentSeconds int = 0
+	timeSpentSeconds := 0
 
 	if match[1] != "" {
 		hours, err := strconv.ParseInt(match[2], 10, 64)
