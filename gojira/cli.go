@@ -180,13 +180,27 @@ var ViewIssueCommand = &cli.Command{
 	Action: ViewIssueInBrowserAction,
 }
 
+// resolveLogArgs returns the issue key and time spent from the two CLI positional
+// args and a pre-resolved git branch issue key. When arg0 contains an issue key
+// it is used as the issue with arg1 as time; otherwise gitIssueKey is the issue
+// and arg0 is treated as the time (allowing `gojira log 30m` when on a Jira branch).
+func resolveLogArgs(arg0, arg1, gitIssueKey string) (issueKey, timeSpent string) {
+	if key := FindIssueKeyInString(arg0); key != "" {
+		return key, arg1
+	}
+	return gitIssueKey, arg0
+}
+
 var LogWorkCommand = &cli.Command{
 	Name:      "log",
 	Usage:     "Log work to specified issue",
-	ArgsUsage: "ISSUE [TIME_SPENT]",
+	ArgsUsage: "[ISSUE] [TIME_SPENT]",
 	Action: func(context *cli.Context) error {
-		issueKey := ResolveIssueKey(context)
-		timeSpent := context.Args().Get(1)
+		issueKey, timeSpent := resolveLogArgs(
+			context.Args().Get(0),
+			context.Args().Get(1),
+			GetTicketFromGitBranch(),
+		)
 		if issueKey == "" {
 			return fmt.Errorf("no issue key given / detected in git branch")
 		}

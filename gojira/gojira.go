@@ -1,11 +1,13 @@
 package gojira
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli/v2"
+	"fmt"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli/v2"
 )
 
 type gojira struct {
@@ -80,6 +82,7 @@ func Run() {
 	err = app.cli.Run(os.Args)
 	if err != nil {
 		logrus.Error(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
