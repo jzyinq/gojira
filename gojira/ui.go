@@ -1,6 +1,7 @@
 package gojira
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -16,6 +17,7 @@ type UserInteface struct {
 }
 
 func newUi() {
+	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
 	app.ui.app = tview.NewApplication()
 	app.ui.pages = tview.NewPages()
 

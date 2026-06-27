@@ -69,9 +69,6 @@ func (c *Calendar) setDays() { //nolint:gocognit
 		cell := tview.NewTableCell(fmt.Sprintf("%d", i)).SetAlign(tview.AlignCenter)
 
 		calendarDay := time.Date(c.year, c.month, i, 0, 0, 0, 0, time.UTC)
-		if calendarDay.Before(time.Now().Local()) {
-			cell.SetBackgroundColor(tcell.ColorGray)
-		}
 
 		if len(app.workLogs.logs) > 0 {
 			worklogs, err := app.workLogs.LogsOnDate(&calendarDay)
@@ -85,7 +82,7 @@ func (c *Calendar) setDays() { //nolint:gocognit
 				if (dayOfWeek == 5 || dayOfWeek == 6) && timeSpent == 0 {
 					cell.SetTextColor(tcell.ColorGrey)
 					if calendarDay.Before(time.Now().Local()) {
-						cell.SetTextColor(tcell.ColorBlack)
+						cell.SetAttributes(tcell.AttrDim)
 					}
 				}
 			}
@@ -94,8 +91,7 @@ func (c *Calendar) setDays() { //nolint:gocognit
 			cell.SetTextColor(tcell.ColorRed)
 		}
 		if i == c.day {
-			cell.SetTextColor(tcell.ColorWhite)
-			cell.SetBackgroundColor(tcell.ColorDimGray)
+			cell.SetAttributes(tcell.AttrBold | tcell.AttrReverse)
 		}
 		c.SetCell(week, dayOfWeek, cell)
 

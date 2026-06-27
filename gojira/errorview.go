@@ -15,7 +15,7 @@ func NewErrorView() *ErrorView {
 	errorView := &ErrorView{tview.NewModal(), nil}
 	errorView.SetText("Something went wrong")
 	errorView.SetTitle("Error!")
-	errorView.SetBackgroundColor(tcell.ColorRed.TrueColor())
+	errorView.SetBackgroundColor(tcell.ColorRed)
 	errorView.AddButtons([]string{"OK"})
 	errorView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {

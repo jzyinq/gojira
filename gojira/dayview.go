@@ -57,26 +57,22 @@ func NewDayView() *DayView { //nolint:funlen
 			if key == tcell.KeyEscape {
 				app.ui.app.SetFocus(dayView.latestIssuesList)
 			}
-		}).SetFieldStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack))
+		}).SetFieldStyle(tcell.StyleDefault)
 
 	dayView.worklogList.SetBorder(true)
 	dayView.latestIssuesList.SetBorder(true)
-	dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGray))
+	dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Dim(true))
 	dayView.latestIssuesList.SetFocusFunc(func() {
-		dayView.latestIssuesList.SetSelectedStyle(
-			tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+		dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Reverse(true))
 	})
 	dayView.latestIssuesList.SetBlurFunc(func() {
-		dayView.latestIssuesList.SetSelectedStyle(
-			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+		dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Dim(true))
 	})
 	dayView.worklogList.SetFocusFunc(func() {
-		dayView.worklogList.SetSelectedStyle(
-			tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+		dayView.worklogList.SetSelectedStyle(tcell.StyleDefault.Reverse(true))
 	})
 	dayView.worklogList.SetBlurFunc(func() {
-		dayView.worklogList.SetSelectedStyle(
-			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+		dayView.worklogList.SetSelectedStyle(tcell.StyleDefault.Dim(true))
 	})
 	dayView.worklogStatus.SetText(
 		fmt.Sprintf("Worklogs - %s - [?h[white]]",
