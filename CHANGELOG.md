@@ -7,14 +7,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### Added
-- Test suite with 118 tests achieving 20.4% code coverage
-- HTTP helper methods for centralized authentication and JSON handling
+- `gojira log` now accepts `TIME_SPENT` as the only argument when on a Jira-named git branch (`gojira log 30m`)
+- Calendar cells turn red on fetch error instead of crashing
 
 ### Changed
-- Refactored business logic to be testable without global state dependencies
-- API clients now use singleton pattern instead of creating new instances per call
-- Unified UI state management with `WithLoader` and consistent error handling patterns
-- Code deduplication pass removing 45+ duplicate patterns across HTTP, UI, and client code
+- UI colors now follow the terminal theme instead of using a hardcoded palette
+- Calendar day and weekday headers are centered and expand to fill available width
+- Already-logged issues now appear in the recent issues list when opening the worklog form
+
+### Fixed
+- Worklog entries could disappear after creation due to a race condition
+- `gojira log` with no issue key and no Jira branch now exits with a proper error message instead of a fatal crash
 
 ## [0.12.0] - 2025-09-16
 ### Fixed
