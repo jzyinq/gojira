@@ -2,7 +2,6 @@ package gojira
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"sync"
@@ -60,10 +59,10 @@ func NewWorklogIssues() error {
 	// goroutine awesomeness
 	var err error
 	startDate, endDate := MonthRange(app.time)
-	if app.workLogsIssues.startDate == startDate && app.workLogsIssues.endDate == endDate {
+	if app.workLogsIssues.startDate.Equal(startDate) && app.workLogsIssues.endDate.Equal(endDate) {
 		return nil
 	}
-	if app.workLogsIssues.startDate != startDate || app.workLogsIssues.endDate != endDate {
+	if !app.workLogsIssues.startDate.Equal(startDate) || !app.workLogsIssues.endDate.Equal(endDate) {
 		app.ui.loaderView.Show("Fetching worklogs...")
 		app.workLogs, err = GetWorklogs(MonthRange(app.time))
 		app.ui.loaderView.Hide()
@@ -78,17 +77,20 @@ func NewWorklogIssues() error {
 	app.workLogsIssues.issues = []WorklogIssue{}
 	waitGroup := sync.WaitGroup{}
 	var errors []error
+	var mu sync.Mutex
 	errCh := make(chan error, len(app.workLogs.logs))
 	for i := range app.workLogs.logs {
 		waitGroup.Add(1)
 		go func(workLog *Worklog) {
-			issue, err := NewJiraClient().GetIssue(strconv.Itoa(workLog.Issue.Id))
+			defer waitGroup.Done()
+			issue, err := app.jiraClient.GetIssue(strconv.Itoa(workLog.Issue.Id))
 			if err != nil {
 				errCh <- err // Send the error to the channel.
 				return
 			}
+			mu.Lock()
 			app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorklogIssue{Worklog: workLog, Issue: issue})
-			waitGroup.Done()
+			mu.Unlock()
 		}(app.workLogs.logs[i])
 	}
 	waitGroup.Wait()
@@ -130,7 +132,7 @@ var IssuesCommand = &cli.Command{
 			}()
 			go func() {
 				defer wg.Done()
-				lastTickets, funcErr := NewJiraClient().GetLatestIssues()
+				lastTickets, funcErr := app.jiraClient.GetLatestIssues()
 				lastIssues = lastTickets.Issues
 				logrus.Infof("Last tickets: %v", lastIssues)
 				if funcErr != nil {
@@ -151,7 +153,7 @@ var IssuesCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		issue, timeSpent, err := IssueWorklogForm(recentIssues)
+		issue, timeSpent, err := IssueWorklogForm(recentIssues, app.workLogs.logs)
 		if err != nil {
 			return err
 		}
@@ -178,17 +180,31 @@ var ViewIssueCommand = &cli.Command{
 	Action: ViewIssueInBrowserAction,
 }
 
+// resolveLogArgs returns the issue key and time spent from the two CLI positional
+// args and a pre-resolved git branch issue key. When arg0 contains an issue key
+// it is used as the issue with arg1 as time; otherwise gitIssueKey is the issue
+// and arg0 is treated as the time (allowing `gojira log 30m` when on a Jira branch).
+func resolveLogArgs(arg0, arg1, gitIssueKey string) (issueKey, timeSpent string) {
+	if key := FindIssueKeyInString(arg0); key != "" {
+		return key, arg1
+	}
+	return gitIssueKey, arg0
+}
+
 var LogWorkCommand = &cli.Command{
 	Name:      "log",
 	Usage:     "Log work to specified issue",
-	ArgsUsage: "ISSUE [TIME_SPENT]",
+	ArgsUsage: "[ISSUE] [TIME_SPENT]",
 	Action: func(context *cli.Context) error {
-		issueKey := ResolveIssueKey(context)
-		timeSpent := context.Args().Get(1)
+		issueKey, timeSpent := resolveLogArgs(
+			context.Args().Get(0),
+			context.Args().Get(1),
+			GetTicketFromGitBranch(),
+		)
 		if issueKey == "" {
-			log.Fatalln("No issue key given / detected in git branch.")
+			return fmt.Errorf("no issue key given / detected in git branch")
 		}
-		issue, err := NewJiraClient().GetIssue(issueKey)
+		issue, err := app.jiraClient.GetIssue(issueKey)
 		if err != nil {
 			return err
 		}
@@ -238,7 +254,7 @@ var DefaultAction = func(c *cli.Context) error {
 var GitOrIssueListAction = func(c *cli.Context) error {
 	issueKey := ResolveIssueKey(c)
 	if issueKey != "" {
-		issue, err := NewJiraClient().GetIssue(issueKey)
+		issue, err := app.jiraClient.GetIssue(issueKey)
 		if err != nil {
 			return err
 		}
@@ -271,11 +287,14 @@ var ViewIssueInBrowserAction = func(c *cli.Context) error {
 	return nil
 }
 
-func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
+// logOrUpdateWork handles the API interaction for logging work. It either updates
+// an existing worklog for the same issue on the same day, or creates a new one.
+// Returns the newly created worklog, or nil if an existing one was updated in place.
+func logOrUpdateWork(issue Issue, logTime *time.Time, timeSpent string, worklogs *Worklogs) (*Worklog, error) {
 	logrus.Infof("Logging %s of time to ticket %s at %s", timeSpent, issue.Key, logTime)
-	todayWorklog, err := app.workLogs.LogsOnDate(logTime)
+	todayWorklog, err := worklogs.LogsOnDate(logTime)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if Config.UpdateExistingWorklog {
 		for index, workLog := range todayWorklog {
@@ -283,19 +302,31 @@ func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
 				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
 				err := todayWorklog[index].Update(timeSpentSum)
 				if err != nil {
-					return err
+					return nil, err
 				}
-				return nil
+				return nil, nil // existing worklog updated in place
 			}
 		}
 	}
 	worklog, err := NewWorklog(issue.GetIdAsInt(), logTime, timeSpent)
 	if err != nil {
+		return nil, err
+	}
+	return &worklog, nil
+}
+
+// LogWork logs time to an issue and updates global app state.
+func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
+	worklog, err := logOrUpdateWork(issue, logTime, timeSpent, &app.workLogs)
+	if err != nil {
 		return err
 	}
-	// add this workload to global object
-	app.workLogs.logs = append(app.workLogs.logs, &worklog)
-	app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorklogIssue{Issue: issue, Worklog: &worklog})
+	if worklog != nil {
+		app.mu.Lock()
+		app.workLogs.logs = append(app.workLogs.logs, worklog)
+		app.workLogsIssues.issues = append(app.workLogsIssues.issues, WorklogIssue{Issue: issue, Worklog: worklog})
+		app.mu.Unlock()
+	}
 	return nil
 }
 

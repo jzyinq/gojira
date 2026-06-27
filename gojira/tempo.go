@@ -1,7 +1,6 @@
 package gojira
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -39,18 +38,16 @@ func (tc *TempoClient) GetWorklogs(fromDate, toDate time.Time) (WorklogsResponse
 	// tempo is required only because of fetching worklogs by date range
 	requestUrl := fmt.Sprintf("%s/worklogs/user/%s?from=%s&to=%s&limit=1000",
 		tc.Url, tc.JiraAccountId, fromDate.Format(dateLayout), toDate.Format(dateLayout))
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("Bearer %s", tc.Token),
-		"Content-Type":  "application/json",
-	}
+	headers := CreateBearerAuthHeaders(tc.Token)
 	response, err := SendHttpRequest("GET", requestUrl, nil, headers, 200)
 	if err != nil {
-		return WorklogsResponse{}, err
+		return WorklogsResponse{}, fmt.Errorf("failed to fetch worklogs from %s to %s: %w",
+			fromDate.Format(dateLayout), toDate.Format(dateLayout), err)
 	}
 	var workLogsResponse WorklogsResponse
 	err = json.Unmarshal(response, &workLogsResponse)
 	if err != nil {
-		return WorklogsResponse{}, err
+		return WorklogsResponse{}, fmt.Errorf("failed to unmarshal worklogs response: %w", err)
 	}
 	return workLogsResponse, err
 }
@@ -66,23 +63,21 @@ func (tc *TempoClient) UpdateWorklog(worklog *Worklog, timeSpent string) error {
 		AuthorAccountId:  worklog.Author.AccountId,
 		TimeSpentSeconds: timeSpentInSeconds,
 	}
-	payloadJson, _ := json.Marshal(payload)
-	requestBody := bytes.NewBuffer(payloadJson)
 	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, worklog.TempoWorklogid)
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
-		"Content-Type":  "application/json",
+	headers := CreateBearerAuthHeaders(Config.TempoToken)
+	_, err := SendJSONRequest("PUT", requestUrl, payload, headers, 200)
+	if err != nil {
+		return fmt.Errorf("failed to update worklog %d: %w", worklog.TempoWorklogid, err)
 	}
-	_, err := SendHttpRequest("PUT", requestUrl, requestBody, headers, 200)
-	return err
+	return nil
 }
 
 func (tc *TempoClient) DeleteWorklog(tempoWorklogID int) error {
 	requestUrl := fmt.Sprintf("%s/worklogs/%d", Config.TempoUrl, tempoWorklogID)
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("Bearer %s", Config.TempoToken),
-		"Content-Type":  "application/json",
-	}
+	headers := CreateBearerAuthHeaders(Config.TempoToken)
 	_, err := SendHttpRequest("DELETE", requestUrl, nil, headers, 204)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to delete worklog %d: %w", tempoWorklogID, err)
+	}
+	return nil
 }

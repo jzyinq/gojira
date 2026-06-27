@@ -1,31 +1,38 @@
 package gojira
 
 import (
+	"fmt"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
-	"log"
-	"os"
-	"time"
 )
 
 type gojira struct {
+	mu             sync.RWMutex
 	cli            *cli.App
 	ui             *UserInteface
 	time           *time.Time
 	holidays       *Holidays
 	workLogs       Worklogs
 	workLogsIssues WorklogsIssues
+	jiraClient     *JiraClient
+	tempoClient    *TempoClient
 }
 
 func Run() {
 	// Open the log file
 	logFile, err := os.OpenFile("/tmp/gojira.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
-		logrus.Fatalf("Error opening log file: %v", err)
+		// Fall back to stderr if log file can't be opened
+		logrus.Warnf("Error opening log file, using stderr: %v", err)
+	} else {
+		defer logFile.Close()
+		// Set the log output to write to the file
+		logrus.SetOutput(logFile)
 	}
-	defer logFile.Close()
-	// Set the log output to write to the file
-	logrus.SetOutput(logFile)
 	// Now log messages will be written to the file
 	appTimer := time.Now().UTC()
 	logrus.Infof("gojira version %s started", projectVersion)
@@ -43,7 +50,12 @@ func Run() {
 		Before: func(context *cli.Context) error {
 			if context.Args().First() != "config" {
 				// dont' check envs on ConfigCommand
-				PrepareConfig()
+				if err := PrepareConfig(); err != nil {
+					return err
+				}
+				// Initialize API clients once after config is loaded
+				app.jiraClient = NewJiraClient()
+				app.tempoClient = NewTempoClient()
 			}
 			if context.IsSet("debug") {
 				logrus.SetLevel(logrus.DebugLevel)
@@ -70,7 +82,8 @@ func Run() {
 	err = app.cli.Run(os.Args)
 	if err != nil {
 		logrus.Error(err)
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }
 

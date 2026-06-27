@@ -14,6 +14,20 @@ const IssueKeyColumn = 0
 const IssueSummaryColumn = 1
 const TimeSpentColumn = 2
 
+// validateTimeSpentInput is a tview-compatible validation function for time input fields
+// It accepts input that matches the time format or is empty (for partial input during typing)
+func validateTimeSpentInput(textToCheck string, lastChar rune) bool {
+	// Allow empty input (user is still typing)
+	if textToCheck == "" {
+		return true
+	}
+	// Allow digits, 'h', 'm', and space characters for valid time format
+	if lastChar == 'h' || lastChar == 'm' || lastChar == ' ' || (lastChar >= '0' && lastChar <= '9') {
+		return true
+	}
+	return false
+}
+
 type DayView struct {
 	worklogList        *tview.Table
 	worklogStatus      *tview.TextView
@@ -43,26 +57,22 @@ func NewDayView() *DayView { //nolint:funlen
 			if key == tcell.KeyEscape {
 				app.ui.app.SetFocus(dayView.latestIssuesList)
 			}
-		}).SetFieldStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack))
+		}).SetFieldStyle(tcell.StyleDefault)
 
 	dayView.worklogList.SetBorder(true)
 	dayView.latestIssuesList.SetBorder(true)
-	dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Background(tcell.ColorGray))
+	dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Dim(true))
 	dayView.latestIssuesList.SetFocusFunc(func() {
-		dayView.latestIssuesList.SetSelectedStyle(
-			tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+		dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Reverse(true))
 	})
 	dayView.latestIssuesList.SetBlurFunc(func() {
-		dayView.latestIssuesList.SetSelectedStyle(
-			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+		dayView.latestIssuesList.SetSelectedStyle(tcell.StyleDefault.Dim(true))
 	})
 	dayView.worklogList.SetFocusFunc(func() {
-		dayView.worklogList.SetSelectedStyle(
-			tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhite))
+		dayView.worklogList.SetSelectedStyle(tcell.StyleDefault.Reverse(true))
 	})
 	dayView.worklogList.SetBlurFunc(func() {
-		dayView.worklogList.SetSelectedStyle(
-			tcell.StyleDefault.Background(tcell.ColorGrey).Foreground(tcell.ColorWhite))
+		dayView.worklogList.SetSelectedStyle(tcell.StyleDefault.Dim(true))
 	})
 	dayView.worklogStatus.SetText(
 		fmt.Sprintf("Worklogs - %s - [?h[white]]",
@@ -96,13 +106,10 @@ func NewDayView() *DayView { //nolint:funlen
 			return nil
 		}
 		if event.Rune() == 'l' && app.ui.app.GetFocus() != dayView.searchInput {
-			go func() {
-				app.ui.loaderView.Show("Searching...")
-				defer func() {
-					app.ui.loaderView.Hide()
-				}()
+			app.ui.loaderView.WithLoader("Searching...", func() error {
 				dayView.loadLatest()
-			}()
+				return nil
+			})
 			return nil
 		}
 		return event
@@ -138,6 +145,36 @@ func loadWorklogs() {
 	}
 }
 
+// updateAll updates the day view, calendar, and summary in one call
+func (d *DayView) updateAll() {
+	d.update()
+	app.ui.pages.RemovePage("worklog-form")
+	app.ui.calendar.update()
+	app.ui.summary.update()
+}
+
+// populateIssuesList populates the latest issues list table with issues
+func (d *DayView) populateIssuesList(issues []Issue) {
+	d.latestIssuesList.Clear()
+	d.latestIssuesList.SetSelectable(true, false)
+	color := tcell.ColorWhite
+	for r := 0; r < len(issues); r++ {
+		d.latestIssuesList.SetCell(r, IssueKeyColumn,
+			tview.NewTableCell(issues[r].Key).SetTextColor(color).SetAlign(tview.AlignLeft),
+		)
+		d.latestIssuesList.SetCell(r, IssueSummaryColumn,
+			tview.NewTableCell(issues[r].Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
+		)
+	}
+	d.latestIssuesList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEscape {
+			app.ui.app.Stop()
+		}
+	}).SetSelectedFunc(func(row, column int) {
+		NewAddWorklogForm(d, issues, row)
+	})
+}
+
 func (d *DayView) update() {
 	logs, _ := app.workLogsIssues.IssuesOnDate(app.time)
 	d.worklogList.Clear()
@@ -165,20 +202,14 @@ func (d *DayView) update() {
 	d.worklogList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyDelete:
-			go func() {
-				app.ui.loaderView.Show("Deleting worklog...")
-				defer app.ui.loaderView.Hide()
+			app.ui.loaderView.WithLoader("Deleting worklog...", func() error {
 				row, _ := d.worklogList.GetSelection()
-				err := app.workLogs.Delete(logs[row].Worklog)
-				if err != nil {
-					app.ui.errorView.ShowError(err.Error(), nil)
-					return
+				if err := app.workLogs.Delete(logs[row].Worklog); err != nil {
+					return err
 				}
-				d.update()
-				app.ui.pages.RemovePage("worklog-form")
-				app.ui.calendar.update()
-				app.ui.summary.update()
-			}()
+				d.updateAll()
+				return nil
+			})
 		default:
 		}
 		return controlCalendar(event)
@@ -194,72 +225,33 @@ func (d *DayView) update() {
 
 func (d *DayView) loadLatest() {
 	d.latestIssuesStatus.SetText("Latest issues").SetDynamicColors(true)
-	issues, err := NewJiraClient().GetLatestIssues()
-	if err != nil {
-		app.ui.errorView.ShowError(err.Error(), nil)
+	issues, err := app.jiraClient.GetLatestIssues()
+	if app.ui.errorView.ShowErrorIfPresent(err, nil) {
 		return
 	}
-	d.latestIssuesList.Clear()
-	d.latestIssuesList.SetSelectable(true, false)
-	color := tcell.ColorWhite
-	for r := 0; r < len(issues.Issues); r++ {
-		d.latestIssuesList.SetCell(r, IssueKeyColumn,
-			tview.NewTableCell((issues.Issues)[r].Key).SetTextColor(color).SetAlign(tview.AlignLeft),
-		)
-		d.latestIssuesList.SetCell(r, IssueSummaryColumn,
-			tview.NewTableCell((issues.Issues)[r].Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
-		)
-	}
-	d.latestIssuesList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
-		if key == tcell.KeyEscape {
-			app.ui.app.Stop()
-		}
-	}).SetSelectedFunc(func(row, column int) {
-		NewAddWorklogForm(d, issues.Issues, row)
-	})
+	d.populateIssuesList(issues.Issues)
 }
 
 func (d *DayView) SearchIssues(search string) {
-	go func() {
-		app.ui.loaderView.Show("Searching...")
-		defer func() {
-			app.ui.loaderView.Hide()
-		}()
+	app.ui.loaderView.WithLoaderAndFocus("Searching...", d.searchInput, func() error {
 		if search == "" {
-			return
+			return nil
 		}
 		jql := fmt.Sprintf("text ~ \"%s\"", search)
 		if FindIssueKeyInString(search) != "" {
 			jql = fmt.Sprintf("(text ~ \"%s\" OR issuekey = \"%s\")", search, search)
 		}
-		issues, err := NewJiraClient().GetIssuesByJQL(
+		issues, err := app.jiraClient.GetIssuesByJQL(
 			fmt.Sprintf("%s ORDER BY updated DESC, created DESC", jql), 10,
 		)
 		if err != nil {
-			app.ui.errorView.ShowError(err.Error(), d.searchInput)
-			return
+			return err
 		}
-		d.latestIssuesList.Clear()
-		d.latestIssuesList.SetSelectable(true, false)
-		color := tcell.ColorWhite
-		for r := 0; r < len(issues.Issues); r++ {
-			d.latestIssuesList.SetCell(r, IssueKeyColumn,
-				tview.NewTableCell((issues.Issues)[r].Key).SetTextColor(color).SetAlign(tview.AlignLeft),
-			)
-			d.latestIssuesList.SetCell(r, IssueSummaryColumn,
-				tview.NewTableCell((issues.Issues)[r].Fields.Summary).SetTextColor(color).SetAlign(tview.AlignLeft),
-			)
-		}
-		d.latestIssuesList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
-			if key == tcell.KeyEscape {
-				app.ui.app.Stop()
-			}
-		}).SetSelectedFunc(func(row, column int) {
-			NewAddWorklogForm(d, issues.Issues, row)
-		})
+		d.populateIssuesList(issues.Issues)
 		d.latestIssuesStatus.SetText("Search results:")
 		app.ui.app.SetFocus(d.latestIssuesList)
-	}()
+		return nil
+	})
 }
 
 // DateRange is a struct for holding the start and end dates
@@ -311,48 +303,54 @@ func ParseDateRange(dateStr string) (DateRange, error) {
 	}, nil
 }
 
-func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
+func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form { //nolint:funlen
 	var form *tview.Form
 
 	newWorklog := func() {
 		logTime := form.GetFormItem(0).(*tview.InputField).GetText()
 		timeSpent := form.GetFormItem(1).(*tview.InputField).GetText()
-		go func() {
-			app.ui.loaderView.Show("Adding worklog...")
-			defer app.ui.loaderView.Hide()
-			issue, err := NewJiraClient().GetIssue(issues[row].Key)
+
+		// Validate time format before submission
+		if timeSpent == "" {
+			app.ui.loaderView.WithLoader("Time spent cannot be empty", func() error {
+				time.Sleep(2 * time.Second)
+				return nil
+			})
+			return
+		}
+		if !timeSpentValidationRegex.MatchString(timeSpent) {
+			app.ui.loaderView.WithLoader("Invalid timeSpent format - try 1h / 1h30m / 30m", func() error {
+				time.Sleep(2 * time.Second)
+				return nil
+			})
+			return
+		}
+
+		app.ui.loaderView.WithLoader("Adding worklog...", func() error {
+			issue, err := app.jiraClient.GetIssue(issues[row].Key)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error(), nil)
-				return
+				return err
 			}
 			// TODO use ParseDateRange and LogWork for each day in range
 			dateRange, err := ParseDateRange(logTime)
 			if err != nil {
-				app.ui.errorView.ShowError(err.Error(), nil)
-				return
+				return err
 			}
 			for day := dateRange.StartDate; day.Before(dateRange.EndDate.AddDate(0, 0, 1)); day = day.AddDate(0, 0, 1) {
 				err := issue.LogWork(&day, timeSpent)
 				app.ui.loaderView.UpdateText(fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout)))
 				if err != nil {
-					app.ui.errorView.ShowError(err.Error(), nil)
-					return
+					return err
 				}
 			}
-			if err != nil {
-				app.ui.errorView.ShowError(err.Error(), nil)
-				return
-			}
-			d.update()
-			app.ui.pages.RemovePage("worklog-form")
-			app.ui.calendar.update()
-			app.ui.summary.update()
-		}()
+			d.updateAll()
+			return nil
+		})
 	}
 
 	form = tview.NewForm().
 		AddInputField("Date", app.time.Format(dateLayout), 20, nil, nil).
-		AddInputField("Time spent", "", 20, nil, nil).
+		AddInputField("Time spent", "", 20, validateTimeSpentInput, nil).
 		AddButton("Add", newWorklog).
 		AddButton("Cancel", func() {
 			app.ui.app.SetFocus(app.ui.dayView.latestIssuesList)
@@ -360,11 +358,10 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 		})
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyEnter:
-			newWorklog()
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.app.SetFocus(app.ui.dayView.latestIssuesList)
+			return nil
 		}
 		return event
 	})
@@ -378,44 +375,50 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form {
 	return form
 }
 
-func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *tview.Form {
+func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *tview.Form { //nolint:funlen
 	var form *tview.Form
 
 	updateWorklog := func() {
 		timeSpent := form.GetFormItem(0).(*tview.InputField).GetText()
-		go func() {
-			app.ui.loaderView.Show("Updating worklog...")
-			defer app.ui.loaderView.Hide()
-			err := workLogIssues[row].Worklog.Update(timeSpent)
-			if err != nil {
-				app.ui.errorView.ShowError(err.Error(), nil)
-				return
+
+		// Validate time format before submission (require non-empty for updates)
+		if timeSpent == "" {
+			app.ui.loaderView.WithLoader("Time spent cannot be empty", func() error {
+				time.Sleep(2 * time.Second)
+				return nil
+			})
+			return
+		}
+		if !timeSpentValidationRegex.MatchString(timeSpent) {
+			app.ui.loaderView.WithLoader("Invalid timeSpent format - try 1h / 1h30m / 30m", func() error {
+				time.Sleep(2 * time.Second)
+				return nil
+			})
+			return
+		}
+
+		app.ui.loaderView.WithLoader("Updating worklog...", func() error {
+			if err := workLogIssues[row].Worklog.Update(timeSpent); err != nil {
+				return err
 			}
-			d.update()
-			app.ui.pages.RemovePage("worklog-form")
-			app.ui.calendar.update()
-			app.ui.summary.update()
-		}()
+			d.updateAll()
+			return nil
+		})
 	}
 
 	deleteWorklog := func() {
-		go func() {
-			app.ui.loaderView.Show("Deleting worklog...")
-			defer app.ui.loaderView.Hide()
-			err := app.workLogs.Delete(workLogIssues[row].Worklog)
-			if err != nil {
-				app.ui.errorView.ShowError(err.Error(), nil)
-				return
+		app.ui.loaderView.WithLoader("Deleting worklog...", func() error {
+			if err := app.workLogs.Delete(workLogIssues[row].Worklog); err != nil {
+				return err
 			}
-			d.update()
-			app.ui.pages.RemovePage("worklog-form")
-			app.ui.calendar.update()
-			app.ui.summary.update()
-		}()
+			d.updateAll()
+			return nil
+		})
 	}
 
 	form = tview.NewForm().
-		AddInputField("Time spent", FormatTimeSpent(workLogIssues[row].Worklog.TimeSpentSeconds), 20, nil, nil).
+		AddInputField("Time spent",
+			FormatTimeSpent(workLogIssues[row].Worklog.TimeSpentSeconds), 20, validateTimeSpentInput, nil).
 		AddButton("Update", updateWorklog).
 		AddButton("Delete", deleteWorklog).
 		AddButton("Cancel", func() {
@@ -424,13 +427,13 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 		})
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyEnter:
-			updateWorklog()
 		case tcell.KeyDelete:
 			deleteWorklog()
+			return nil
 		case tcell.KeyEscape:
 			app.ui.pages.RemovePage("worklog-form")
 			app.ui.app.SetFocus(app.ui.dayView.worklogList)
+			return nil
 		}
 		return event
 	})

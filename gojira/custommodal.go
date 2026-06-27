@@ -78,7 +78,7 @@ func (m *LoaderModal) Draw(screen tcell.Screen) {
 	x := (screenWidth - width) / 2
 	y := (screenHeight - height) / 2
 	m.SetRect(x, y, width, height)
-	m.Box.DrawForSubclass(screen, m)
+	m.DrawForSubclass(screen, m)
 	x, y, width, height = m.GetInnerRect()
 	m.textView.SetRect(x, y, width, height)
 	m.textView.Draw(screen)

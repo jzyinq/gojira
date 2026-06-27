@@ -15,7 +15,7 @@ func NewErrorView() *ErrorView {
 	errorView := &ErrorView{tview.NewModal(), nil}
 	errorView.SetText("Something went wrong")
 	errorView.SetTitle("Error!")
-	errorView.SetBackgroundColor(tcell.ColorRed.TrueColor())
+	errorView.SetBackgroundColor(tcell.ColorRed)
 	errorView.AddButtons([]string{"OK"})
 	errorView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -38,4 +38,13 @@ func (e *ErrorView) ShowError(error string, previousFocus tview.Primitive) {
 	app.ui.pages.ShowPage("error")
 	app.ui.app.SetFocus(e)
 	app.ui.app.Draw()
+}
+
+// ShowErrorIfPresent displays an error if err is not nil, returns true if error was shown
+func (e *ErrorView) ShowErrorIfPresent(err error, previousFocus tview.Primitive) bool {
+	if err != nil {
+		e.ShowError(err.Error(), previousFocus)
+		return true
+	}
+	return false
 }

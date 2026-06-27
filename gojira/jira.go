@@ -1,8 +1,6 @@
 package gojira
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -28,12 +26,7 @@ func NewJiraClient() *JiraClient {
 }
 
 func (jc *JiraClient) getHttpHeaders() map[string]string {
-	authorizationToken := fmt.Sprintf("%s:%s", Config.JiraLogin, Config.JiraToken)
-	authorizationHeader := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(authorizationToken)))
-	return map[string]string{
-		"Authorization": authorizationHeader,
-		"Content-Type":  "application/json",
-	}
+	return CreateBasicAuthHeaders(Config.JiraLogin, Config.JiraToken)
 }
 
 type JQLSearch struct {
@@ -113,12 +106,12 @@ func (jc *JiraClient) GetIssuesByJQL(jql string, maxResults int) (JQLResponse, e
 	fullUrl := requestUrl + "?" + q.Encode()
 	response, err := SendHttpRequest("GET", fullUrl, nil, jc.getHttpHeaders(), 200)
 	if err != nil {
-		return JQLResponse{}, err
+		return JQLResponse{}, fmt.Errorf("failed to execute JQL query: %w", err)
 	}
 	var jqlResponse JQLResponse
 	err = json.Unmarshal(response, &jqlResponse)
 	if err != nil {
-		return JQLResponse{}, err
+		return JQLResponse{}, fmt.Errorf("failed to unmarshal JQL response: %w", err)
 	}
 	return jqlResponse, nil
 }
@@ -142,12 +135,12 @@ func (jc *JiraClient) GetIssue(issueKey string) (Issue, error) {
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%s?fields=summary,status,id", Config.JiraUrl, issueKey)
 	response, err := SendHttpRequest("GET", requestUrl, nil, jc.getHttpHeaders(), 200)
 	if err != nil {
-		return Issue{}, err
+		return Issue{}, fmt.Errorf("failed to get issue %s: %w", issueKey, err)
 	}
 	var jiraIssue Issue
 	err = json.Unmarshal(response, &jiraIssue)
 	if err != nil {
-		return Issue{}, err
+		return Issue{}, fmt.Errorf("failed to unmarshal issue %s: %w", issueKey, err)
 	}
 	return jiraIssue, nil
 }
@@ -158,10 +151,8 @@ func (jc *JiraClient) CreateWorklog(issueId int, logTime *time.Time, timeSpent s
 		"adjustEstimate": "leave",
 		"started":        logTime.Format("2006-01-02T15:04:05.000-0700"),
 	}
-	payloadJson, _ := json.Marshal(payload)
-	requestBody := bytes.NewBuffer(payloadJson)
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%d/worklog?notifyUsers=false", Config.JiraUrl, issueId)
-	response, err := SendHttpRequest("POST", requestUrl, requestBody, jc.getHttpHeaders(), 201)
+	response, err := SendJSONRequest("POST", requestUrl, payload, jc.getHttpHeaders(), 201)
 	if err != nil {
 		return WorklogResponse{}, err
 	}
@@ -178,11 +169,9 @@ func (jc *JiraClient) UpdateWorklog(issueId int, jiraWorklogId int, timeSpentInS
 	payload := JiraWorklogUpdate{
 		TimeSpentSeconds: timeSpentInSeconds,
 	}
-	payloadJson, _ := json.Marshal(payload)
-	requestBody := bytes.NewBuffer(payloadJson)
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%d/worklog/%d?notifyUsers=false",
 		Config.JiraUrl, issueId, jiraWorklogId)
-	_, err := SendHttpRequest("PUT", requestUrl, requestBody, jc.getHttpHeaders(), 200)
+	_, err := SendJSONRequest("PUT", requestUrl, payload, jc.getHttpHeaders(), 200)
 	return err
 }
 

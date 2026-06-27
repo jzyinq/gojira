@@ -37,8 +37,8 @@ func NewCalendar() *Calendar {
 
 func (c *Calendar) update() {
 	c.setDate()
-	c.setWeekdays()
 	c.setDays()
+	c.setWeekdays()
 }
 
 func (c *Calendar) setDate() {
@@ -50,11 +50,11 @@ func (c *Calendar) setDate() {
 func (c *Calendar) setWeekdays() {
 	weekdays := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
 	for i, day := range weekdays {
-		c.SetCell(0, i, tview.NewTableCell(day))
+		c.SetCell(0, i, tview.NewTableCell(day).SetAlign(tview.AlignCenter).SetExpansion(1))
 	}
 }
 
-func (c *Calendar) setDays() {
+func (c *Calendar) setDays() { //nolint:gocognit
 	c.Clear()
 	t := time.Date(c.year, c.month, 1, 0, 0, 0, 0, time.Local)
 	daysInMonth := time.Date(c.year, c.month+1, 0, 0, 0, 0, 0, time.Local).Day()
@@ -66,25 +66,24 @@ func (c *Calendar) setDays() {
 			dayOfWeek = 6 // Sunday
 		}
 
-		cell := tview.NewTableCell(fmt.Sprintf("%d", i)).SetAlign(tview.AlignCenter)
+		cell := tview.NewTableCell(fmt.Sprintf("%d", i)).SetAlign(tview.AlignCenter).SetExpansion(1)
 
 		calendarDay := time.Date(c.year, c.month, i, 0, 0, 0, 0, time.UTC)
-		if calendarDay.Before(time.Now().Local()) {
-			cell.SetBackgroundColor(tcell.ColorGray)
-		}
 
 		if len(app.workLogs.logs) > 0 {
 			worklogs, err := app.workLogs.LogsOnDate(&calendarDay)
 			if err != nil {
-				panic(err)
-			}
-			timeSpent := CalculateTimeSpent(worklogs)
-			color := GetTimeSpentColor(timeSpent, 8)
-			cell.SetTextColor(color)
-			if (dayOfWeek == 5 || dayOfWeek == 6) && timeSpent == 0 {
-				cell.SetTextColor(tcell.ColorGrey)
-				if calendarDay.Before(time.Now().Local()) {
-					cell.SetTextColor(tcell.ColorBlack)
+				logrus.Errorf("failed to get worklogs for date %s: %v", calendarDay.Format("2006-01-02"), err)
+				cell.SetTextColor(tcell.ColorRed)
+			} else {
+				timeSpent := CalculateTimeSpent(worklogs)
+				color := GetTimeSpentColor(timeSpent, 8)
+				cell.SetTextColor(color)
+				if (dayOfWeek == 5 || dayOfWeek == 6) && timeSpent == 0 {
+					cell.SetTextColor(tcell.ColorGrey)
+					if calendarDay.Before(time.Now().Local()) {
+						cell.SetAttributes(tcell.AttrDim)
+					}
 				}
 			}
 		}
@@ -92,8 +91,7 @@ func (c *Calendar) setDays() {
 			cell.SetTextColor(tcell.ColorRed)
 		}
 		if i == c.day {
-			cell.SetTextColor(tcell.ColorWhite)
-			cell.SetBackgroundColor(tcell.ColorDimGray)
+			cell.SetAttributes(tcell.AttrBold | tcell.AttrReverse)
 		}
 		c.SetCell(week, dayOfWeek, cell)
 
@@ -133,7 +131,9 @@ func controlCalendar(event *tcell.EventKey) *tcell.EventKey {
 			newTime = app.time.Add(timePeriod)
 		}
 		logrus.Debug("Changing date to ", newTime)
+		app.mu.Lock()
 		app.time = &newTime
+		app.mu.Unlock()
 		loadWorklogs()
 		app.ui.calendar.update()
 	}

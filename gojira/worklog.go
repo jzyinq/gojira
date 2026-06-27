@@ -3,14 +3,15 @@ package gojira
 import (
 	"errors"
 	"github.com/sirupsen/logrus"
-	"log"
 	"regexp"
 	"strconv"
 	"time"
 )
 
+var timeSpentRegex = regexp.MustCompile(`(([0-9]+)h)?\s?(([0-9]+)m)?`)
+
 func NewWorklog(issueId int, logTime *time.Time, timeSpent string) (Worklog, error) {
-	workLogResponse, err := NewJiraClient().CreateWorklog(issueId, logTime, timeSpent)
+	workLogResponse, err := app.jiraClient.CreateWorklog(issueId, logTime, timeSpent)
 	if err != nil {
 		return Worklog{}, err
 	}
@@ -101,7 +102,7 @@ func GetIssuesWithWorklogs(worklogs []*Worklog) ([]Issue, error) {
 	if len(worklogIssueIds) == 0 {
 		return []Issue{}, err
 	}
-	todaysIssues, err := NewJiraClient().GetIssuesByKeys(worklogIssueIds)
+	todaysIssues, err := app.jiraClient.GetIssuesByKeys(worklogIssueIds)
 	if err != nil {
 		return []Issue{}, err
 	}
@@ -125,7 +126,7 @@ func (wl *Worklogs) TotalTimeSpentToPresentDay() int {
 func (wli *WorklogsIssues) IssuesOnDate(date *time.Time) ([]*WorklogIssue, error) {
 	var issuesOnDate []*WorklogIssue
 	if date.Before(wli.startDate) || date.After(wli.endDate) {
-		return nil, errors.New("Date is out of worklogs range")
+		return nil, errors.New("date is out of worklogs range")
 	}
 	truncatedDate := (*date).Truncate(24 * time.Hour)
 	for i, issue := range wli.issues {
@@ -144,7 +145,7 @@ func (wli *WorklogsIssues) IssuesOnDate(date *time.Time) ([]*WorklogIssue, error
 
 func GetWorklogs(fromDate time.Time, toDate time.Time) (Worklogs, error) {
 	logrus.Infof("getting worklogs from %s to %s...", fromDate, toDate)
-	workLogsResponse, err := NewTempoClient().GetWorklogs(fromDate, toDate)
+	workLogsResponse, err := app.tempoClient.GetWorklogs(fromDate, toDate)
 	if err != nil {
 		return Worklogs{}, err
 	}
@@ -156,23 +157,24 @@ func GetWorklogs(fromDate time.Time, toDate time.Time) (Worklogs, error) {
 }
 
 func TimeSpentToSeconds(timeSpent string) int {
-	r, _ := regexp.Compile(`(([0-9]+)h)?\s?(([0-9]+)m)?`)
-	match := r.FindStringSubmatch(timeSpent)
-	var timeSpentSeconds int = 0
+	match := timeSpentRegex.FindStringSubmatch(timeSpent)
+	timeSpentSeconds := 0
 
 	if match[1] != "" {
 		hours, err := strconv.ParseInt(match[2], 10, 64)
-		timeSpentSeconds += int(hours) * 60 * 60
 		if err != nil {
-			log.Fatal(err)
+			logrus.Errorf("failed to parse hours from time spent '%s': %v", timeSpent, err)
+			return 0
 		}
+		timeSpentSeconds += int(hours) * 60 * 60
 	}
 	if match[3] != "" {
 		minutes, err := strconv.ParseInt(match[4], 10, 32)
-		timeSpentSeconds += int(minutes) * 60
 		if err != nil {
-			log.Fatal(err)
+			logrus.Errorf("failed to parse minutes from time spent '%s': %v", timeSpent, err)
+			return 0
 		}
+		timeSpentSeconds += int(minutes) * 60
 	}
 	return timeSpentSeconds
 }
@@ -184,10 +186,10 @@ func (wl *Worklog) Update(timeSpent string) error {
 
 	if wl.TempoWorklogid != 0 {
 		// make update request to tempo if tempoWorklogId is set
-		err = NewTempoClient().UpdateWorklog(wl, timeSpent)
+		err = app.tempoClient.UpdateWorklog(wl, timeSpent)
 	} else {
 		// make update request to jira if tempoWorklogId is not set
-		err = NewJiraClient().UpdateWorklog(wl.Issue.Id, wl.JiraWorklogID, timeSpentInSeconds)
+		err = app.jiraClient.UpdateWorklog(wl.Issue.Id, wl.JiraWorklogID, timeSpentInSeconds)
 	}
 	if err != nil {
 		return err
@@ -196,33 +198,40 @@ func (wl *Worklog) Update(timeSpent string) error {
 	return nil
 }
 
-func (wl *Worklogs) Delete(w *Worklog) error {
-	logrus.Debugf("deleting w ... %+v", w)
-	// make update request to tempo if tempoWorklogId is set
-	var err error
+// deleteWorklogFromAPI calls the appropriate API (Tempo or Jira) to delete a worklog.
+func deleteWorklogFromAPI(w *Worklog) error {
+	logrus.Debugf("deleting worklog ... %+v", w)
 	if w.TempoWorklogid != 0 {
-		err = NewTempoClient().DeleteWorklog(w.TempoWorklogid)
-	} else {
-		err = NewJiraClient().DeleteWorklog(w.Issue.Id, w.JiraWorklogID)
+		return app.tempoClient.DeleteWorklog(w.TempoWorklogid)
 	}
-	if err != nil {
+	return app.jiraClient.DeleteWorklog(w.Issue.Id, w.JiraWorklogID)
+}
+
+// removeWorklog filters a worklog out of both slices by pointer identity. Pure function.
+func removeWorklog(logs []*Worklog, issues []WorklogIssue, w *Worklog) ([]*Worklog, []WorklogIssue) {
+	filteredLogs := make([]*Worklog, 0, len(logs))
+	for _, wl := range logs {
+		if wl != w {
+			filteredLogs = append(filteredLogs, wl)
+		}
+	}
+	filteredIssues := make([]WorklogIssue, 0, len(issues))
+	for _, issue := range issues {
+		if issue.Worklog != w {
+			filteredIssues = append(filteredIssues, issue)
+		}
+	}
+	return filteredLogs, filteredIssues
+}
+
+// Delete removes a worklog via API call, then updates local state.
+func (wl *Worklogs) Delete(w *Worklog) error {
+	if err := deleteWorklogFromAPI(w); err != nil {
 		logrus.Debug(w)
 		return err
 	}
-
-	// FIXME delete is kinda buggy - it messes up pointers and we're getting weird results
-	for i, issue := range app.workLogsIssues.issues {
-		if issue.Worklog.JiraWorklogID == w.JiraWorklogID {
-			app.workLogsIssues.issues = append(app.workLogsIssues.issues[:i], app.workLogsIssues.issues[i+1:]...)
-			break
-		}
-	}
-	for i, workLog := range wl.logs {
-		if workLog.JiraWorklogID == w.JiraWorklogID {
-			wl.logs = append(wl.logs[:i], wl.logs[i+1:]...)
-			break
-		}
-	}
-
+	app.mu.Lock()
+	wl.logs, app.workLogsIssues.issues = removeWorklog(wl.logs, app.workLogsIssues.issues, w)
+	app.mu.Unlock()
 	return nil
 }

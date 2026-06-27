@@ -8,6 +8,8 @@ import (
 	"regexp"
 )
 
+var timeSpentValidationRegex = regexp.MustCompile(`^(([0-9]+)h)?\s?(([0-9]+)m)?$`)
+
 func SelectActionForm(actions []string) (string, error) {
 	formOptions := make([]huh.Option[string], len(actions))
 	for i, action := range actions {
@@ -32,11 +34,11 @@ func SelectActionForm(actions []string) (string, error) {
 	return chosenAction, nil
 }
 
-func IssueWorklogForm(issues []Issue) (Issue, string, error) {
+func IssueWorklogForm(issues []Issue, worklogs []*Worklog) (Issue, string, error) {
 	formOptions := make([]huh.Option[Issue], len(issues))
 	for i, issue := range issues {
 		timeSpent := ""
-		worklog := findWorklogByIssueKey(app.workLogs.logs, issue.Key)
+		worklog := findWorklogByIssueKey(worklogs, issue.Key)
 		if worklog != nil {
 			timeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
 		}
@@ -49,8 +51,7 @@ func IssueWorklogForm(issues []Issue) (Issue, string, error) {
 		Placeholder("1h / 1h30m / 30m").
 		Value(&timeSpent).
 		Validate(func(input string) error {
-			r, _ := regexp.Compile(`^(([0-9]+)h)?\s?(([0-9]+)m)?$`)
-			match := r.MatchString(input)
+			match := timeSpentValidationRegex.MatchString(input)
 			if !match {
 				return errors.New("invalid timeSpent format - try 1h / 1h30m / 30m")
 			}
@@ -60,13 +61,13 @@ func IssueWorklogForm(issues []Issue) (Issue, string, error) {
 		huh.NewGroup(
 			huh.NewSelect[Issue]().
 				Title("Choose issue").
-				Description(fmt.Sprintf("Time logged for today: %s", FormatTimeSpent(CalculateTimeSpent(app.workLogs.logs)))).
+				Description(fmt.Sprintf("Time logged for today: %s", FormatTimeSpent(CalculateTimeSpent(worklogs)))).
 				Options(formOptions...).
 				Value(&chosenIssue).
 				Validate(func(issue Issue) error {
 					// it's more like a "prepare next input" function
 					timeSpent = ""
-					worklog := findWorklogByIssueKey(app.workLogs.logs, issue.Key)
+					worklog := findWorklogByIssueKey(worklogs, issue.Key)
 					if worklog != nil {
 						timeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
 					}
@@ -100,10 +101,9 @@ func InputTimeSpentForm(issue Issue, timeSpent string) (string, error) {
 				Placeholder("1h / 1h30m / 30m").
 				Value(&timeSpent).
 				Validate(func(input string) error {
-					r, _ := regexp.Compile(`^(([0-9]+)h)?\s?(([0-9]+)m)?$`)
-					match := r.MatchString(input)
+					match := timeSpentValidationRegex.MatchString(input)
 					if !match {
-						return errors.New("Invalid timeSpent format - try 1h / 1h30m / 30m")
+						return errors.New("invalid timeSpent format - try 1h / 1h30m / 30m")
 					}
 					return nil
 				}),
