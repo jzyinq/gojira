@@ -20,4 +20,4 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: latest
-          args: --out-format=colored-line-number --concurrency 8
+          args: --output.formats=colored-line-number --concurrency 8
