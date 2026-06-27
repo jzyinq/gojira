@@ -37,8 +37,8 @@ func NewCalendar() *Calendar {
 
 func (c *Calendar) update() {
 	c.setDate()
-	c.setWeekdays()
 	c.setDays()
+	c.setWeekdays()
 }
 
 func (c *Calendar) setDate() {
@@ -50,7 +50,7 @@ func (c *Calendar) setDate() {
 func (c *Calendar) setWeekdays() {
 	weekdays := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
 	for i, day := range weekdays {
-		c.SetCell(0, i, tview.NewTableCell(day))
+		c.SetCell(0, i, tview.NewTableCell(day).SetAlign(tview.AlignCenter).SetExpansion(1))
 	}
 }
 
@@ -66,7 +66,7 @@ func (c *Calendar) setDays() { //nolint:gocognit
 			dayOfWeek = 6 // Sunday
 		}
 
-		cell := tview.NewTableCell(fmt.Sprintf("%d", i)).SetAlign(tview.AlignCenter)
+		cell := tview.NewTableCell(fmt.Sprintf("%d", i)).SetAlign(tview.AlignCenter).SetExpansion(1)
 
 		calendarDay := time.Date(c.year, c.month, i, 0, 0, 0, 0, time.UTC)
 
