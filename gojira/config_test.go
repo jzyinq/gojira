@@ -7,13 +7,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testJiraURL   = "https://test.atlassian.net"
+	testJiraEmail = "test@example.com"
+)
+
 // gojiraEnvVars lists all env vars used by PrepareConfig.
 var gojiraEnvVars = []string{
-	"GOJIRA_JIRA_INSTANCE_URL",
-	"GOJIRA_JIRA_LOGIN",
-	"GOJIRA_JIRA_TOKEN",
-	"GOJIRA_JIRA_ACCOUNT_ID",
-	"GOJIRA_TEMPO_TOKEN",
+	envJiraInstanceURL,
+	envJiraLogin,
+	envJiraToken,
+	envJiraAccountID,
+	envTempoToken,
 }
 
 // isolateGojiraEnv clears all GOJIRA env vars for the duration of the test,
@@ -62,19 +67,19 @@ func TestGetEnv(t *testing.T) {
 func TestPrepareConfig(t *testing.T) { //nolint:funlen
 	t.Run("successfully prepares config with all env vars", func(t *testing.T) {
 		isolateGojiraEnv(t, map[string]string{
-			"GOJIRA_JIRA_INSTANCE_URL": "https://test.atlassian.net",
-			"GOJIRA_JIRA_LOGIN":        "test@example.com",
-			"GOJIRA_JIRA_TOKEN":        "test-jira-token",
-			"GOJIRA_JIRA_ACCOUNT_ID":   "test-account-id",
-			"GOJIRA_TEMPO_TOKEN":       "test-tempo-token",
+			envJiraInstanceURL: testJiraURL,
+			envJiraLogin:       testJiraEmail,
+			envJiraToken:       "test-jira-token",
+			envJiraAccountID:   "test-account-id",
+			envTempoToken:      "test-tempo-token",
 		})
 		defer func() { Config = nil }()
 
 		err := PrepareConfig()
 		assert.NoError(t, err)
 		assert.NotNil(t, Config)
-		assert.Equal(t, "https://test.atlassian.net", Config.JiraUrl)
-		assert.Equal(t, "test@example.com", Config.JiraLogin)
+		assert.Equal(t, testJiraURL, Config.JiraUrl)
+		assert.Equal(t, testJiraEmail, Config.JiraLogin)
 		assert.Equal(t, "test-jira-token", Config.JiraToken)
 		assert.Equal(t, "test-account-id", Config.JiraAccountId)
 		assert.Equal(t, "test-tempo-token", Config.TempoToken)
@@ -88,56 +93,56 @@ func TestPrepareConfig(t *testing.T) { //nolint:funlen
 
 		err := PrepareConfig()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "GOJIRA_JIRA_INSTANCE_URL")
+		assert.Contains(t, err.Error(), envJiraInstanceURL)
 	})
 
 	t.Run("returns error when GOJIRA_JIRA_LOGIN is missing", func(t *testing.T) {
 		isolateGojiraEnv(t, map[string]string{
-			"GOJIRA_JIRA_INSTANCE_URL": "https://test.atlassian.net",
+			envJiraInstanceURL: testJiraURL,
 		})
 		defer func() { Config = nil }()
 
 		err := PrepareConfig()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "GOJIRA_JIRA_LOGIN")
+		assert.Contains(t, err.Error(), envJiraLogin)
 	})
 
 	t.Run("returns error when GOJIRA_JIRA_TOKEN is missing", func(t *testing.T) {
 		isolateGojiraEnv(t, map[string]string{
-			"GOJIRA_JIRA_INSTANCE_URL": "https://test.atlassian.net",
-			"GOJIRA_JIRA_LOGIN":        "test@example.com",
+			envJiraInstanceURL: testJiraURL,
+			envJiraLogin:       testJiraEmail,
 		})
 		defer func() { Config = nil }()
 
 		err := PrepareConfig()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "GOJIRA_JIRA_TOKEN")
+		assert.Contains(t, err.Error(), envJiraToken)
 	})
 
 	t.Run("returns error when GOJIRA_JIRA_ACCOUNT_ID is missing", func(t *testing.T) {
 		isolateGojiraEnv(t, map[string]string{
-			"GOJIRA_JIRA_INSTANCE_URL": "https://test.atlassian.net",
-			"GOJIRA_JIRA_LOGIN":        "test@example.com",
-			"GOJIRA_JIRA_TOKEN":        "test-token",
+			envJiraInstanceURL: testJiraURL,
+			envJiraLogin:       testJiraEmail,
+			envJiraToken:       "test-token",
 		})
 		defer func() { Config = nil }()
 
 		err := PrepareConfig()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "GOJIRA_JIRA_ACCOUNT_ID")
+		assert.Contains(t, err.Error(), envJiraAccountID)
 	})
 
 	t.Run("returns error when GOJIRA_TEMPO_TOKEN is missing", func(t *testing.T) {
 		isolateGojiraEnv(t, map[string]string{
-			"GOJIRA_JIRA_INSTANCE_URL": "https://test.atlassian.net",
-			"GOJIRA_JIRA_LOGIN":        "test@example.com",
-			"GOJIRA_JIRA_TOKEN":        "test-token",
-			"GOJIRA_JIRA_ACCOUNT_ID":   "test-account-id",
+			envJiraInstanceURL: testJiraURL,
+			envJiraLogin:       testJiraEmail,
+			envJiraToken:       "test-token",
+			envJiraAccountID:   "test-account-id",
 		})
 		defer func() { Config = nil }()
 
 		err := PrepareConfig()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "GOJIRA_TEMPO_TOKEN")
+		assert.Contains(t, err.Error(), envTempoToken)
 	})
 }

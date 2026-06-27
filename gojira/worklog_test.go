@@ -14,7 +14,7 @@ func TestWorklog_TimeSpentToSeconds(t *testing.T) {
 		expected int
 	}{
 		{"hours and minutes", "1h 30m", 5400},
-		{"hours and minutes no space", "1h30m", 5400},
+		{"hours and minutes no space", testDuration1h30m, 5400},
 		{"only minutes", "29m", 1740},
 		{"only hours", "2h", 7200},
 		{"multiple hours and minutes", "3h 45m", 13500},
@@ -32,7 +32,7 @@ func TestWorklog_TimeSpentToSeconds(t *testing.T) {
 
 func TestWorklog_LogsOnDate(t *testing.T) {
 	// Setup test data
-	date1, _ := time.Parse(dateLayout, "2024-01-15")
+	date1, _ := time.Parse(dateLayout, testDate20240115)
 	date2, _ := time.Parse(dateLayout, "2024-01-16")
 	date3, _ := time.Parse(dateLayout, "2024-01-17")
 
@@ -40,8 +40,8 @@ func TestWorklog_LogsOnDate(t *testing.T) {
 		startDate: date1,
 		endDate:   date3,
 		logs: []*Worklog{
-			{StartDate: "2024-01-15", TimeSpentSeconds: 3600},
-			{StartDate: "2024-01-15", TimeSpentSeconds: 1800},
+			{StartDate: testDate20240115, TimeSpentSeconds: 3600},
+			{StartDate: testDate20240115, TimeSpentSeconds: 1800},
 			{StartDate: "2024-01-16", TimeSpentSeconds: 7200},
 			{StartDate: "2024-01-17", TimeSpentSeconds: 900},
 		},
@@ -99,7 +99,7 @@ func TestWorklog_TotalTimeSpentToPresentDay(t *testing.T) {
 }
 
 func TestWorklogsIssues_IssuesOnDate(t *testing.T) {
-	date1, _ := time.Parse(dateLayout, "2024-01-15")
+	date1, _ := time.Parse(dateLayout, testDate20240115)
 	date3, _ := time.Parse(dateLayout, "2024-01-17")
 
 	worklogsIssues := WorklogsIssues{
@@ -107,11 +107,11 @@ func TestWorklogsIssues_IssuesOnDate(t *testing.T) {
 		endDate:   date3,
 		issues: []WorklogIssue{
 			{
-				Worklog: &Worklog{StartDate: "2024-01-15", TimeSpentSeconds: 3600},
+				Worklog: &Worklog{StartDate: testDate20240115, TimeSpentSeconds: 3600},
 				Issue:   Issue{Key: "TEST-1"},
 			},
 			{
-				Worklog: &Worklog{StartDate: "2024-01-15", TimeSpentSeconds: 1800},
+				Worklog: &Worklog{StartDate: testDate20240115, TimeSpentSeconds: 1800},
 				Issue:   Issue{Key: "TEST-2"},
 			},
 			{

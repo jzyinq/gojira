@@ -20,24 +20,32 @@ type Configuration struct {
 
 var Config *Configuration
 
+const (
+	envJiraInstanceURL = "GOJIRA_JIRA_INSTANCE_URL"
+	envJiraLogin       = "GOJIRA_JIRA_LOGIN"
+	envJiraToken       = "GOJIRA_JIRA_TOKEN" //nolint:gosec
+	envJiraAccountID   = "GOJIRA_JIRA_ACCOUNT_ID"
+	envTempoToken      = "GOJIRA_TEMPO_TOKEN" //nolint:gosec
+)
+
 func PrepareConfig() error {
-	jiraUrl, err := GetEnv("GOJIRA_JIRA_INSTANCE_URL")
+	jiraUrl, err := GetEnv(envJiraInstanceURL)
 	if err != nil {
 		return err
 	}
-	jiraLogin, err := GetEnv("GOJIRA_JIRA_LOGIN")
+	jiraLogin, err := GetEnv(envJiraLogin)
 	if err != nil {
 		return err
 	}
-	jiraToken, err := GetEnv("GOJIRA_JIRA_TOKEN")
+	jiraToken, err := GetEnv(envJiraToken)
 	if err != nil {
 		return err
 	}
-	jiraAccountId, err := GetEnv("GOJIRA_JIRA_ACCOUNT_ID")
+	jiraAccountId, err := GetEnv(envJiraAccountID)
 	if err != nil {
 		return err
 	}
-	tempoToken, err := GetEnv("GOJIRA_TEMPO_TOKEN")
+	tempoToken, err := GetEnv(envTempoToken)
 	if err != nil {
 		return err
 	}

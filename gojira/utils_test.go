@@ -71,7 +71,7 @@ func TestTimeSpentToSeconds(t *testing.T) {
 		expectedTimeSpentInSeconds int
 	}{
 		{"1h 30m", 5400},
-		{"1h30m", 5400},
+		{testDuration1h30m, 5400},
 		{"29m", 1740},
 	}
 

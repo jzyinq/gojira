@@ -10,7 +10,7 @@ import (
 func TestWorkingHoursInMonthToPresentDay(t *testing.T) {
 	t.Run("counts weekdays excluding holidays", func(t *testing.T) {
 		holidays := &Holidays{
-			{Date: "2024-01-01", Name: "New Year"},
+			{Date: testDate20240101, Name: "New Year"},
 		}
 		// January 2024: 23 weekdays, minus 1 holiday = 22 working days = 176 hours
 		hours := workingHoursInMonthToPresentDay(2024, time.January, holidays)
@@ -26,8 +26,8 @@ func TestWorkingHoursInMonthToPresentDay(t *testing.T) {
 
 	t.Run("counts weekdays with multiple holidays", func(t *testing.T) {
 		holidays := &Holidays{
-			{Date: "2024-01-01", Name: "New Year"},
-			{Date: "2024-01-15", Name: "MLK Day"},
+			{Date: testDate20240101, Name: "New Year"},
+			{Date: testDate20240115, Name: "MLK Day"},
 		}
 		// January 2024: 23 weekdays, minus 2 holidays = 21 * 8 = 168 hours
 		hours := workingHoursInMonthToPresentDay(2024, time.January, holidays)

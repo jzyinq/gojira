@@ -9,7 +9,7 @@ import (
 
 func TestHolidays_GetHolidaysForMonth(t *testing.T) {
 	holidays := Holidays{
-		{Date: "2024-01-01", Name: "New Year's Day", CountryCode: "US"},
+		{Date: testDate20240101, Name: "New Year's Day", CountryCode: "US"},
 		{Date: "2024-02-14", Name: "Valentine's Day", CountryCode: "US"},
 		{Date: "2024-02-19", Name: "Presidents Day", CountryCode: "US"},
 		{Date: "2024-03-17", Name: "St. Patrick's Day", CountryCode: "US"},
@@ -37,7 +37,7 @@ func TestHolidays_GetHolidaysForMonth(t *testing.T) {
 
 func TestHolidays_IsHoliday(t *testing.T) {
 	holidays := Holidays{
-		{Date: "2024-01-01", Name: "New Year's Day", CountryCode: "US"},
+		{Date: testDate20240101, Name: "New Year's Day", CountryCode: "US"},
 		{Date: "2024-07-04", Name: "Independence Day", CountryCode: "US"},
 	}
 

@@ -6,54 +6,60 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestResolveLogArgs(t *testing.T) {
+const (
+	testIssueKey    = "TICKET-123"
+	testDuration30m = "30m"
+	testGitIssueKey = "GIT-999"
+)
+
+func TestResolveLogArgs(t *testing.T) { //nolint:funlen
 	tests := []struct {
-		name           string
-		arg0           string
-		arg1           string
-		gitIssueKey    string
-		wantIssueKey   string
-		wantTimeSpent  string
+		name          string
+		arg0          string
+		arg1          string
+		gitIssueKey   string
+		wantIssueKey  string
+		wantTimeSpent string
 	}{
 		{
 			name:          "issue and time provided explicitly",
-			arg0:          "TICKET-123",
-			arg1:          "30m",
-			gitIssueKey:   "GIT-999",
-			wantIssueKey:  "TICKET-123",
-			wantTimeSpent: "30m",
+			arg0:          testIssueKey,
+			arg1:          testDuration30m,
+			gitIssueKey:   testGitIssueKey,
+			wantIssueKey:  testIssueKey,
+			wantTimeSpent: testDuration30m,
 		},
 		{
 			name:          "only time provided, issue from git branch",
-			arg0:          "30m",
+			arg0:          testDuration30m,
 			arg1:          "",
-			gitIssueKey:   "GIT-999",
-			wantIssueKey:  "GIT-999",
-			wantTimeSpent: "30m",
+			gitIssueKey:   testGitIssueKey,
+			wantIssueKey:  testGitIssueKey,
+			wantTimeSpent: testDuration30m,
 		},
 		{
 			name:          "issue URL with time provided explicitly",
 			arg0:          "https://instance.atlassian.net/browse/TICKET-123",
-			arg1:          "1h30m",
-			gitIssueKey:   "GIT-999",
-			wantIssueKey:  "TICKET-123",
-			wantTimeSpent: "1h30m",
+			arg1:          testDuration1h30m,
+			gitIssueKey:   testGitIssueKey,
+			wantIssueKey:  testIssueKey,
+			wantTimeSpent: testDuration1h30m,
 		},
 		{
 			name:          "only issue provided, no time",
-			arg0:          "TICKET-123",
+			arg0:          testIssueKey,
 			arg1:          "",
-			gitIssueKey:   "GIT-999",
-			wantIssueKey:  "TICKET-123",
+			gitIssueKey:   testGitIssueKey,
+			wantIssueKey:  testIssueKey,
 			wantTimeSpent: "",
 		},
 		{
 			name:          "time provided but no issue in arg or git branch",
-			arg0:          "30m",
+			arg0:          testDuration30m,
 			arg1:          "",
 			gitIssueKey:   "",
 			wantIssueKey:  "",
-			wantTimeSpent: "30m",
+			wantTimeSpent: testDuration30m,
 		},
 		{
 			name:          "no args, no git branch",
@@ -67,8 +73,8 @@ func TestResolveLogArgs(t *testing.T) {
 			name:          "no args, issue from git branch",
 			arg0:          "",
 			arg1:          "",
-			gitIssueKey:   "GIT-999",
-			wantIssueKey:  "GIT-999",
+			gitIssueKey:   testGitIssueKey,
+			wantIssueKey:  testGitIssueKey,
 			wantTimeSpent: "",
 		},
 	}
