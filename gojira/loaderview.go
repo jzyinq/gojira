@@ -3,8 +3,9 @@ package gojira
 import (
 	"context"
 	"fmt"
-	"github.com/rivo/tview"
 	"time"
+
+	"github.com/rivo/tview"
 )
 
 type LoaderView struct {

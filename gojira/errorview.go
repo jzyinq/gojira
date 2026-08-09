@@ -2,6 +2,7 @@ package gojira
 
 import (
 	"fmt"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -36,8 +37,6 @@ func (e *ErrorView) ShowError(error string, previousFocus tview.Primitive) {
 	app.ui.pages.SendToFront("error")
 	e.SetText(fmt.Sprintf("Error: %s", error))
 	app.ui.pages.ShowPage("error")
-	app.ui.app.SetFocus(e)
-	app.ui.app.Draw()
 }
 
 // ShowErrorIfPresent displays an error if err is not nil, returns true if error was shown

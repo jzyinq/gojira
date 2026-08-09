@@ -6,14 +6,15 @@ import (
 )
 
 type UserInteface struct {
-	app        *tview.Application
-	pages      *tview.Pages
-	grid       *tview.Grid
-	calendar   *Calendar
-	summary    *Summary
-	dayView    *DayView
-	errorView  *ErrorView
-	loaderView *LoaderView
+	app         *tview.Application
+	pages       *tview.Pages
+	grid        *tview.Grid
+	calendar    *Calendar
+	summary     *Summary
+	dayView     *DayView
+	errorView   *ErrorView
+	loaderView  *LoaderView
+	confirmView *ConfirmView
 }
 
 func newUi() {
@@ -23,6 +24,7 @@ func newUi() {
 
 	app.ui.errorView = NewErrorView()
 	app.ui.loaderView = NewLoaderView()
+	app.ui.confirmView = NewConfirmView()
 
 	app.ui.calendar = NewCalendar()
 	app.ui.summary = NewSummary()

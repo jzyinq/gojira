@@ -168,7 +168,9 @@ func (d *DayView) populateIssuesList(issues []Issue) {
 	}
 	d.latestIssuesList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEscape {
-			app.ui.app.Stop()
+			app.ui.confirmView.Confirm("Are you sure you want to exit?", app.ui.app.GetFocus(), func() {
+				app.ui.app.Stop()
+			})
 		}
 	}).SetSelectedFunc(func(row, column int) {
 		NewAddWorklogForm(d, issues, row)
@@ -194,7 +196,9 @@ func (d *DayView) update() {
 	}
 	d.worklogList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEscape {
-			app.ui.app.Stop()
+			app.ui.confirmView.Confirm("Are you sure you want to exit?", app.ui.app.GetFocus(), func() {
+				app.ui.app.Stop()
+			})
 		}
 	}).SetSelectedFunc(func(row, column int) {
 		NewUpdateWorklogForm(d, logs, row)
