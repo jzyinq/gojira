@@ -23,18 +23,18 @@ func TestLoadUserConfig(t *testing.T) {
 
 		userConfig, err := LoadUserConfig()
 		assert.NoError(t, err)
-		assert.Empty(t, userConfig.SubtractedIssues)
+		assert.Empty(t, userConfig.ExcludedIssues)
 	})
 
-	t.Run("loads subtracted issues from yaml file", func(t *testing.T) {
+	t.Run("loads excluded issues from yaml file", func(t *testing.T) {
 		dir := isolateUserConfigDir(t)
 		configPath := filepath.Join(dir, "gojira", "config.yaml")
 		assert.NoError(t, os.MkdirAll(filepath.Dir(configPath), 0750))
-		assert.NoError(t, os.WriteFile(configPath, []byte("subtractedIssues:\n  - PPURLOP-4\n"), 0600))
+		assert.NoError(t, os.WriteFile(configPath, []byte("excludedIssues:\n  - PPURLOP-4\n"), 0600))
 
 		userConfig, err := LoadUserConfig()
 		assert.NoError(t, err)
-		assert.Equal(t, []string{"PPURLOP-4"}, userConfig.SubtractedIssues)
+		assert.Equal(t, []string{"PPURLOP-4"}, userConfig.ExcludedIssues)
 	})
 
 	t.Run("returns error for invalid yaml", func(t *testing.T) {

@@ -20,10 +20,10 @@ type gojira struct {
 	workLogsIssues WorklogsIssues
 	jiraClient     *JiraClient
 	tempoClient    *TempoClient
-	// subtractedIssueIDs holds the numeric Jira issue IDs (resolved from
-	// Config.SubtractedIssues keys) whose logged time is subtracted from,
-	// rather than added to, the total time spent.
-	subtractedIssueIDs map[int]bool
+	// excludedIssueIDs holds the numeric Jira issue IDs (resolved from
+	// Config.ExcludedIssues keys) whose logged time is excluded entirely
+	// from the total time spent calculation.
+	excludedIssueIDs map[int]bool
 }
 
 func Run() {
@@ -60,8 +60,8 @@ func Run() {
 				// Initialize API clients once after config is loaded
 				app.jiraClient = NewJiraClient()
 				app.tempoClient = NewTempoClient()
-				if len(Config.SubtractedIssues) > 0 {
-					app.subtractedIssueIDs = ResolveSubtractedIssueIDs(Config.SubtractedIssues)
+				if len(Config.ExcludedIssues) > 0 {
+					app.excludedIssueIDs = ResolveExcludedIssueIDs(Config.ExcludedIssues)
 				}
 			}
 			if context.IsSet("debug") {

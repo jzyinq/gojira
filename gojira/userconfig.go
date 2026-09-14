@@ -10,9 +10,9 @@ import (
 
 // UserConfig holds user-customizable settings loaded from ~/.config/gojira/config.yaml.
 type UserConfig struct {
-	// SubtractedIssues lists issue keys (e.g. "PPURLOP-4") whose logged time should be
-	// subtracted from the total time spent, instead of being added to it.
-	SubtractedIssues []string `yaml:"subtractedIssues"`
+	// ExcludedIssues lists issue keys (e.g. "PPURLOP-4") whose logged time should be
+	// excluded from the total time spent entirely - neither added nor subtracted.
+	ExcludedIssues []string `yaml:"excludedIssues"`
 }
 
 // UserConfigPath returns the path to the user config file, following the OS config dir
@@ -48,17 +48,19 @@ func LoadUserConfig() (*UserConfig, error) {
 	return &userConfig, nil
 }
 
-// ResolveSubtractedIssueIDs resolves configured issue keys to the numeric Jira issue IDs
+// ResolveExcludedIssueIDs resolves configured issue keys to the numeric Jira issue IDs
 // that worklogs are keyed by, so they can be matched during time spent calculations.
-func ResolveSubtractedIssueIDs(issueKeys []string) map[int]bool {
+func ResolveExcludedIssueIDs(issueKeys []string) map[int]bool {
 	issueIDs := map[int]bool{}
 	for _, issueKey := range issueKeys {
 		issue, err := app.jiraClient.GetIssue(issueKey)
 		if err != nil {
-			logrus.Warnf("failed to resolve subtracted issue %q: %v", issueKey, err)
+			logrus.Warnf("failed to resolve excluded issue %q: %v", issueKey, err)
 			continue
 		}
-		issueIDs[issue.GetIdAsInt()] = true
+		id := issue.GetIdAsInt()
+		logrus.Debugf("resolved excluded issue %q to numeric id %d", issueKey, id)
+		issueIDs[id] = true
 	}
 	return issueIDs
 }

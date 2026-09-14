@@ -116,12 +116,8 @@ func (wl *Worklogs) TotalTimeSpentToPresentDay() int {
 		if err != nil {
 			logrus.Error(err)
 		}
-		if logDate.Before(time.Now().UTC()) {
-			if app.subtractedIssueIDs[log.Issue.Id] {
-				totalTime -= log.TimeSpentSeconds
-			} else {
-				totalTime += log.TimeSpentSeconds
-			}
+		if logDate.Before(time.Now().UTC()) && !app.excludedIssueIDs[log.Issue.Id] {
+			totalTime += log.TimeSpentSeconds
 		}
 	}
 	return totalTime

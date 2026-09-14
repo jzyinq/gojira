@@ -98,7 +98,7 @@ func TestWorklog_TotalTimeSpentToPresentDay(t *testing.T) {
 	assert.Equal(t, 5400, total, "Should only count worklogs before present")
 }
 
-func TestWorklog_TotalTimeSpentToPresentDay_SubtractedIssues(t *testing.T) {
+func TestWorklog_TotalTimeSpentToPresentDay_ExcludedIssues(t *testing.T) {
 	yesterday := time.Now().UTC().AddDate(0, 0, -1)
 
 	worklogs := Worklogs{
@@ -110,18 +110,18 @@ func TestWorklog_TotalTimeSpentToPresentDay_SubtractedIssues(t *testing.T) {
 			}{Id: 1}},
 			{StartDate: yesterday.Format(dateLayout), TimeSpentSeconds: 1800, Issue: struct {
 				Id int `json:"id"`
-			}{Id: 2}}, // logged against subtracted issue
+			}{Id: 2}}, // logged against excluded issue
 		},
 	}
 
-	origSubtracted := app.subtractedIssueIDs
-	app.subtractedIssueIDs = map[int]bool{2: true}
-	defer func() { app.subtractedIssueIDs = origSubtracted }()
+	origExcluded := app.excludedIssueIDs
+	app.excludedIssueIDs = map[int]bool{2: true}
+	defer func() { app.excludedIssueIDs = origExcluded }()
 
 	total := worklogs.TotalTimeSpentToPresentDay()
 
-	// 3600 (issue 1) - 1800 (subtracted issue 2) = 1800
-	assert.Equal(t, 1800, total, "time logged against subtracted issues should be subtracted, not added")
+	// only issue 1's 3600 seconds counts; issue 2 is excluded entirely
+	assert.Equal(t, 3600, total, "time logged against excluded issues should not count towards the total")
 }
 
 func TestWorklogsIssues_IssuesOnDate(t *testing.T) {

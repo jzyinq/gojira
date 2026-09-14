@@ -18,7 +18,7 @@ func GetEnv(key string) (string, error) {
 type Configuration struct {
 	JiraUrl, JiraLogin, JiraToken, TempoUrl, TempoToken, JiraAccountId string
 	UpdateExistingWorklog                                              bool
-	SubtractedIssues                                                   []string
+	ExcludedIssues                                                     []string
 }
 
 var Config *Configuration
@@ -67,7 +67,7 @@ func PrepareConfig() error {
 		TempoUrl:              "https://api.tempo.io/4",
 		TempoToken:            tempoToken,
 		UpdateExistingWorklog: true,
-		SubtractedIssues:      userConfig.SubtractedIssues,
+		ExcludedIssues:        userConfig.ExcludedIssues,
 	}
 	return nil
 }

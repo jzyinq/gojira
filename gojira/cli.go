@@ -354,11 +354,11 @@ Save it and you should ready to go!
 #3 Optionally, customize how time spent is calculated by creating
 ~/.config/gojira/config.yaml (respects $XDG_CONFIG_HOME):
 
-subtractedIssues:
+excludedIssues:
   - PPURLOP-4
 
-Time logged against these issue keys will be subtracted from, instead of
-added to, the total time spent shown in the worklogs summary.
+Time logged against these issue keys is excluded entirely from the total
+time spent shown in the worklogs summary (neither added nor subtracted).
 `)
 		return nil
 	},
