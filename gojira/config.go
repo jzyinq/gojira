@@ -3,6 +3,8 @@ package gojira
 import (
 	"fmt"
 	"os"
+
+	"github.com/sirupsen/logrus"
 )
 
 func GetEnv(key string) (string, error) {
@@ -16,6 +18,7 @@ func GetEnv(key string) (string, error) {
 type Configuration struct {
 	JiraUrl, JiraLogin, JiraToken, TempoUrl, TempoToken, JiraAccountId string
 	UpdateExistingWorklog                                              bool
+	SubtractedIssues                                                   []string
 }
 
 var Config *Configuration
@@ -50,6 +53,12 @@ func PrepareConfig() error {
 		return err
 	}
 
+	userConfig, err := LoadUserConfig()
+	if err != nil {
+		logrus.Warnf("failed to load user config: %v", err)
+		userConfig = &UserConfig{}
+	}
+
 	Config = &Configuration{
 		JiraUrl:               jiraUrl,
 		JiraLogin:             jiraLogin,
@@ -58,6 +67,7 @@ func PrepareConfig() error {
 		TempoUrl:              "https://api.tempo.io/4",
 		TempoToken:            tempoToken,
 		UpdateExistingWorklog: true,
+		SubtractedIssues:      userConfig.SubtractedIssues,
 	}
 	return nil
 }

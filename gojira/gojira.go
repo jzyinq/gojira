@@ -20,6 +20,10 @@ type gojira struct {
 	workLogsIssues WorklogsIssues
 	jiraClient     *JiraClient
 	tempoClient    *TempoClient
+	// subtractedIssueIDs holds the numeric Jira issue IDs (resolved from
+	// Config.SubtractedIssues keys) whose logged time is subtracted from,
+	// rather than added to, the total time spent.
+	subtractedIssueIDs map[int]bool
 }
 
 func Run() {
@@ -56,6 +60,9 @@ func Run() {
 				// Initialize API clients once after config is loaded
 				app.jiraClient = NewJiraClient()
 				app.tempoClient = NewTempoClient()
+				if len(Config.SubtractedIssues) > 0 {
+					app.subtractedIssueIDs = ResolveSubtractedIssueIDs(Config.SubtractedIssues)
+				}
 			}
 			if context.IsSet("debug") {
 				logrus.SetLevel(logrus.DebugLevel)
