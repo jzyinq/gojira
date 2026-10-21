@@ -81,7 +81,8 @@ type WorklogResponse struct {
 }
 
 type JiraWorklogUpdate struct {
-	TimeSpentSeconds int `json:"timeSpentSeconds"`
+	TimeSpentSeconds int    `json:"timeSpentSeconds"`
+	Comment          string `json:"comment"`
 }
 
 func (jc *JiraClient) GetIssuesByJQL(jql string, maxResults int) (JQLResponse, error) {
@@ -145,11 +146,16 @@ func (jc *JiraClient) GetIssue(issueKey string) (Issue, error) {
 	return jiraIssue, nil
 }
 
-func (jc *JiraClient) CreateWorklog(issueId int, logTime *time.Time, timeSpent string) (WorklogResponse, error) {
+func (jc *JiraClient) CreateWorklog(
+	issueId int, logTime *time.Time, timeSpent, description string,
+) (WorklogResponse, error) {
 	payload := map[string]string{
 		"timeSpent":      FormatTimeSpent(TimeSpentToSeconds(timeSpent)),
 		"adjustEstimate": "leave",
 		"started":        logTime.Format("2006-01-02T15:04:05.000-0700"),
+	}
+	if description != "" {
+		payload["comment"] = description
 	}
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%d/worklog?notifyUsers=false", Config.JiraUrl, issueId)
 	response, err := SendJSONRequest("POST", requestUrl, payload, jc.getHttpHeaders(), 201)
@@ -165,9 +171,10 @@ func (jc *JiraClient) CreateWorklog(issueId int, logTime *time.Time, timeSpent s
 	return workLogRequest, nil
 }
 
-func (jc *JiraClient) UpdateWorklog(issueId int, jiraWorklogId int, timeSpentInSeconds int) error {
+func (jc *JiraClient) UpdateWorklog(issueId int, jiraWorklogId int, timeSpentInSeconds int, description string) error {
 	payload := JiraWorklogUpdate{
 		TimeSpentSeconds: timeSpentInSeconds,
+		Comment:          description,
 	}
 	requestUrl := fmt.Sprintf("%s/rest/api/2/issue/%d/worklog/%d?notifyUsers=false",
 		Config.JiraUrl, issueId, jiraWorklogId)

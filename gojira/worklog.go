@@ -10,8 +10,8 @@ import (
 
 var timeSpentRegex = regexp.MustCompile(`(([0-9]+)h)?\s?(([0-9]+)m)?`)
 
-func NewWorklog(issueId int, logTime *time.Time, timeSpent string) (Worklog, error) {
-	workLogResponse, err := app.jiraClient.CreateWorklog(issueId, logTime, timeSpent)
+func NewWorklog(issueId int, logTime *time.Time, timeSpent, description string) (Worklog, error) {
+	workLogResponse, err := app.jiraClient.CreateWorklog(issueId, logTime, timeSpent, description)
 	if err != nil {
 		return Worklog{}, err
 	}
@@ -26,6 +26,7 @@ func NewWorklog(issueId int, logTime *time.Time, timeSpent string) (Worklog, err
 		StartDate:        logTime.Format(dateLayout),
 		StartTime:        logTime.Format("15:04:05"),
 		TimeSpentSeconds: workLogResponse.Timespentseconds,
+		Description:      description,
 		Issue: struct {
 			Id int `json:"id"`
 		}{Id: issueId},
@@ -179,22 +180,26 @@ func TimeSpentToSeconds(timeSpent string) int {
 	return timeSpentSeconds
 }
 
-func (wl *Worklog) Update(timeSpent string) error {
+// Update sets the worklog time spent and description. Pass wl.Description to keep the current description.
+func (wl *Worklog) Update(timeSpent, description string) error {
 	logrus.Debugf("updating worklog ... %+v", wl)
 	timeSpentInSeconds := TimeSpentToSeconds(timeSpent)
 	var err error
 
 	if wl.TempoWorklogid != 0 {
 		// make update request to tempo if tempoWorklogId is set
-		err = app.tempoClient.UpdateWorklog(wl, timeSpent)
+		updated := *wl
+		updated.Description = description
+		err = app.tempoClient.UpdateWorklog(&updated, timeSpent)
 	} else {
 		// make update request to jira if tempoWorklogId is not set
-		err = app.jiraClient.UpdateWorklog(wl.Issue.Id, wl.JiraWorklogID, timeSpentInSeconds)
+		err = app.jiraClient.UpdateWorklog(wl.Issue.Id, wl.JiraWorklogID, timeSpentInSeconds, description)
 	}
 	if err != nil {
 		return err
 	}
 	wl.TimeSpentSeconds = timeSpentInSeconds
+	wl.Description = description
 	return nil
 }
 

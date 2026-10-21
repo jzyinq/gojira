@@ -84,3 +84,8 @@ func TestParseDateRange(t *testing.T) {
 		assert.Equal(t, 6, result.NumberOfDays)
 	})
 }
+
+func TestFormatDescription(t *testing.T) {
+	assert.Equal(t, "", formatDescription(""))
+	assert.Equal(t, "(code review)", formatDescription("code review"))
+}

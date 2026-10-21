@@ -13,6 +13,15 @@ import (
 const IssueKeyColumn = 0
 const IssueSummaryColumn = 1
 const TimeSpentColumn = 2
+const DescriptionColumn = 3
+
+// formatDescription wraps a non-empty worklog description in parentheses for display
+func formatDescription(description string) string {
+	if description == "" {
+		return ""
+	}
+	return fmt.Sprintf("(%s)", description)
+}
 
 // validateTimeSpentInput is a tview-compatible validation function for time input fields
 // It accepts input that matches the time format or is empty (for partial input during typing)
@@ -193,6 +202,10 @@ func (d *DayView) update() {
 			tview.NewTableCell(
 				FormatTimeSpent((logs)[r].Worklog.TimeSpentSeconds)).SetTextColor(color).SetAlign(tview.AlignLeft),
 		)
+		d.worklogList.SetCell(r, DescriptionColumn,
+			tview.NewTableCell(
+				formatDescription((logs)[r].Worklog.Description)).SetTextColor(color).SetAlign(tview.AlignLeft),
+		)
 	}
 	d.worklogList.Select(0, IssueKeyColumn).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEscape {
@@ -313,6 +326,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form { //noli
 	newWorklog := func() {
 		logTime := form.GetFormItem(0).(*tview.InputField).GetText()
 		timeSpent := form.GetFormItem(1).(*tview.InputField).GetText()
+		description := form.GetFormItem(2).(*tview.InputField).GetText()
 
 		// Validate time format before submission
 		if timeSpent == "" {
@@ -341,7 +355,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form { //noli
 				return err
 			}
 			for day := dateRange.StartDate; day.Before(dateRange.EndDate.AddDate(0, 0, 1)); day = day.AddDate(0, 0, 1) {
-				err := issue.LogWork(&day, timeSpent)
+				err := issue.LogWork(&day, timeSpent, description)
 				app.ui.loaderView.UpdateText(fmt.Sprintf("Adding worklog for %s ...", day.Format(dateLayout)))
 				if err != nil {
 					return err
@@ -355,6 +369,7 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form { //noli
 	form = tview.NewForm().
 		AddInputField("Date", app.time.Format(dateLayout), 20, nil, nil).
 		AddInputField("Time spent", "", 20, validateTimeSpentInput, nil).
+		AddInputField("Description", "", 30, nil, nil).
 		AddButton("Add", newWorklog).
 		AddButton("Cancel", func() {
 			app.ui.app.SetFocus(app.ui.dayView.latestIssuesList)
@@ -371,8 +386,8 @@ func NewAddWorklogForm(d *DayView, issues []Issue, row int) *tview.Form { //noli
 	})
 	form.SetBorder(true).SetTitle("New worklog").SetTitleAlign(tview.AlignLeft)
 	_, _, pwidth, pheight := app.ui.grid.GetRect()
-	formWidth := 36
-	formHeight := 9
+	formWidth := 50
+	formHeight := 11
 	form.SetRect(pwidth/2-(formWidth/2), pheight/2-3, formWidth, formHeight)
 	form.SetFocus(1)
 	app.ui.pages.AddPage("worklog-form", form, false, true)
@@ -384,6 +399,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 
 	updateWorklog := func() {
 		timeSpent := form.GetFormItem(0).(*tview.InputField).GetText()
+		description := form.GetFormItem(1).(*tview.InputField).GetText()
 
 		// Validate time format before submission (require non-empty for updates)
 		if timeSpent == "" {
@@ -402,7 +418,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 		}
 
 		app.ui.loaderView.WithLoader("Updating worklog...", func() error {
-			if err := workLogIssues[row].Worklog.Update(timeSpent); err != nil {
+			if err := workLogIssues[row].Worklog.Update(timeSpent, description); err != nil {
 				return err
 			}
 			d.updateAll()
@@ -423,6 +439,7 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 	form = tview.NewForm().
 		AddInputField("Time spent",
 			FormatTimeSpent(workLogIssues[row].Worklog.TimeSpentSeconds), 20, validateTimeSpentInput, nil).
+		AddInputField("Description", workLogIssues[row].Worklog.Description, 30, nil, nil).
 		AddButton("Update", updateWorklog).
 		AddButton("Delete", deleteWorklog).
 		AddButton("Cancel", func() {
@@ -443,8 +460,8 @@ func NewUpdateWorklogForm(d *DayView, workLogIssues []*WorklogIssue, row int) *t
 	})
 	form.SetBorder(true).SetTitle("Update worklog").SetTitleAlign(tview.AlignLeft)
 	_, _, pwidth, pheight := app.ui.grid.GetRect()
-	formWidth := 36
-	formHeight := 7
+	formWidth := 50
+	formHeight := 9
 	form.SetRect(pwidth/2-(formWidth/2), pheight/2-3, formWidth, formHeight)
 	app.ui.pages.AddPage("worklog-form", form, false, true)
 	return form

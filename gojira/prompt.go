@@ -34,7 +34,14 @@ func SelectActionForm(actions []string) (string, error) {
 	return chosenAction, nil
 }
 
-func IssueWorklogForm(issues []Issue, worklogs []*Worklog) (Issue, string, error) {
+func newDescriptionInput(description *string) *huh.Input {
+	return huh.NewInput().
+		Title("Description").
+		Placeholder("optional").
+		Value(description)
+}
+
+func IssueWorklogForm(issues []Issue, worklogs []*Worklog) (Issue, string, string, error) {
 	formOptions := make([]huh.Option[Issue], len(issues))
 	for i, issue := range issues {
 		timeSpent := ""
@@ -46,6 +53,8 @@ func IssueWorklogForm(issues []Issue, worklogs []*Worklog) (Issue, string, error
 	}
 	chosenIssue := Issue{}
 	timeSpent := ""
+	description := ""
+	descriptionInput := newDescriptionInput(&description)
 	timeSpentInput := huh.NewInput().
 		Title("Log time").
 		Placeholder("1h / 1h30m / 30m").
@@ -67,16 +76,19 @@ func IssueWorklogForm(issues []Issue, worklogs []*Worklog) (Issue, string, error
 				Validate(func(issue Issue) error {
 					// it's more like a "prepare next input" function
 					timeSpent = ""
+					description = ""
 					worklog := findWorklogByIssueKey(worklogs, issue.Key)
 					if worklog != nil {
 						timeSpent = FormatTimeSpent(worklog.TimeSpentSeconds)
+						description = worklog.Description
 					}
 					timeSpentInput.Value(&timeSpent)
+					descriptionInput.Value(&description)
 					timeSpentInput.Description(fmt.Sprintf("%s %s", chosenIssue.Key, chosenIssue.Fields.Summary))
 					return nil
 				}),
 		),
-		huh.NewGroup(timeSpentInput),
+		huh.NewGroup(timeSpentInput, descriptionInput),
 	)
 	form.WithTheme(huh.ThemeDracula())
 	customizedKeyMap := huh.NewDefaultKeyMap()
@@ -86,13 +98,13 @@ func IssueWorklogForm(issues []Issue, worklogs []*Worklog) (Issue, string, error
 	form.WithKeyMap(customizedKeyMap)
 	err := form.Run()
 	if err != nil {
-		return chosenIssue, timeSpent, err
+		return chosenIssue, timeSpent, description, err
 	}
 
-	return chosenIssue, timeSpent, nil
+	return chosenIssue, timeSpent, description, nil
 }
 
-func InputTimeSpentForm(issue Issue, timeSpent string) (string, error) {
+func InputTimeSpentForm(issue Issue, timeSpent, description string) (string, string, error) {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -107,13 +119,14 @@ func InputTimeSpentForm(issue Issue, timeSpent string) (string, error) {
 					}
 					return nil
 				}),
+			newDescriptionInput(&description),
 		),
 	)
 	form.WithTheme(huh.ThemeDracula())
 	err := form.Run()
 	if err != nil {
-		return timeSpent, err
+		return timeSpent, description, err
 	}
 
-	return timeSpent, nil
+	return timeSpent, description, nil
 }

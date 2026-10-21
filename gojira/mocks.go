@@ -31,13 +31,15 @@ func (m *MockJiraClient) GetIssue(issueKey string) (Issue, error) {
 	return args.Get(0).(Issue), args.Error(1)
 }
 
-func (m *MockJiraClient) CreateWorklog(issueId int, logTime *time.Time, timeSpent string) (WorklogResponse, error) {
-	args := m.Called(issueId, logTime, timeSpent)
+func (m *MockJiraClient) CreateWorklog(
+	issueId int, logTime *time.Time, timeSpent, description string,
+) (WorklogResponse, error) {
+	args := m.Called(issueId, logTime, timeSpent, description)
 	return args.Get(0).(WorklogResponse), args.Error(1)
 }
 
-func (m *MockJiraClient) UpdateWorklog(issueId int, jiraWorklogId int, timeSpentInSeconds int) error {
-	args := m.Called(issueId, jiraWorklogId, timeSpentInSeconds)
+func (m *MockJiraClient) UpdateWorklog(issueId, jiraWorklogId, timeSpentInSeconds int, description string) error {
+	args := m.Called(issueId, jiraWorklogId, timeSpentInSeconds, description)
 	return args.Error(0)
 }
 

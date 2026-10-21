@@ -8,8 +8,8 @@ type JiraClientInterface interface {
 	GetLatestIssues() (JQLResponse, error)
 	GetIssuesByKeys(issueKeys []int) (JQLResponse, error)
 	GetIssue(issueKey string) (Issue, error)
-	CreateWorklog(issueId int, logTime *time.Time, timeSpent string) (WorklogResponse, error)
-	UpdateWorklog(issueId int, jiraWorklogId int, timeSpentInSeconds int) error
+	CreateWorklog(issueId int, logTime *time.Time, timeSpent, description string) (WorklogResponse, error)
+	UpdateWorklog(issueId int, jiraWorklogId int, timeSpentInSeconds int, description string) error
 	DeleteWorklog(issueId int, jiraWorklogId int) error
 }
 

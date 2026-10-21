@@ -153,17 +153,17 @@ var IssuesCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		issue, timeSpent, err := IssueWorklogForm(recentIssues, app.workLogs.logs)
+		issue, timeSpent, description, err := IssueWorklogForm(recentIssues, app.workLogs.logs)
 		if err != nil {
 			return err
 		}
 		err = spinner.New().Title("Logging work...").Action(func() {
 			worklog := findWorklogByIssueKey(app.workLogs.logs, issue.Key)
 			if worklog != nil {
-				err = worklog.Update(timeSpent)
+				err = worklog.Update(timeSpent, description)
 				return
 			}
-			err = issue.LogWork(app.time, timeSpent)
+			err = issue.LogWork(app.time, timeSpent, description)
 		}).Run()
 		if err != nil {
 			return err
@@ -195,6 +195,13 @@ var LogWorkCommand = &cli.Command{
 	Name:      "log",
 	Usage:     "Log work to specified issue",
 	ArgsUsage: "[ISSUE] [TIME_SPENT]",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "message",
+			Aliases: []string{"m"},
+			Usage:   "Optional worklog description",
+		},
+	},
 	Action: func(context *cli.Context) error {
 		issueKey, timeSpent := resolveLogArgs(
 			context.Args().Get(0),
@@ -208,14 +215,15 @@ var LogWorkCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
+		description := context.String("message")
 		if timeSpent == "" {
-			timeSpent, err = InputTimeSpentForm(issue, "")
+			timeSpent, description, err = InputTimeSpentForm(issue, "", description)
 			if err != nil {
 				return err
 			}
 		}
 		err = spinner.New().Title("Logging work...").Action(func() {
-			err = issue.LogWork(app.time, timeSpent)
+			err = issue.LogWork(app.time, timeSpent, description)
 		}).Run()
 		if err != nil {
 			return err
@@ -258,12 +266,12 @@ var GitOrIssueListAction = func(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		timeSpent, err := InputTimeSpentForm(issue, "")
+		timeSpent, description, err := InputTimeSpentForm(issue, "", "")
 		if err != nil {
 			return nil
 		}
 		err = spinner.New().Title("Logging work...").Action(func() {
-			err = issue.LogWork(app.time, timeSpent)
+			err = issue.LogWork(app.time, timeSpent, description)
 		}).Run()
 		if err != nil {
 			return err
@@ -290,7 +298,10 @@ var ViewIssueInBrowserAction = func(c *cli.Context) error {
 // logOrUpdateWork handles the API interaction for logging work. It either updates
 // an existing worklog for the same issue on the same day, or creates a new one.
 // Returns the newly created worklog, or nil if an existing one was updated in place.
-func logOrUpdateWork(issue Issue, logTime *time.Time, timeSpent string, worklogs *Worklogs) (*Worklog, error) {
+// When updating in place, a non-empty description replaces the existing one.
+func logOrUpdateWork(
+	issue Issue, logTime *time.Time, timeSpent, description string, worklogs *Worklogs,
+) (*Worklog, error) {
 	logrus.Infof("Logging %s of time to ticket %s at %s", timeSpent, issue.Key, logTime)
 	todayWorklog, err := worklogs.LogsOnDate(logTime)
 	if err != nil {
@@ -300,7 +311,10 @@ func logOrUpdateWork(issue Issue, logTime *time.Time, timeSpent string, worklogs
 		for index, workLog := range todayWorklog {
 			if strconv.Itoa(workLog.Issue.Id) == issue.Id {
 				timeSpentSum := FormatTimeSpent(TimeSpentToSeconds(timeSpent) + workLog.TimeSpentSeconds)
-				err := todayWorklog[index].Update(timeSpentSum)
+				if description == "" {
+					description = workLog.Description
+				}
+				err := todayWorklog[index].Update(timeSpentSum, description)
 				if err != nil {
 					return nil, err
 				}
@@ -308,7 +322,7 @@ func logOrUpdateWork(issue Issue, logTime *time.Time, timeSpent string, worklogs
 			}
 		}
 	}
-	worklog, err := NewWorklog(issue.GetIdAsInt(), logTime, timeSpent)
+	worklog, err := NewWorklog(issue.GetIdAsInt(), logTime, timeSpent, description)
 	if err != nil {
 		return nil, err
 	}
@@ -316,8 +330,8 @@ func logOrUpdateWork(issue Issue, logTime *time.Time, timeSpent string, worklogs
 }
 
 // LogWork logs time to an issue and updates global app state.
-func (issue Issue) LogWork(logTime *time.Time, timeSpent string) error {
-	worklog, err := logOrUpdateWork(issue, logTime, timeSpent, &app.workLogs)
+func (issue Issue) LogWork(logTime *time.Time, timeSpent, description string) error {
+	worklog, err := logOrUpdateWork(issue, logTime, timeSpent, description, &app.workLogs)
 	if err != nil {
 		return err
 	}
