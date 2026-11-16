@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+- `r` shortcut in `gojira worklogs` to refresh worklogs (picks up worklogs added outside gojira)
+
 ## [0.13.0] - 2026-06-27
 
 ### Added

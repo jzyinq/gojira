@@ -15,4 +15,4 @@ tests: ## run tests
 
 fixer: ## run static analysis
 	@echo "Static analysis..."
-	@golangci-lint run --config .golangci.yml --out-format=colored-line-number --concurrency 8
+	@golangci-lint run --config .golangci.yml --concurrency 8

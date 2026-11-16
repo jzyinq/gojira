@@ -56,7 +56,7 @@ func NewDayView() *DayView { //nolint:funlen
 			app.ui.app.Draw()
 		}),
 	}
-	dayView.searchInput = tview.NewInputField().SetLabel("(l)Latest | (/)Search: ").SetFieldWidth(60).
+	dayView.searchInput = tview.NewInputField().SetLabel("(r)Refresh | (l)Latest | (/)Search: ").SetFieldWidth(60).
 		SetDoneFunc(func(key tcell.Key) {
 			if key == tcell.KeyEnter {
 				go func() {
@@ -121,6 +121,10 @@ func NewDayView() *DayView { //nolint:funlen
 			})
 			return nil
 		}
+		if event.Rune() == 'r' && app.ui.app.GetFocus() != dayView.searchInput {
+			refreshWorklogs()
+			return nil
+		}
 		return event
 	})
 
@@ -139,10 +143,24 @@ func NewDayView() *DayView { //nolint:funlen
 var loadingWorklogs = make(chan bool, 1)
 
 func loadWorklogs() {
+	fetchWorklogs(false)
+}
+
+// refreshWorklogs re-fetches worklogs for the current month, even if they are already loaded
+func refreshWorklogs() {
+	fetchWorklogs(true)
+}
+
+func fetchWorklogs(force bool) {
 	select {
 	case loadingWorklogs <- true:
 		go func() {
 			defer func() { <-loadingWorklogs }()
+			if force {
+				// invalidate the cached month range so NewWorklogIssues fetches again
+				app.workLogsIssues.startDate = time.Time{}
+				app.workLogsIssues.endDate = time.Time{}
+			}
 			err := NewWorklogIssues()
 			if err != nil {
 				app.ui.errorView.ShowError(err.Error(), nil)
