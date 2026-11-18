@@ -6,9 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-16
+
 ### Added
 
 - `r` shortcut in `gojira worklogs` to refresh worklogs (picks up worklogs added outside gojira)
+- Optional worklog description: `gojira log -m "message"`, a "Description" field in the CLI prompts and in the add/update worklog forms, and a description column in the day view
+- User config file `~/.config/gojira/config.yaml` (respects `$XDG_CONFIG_HOME`) with `excludedIssues` - a list of issue keys whose logged time is left out of the total time spent in the worklogs summary
+- Confirmation dialog when exiting `gojira worklogs` with `Esc`
+
+### Changed
+
+- When time is added to an existing worklog for the same issue and day, a new description replaces the old one; an empty description keeps the existing one
+- Updated dependencies (`huh` 1.0.0, `tcell` 2.13.10 and others), Go 1.25
 
 ## [0.13.0] - 2026-06-27
 
@@ -210,8 +220,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Initial release of gojira
 
-[Unreleased]: git@github.com:jzyinq/gojira/compare/0.13.0...master
-[0.13.0]: git@github.com:jzyinq/gojira/compare/0.12.0...0.13.0
+[Unreleased]: https://github.com/jzyinq/gojira/compare/0.14.0...master
+[0.14.0]: https://github.com/jzyinq/gojira/compare/0.13.0...0.14.0
+[0.13.0]: https://github.com/jzyinq/gojira/compare/0.12.0...0.13.0
 [0.12.0]: https://github.com/jzyinq/gojira/compare/0.11.0...0.12.0
 [0.11.0]: https://github.com/jzyinq/gojira/compare/0.10.2...0.11.0
 [0.10.2]: https://github.com/jzyinq/gojira/compare/0.10.1...0.10.2
